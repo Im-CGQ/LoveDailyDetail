@@ -12,6 +12,37 @@
       </div>
     </div>
 
+    <!-- 全局悬浮音乐播放器 -->
+    <div class="global-floating-music-player" v-if="currentDiary && currentDiary.backgroundMusic">
+      <div 
+        class="music-icon" 
+        :class="{ 'playing': isMusicPlaying, 'show-controls': showMusicControls }"
+        @click="toggleMusicControls"
+      >
+        <span class="music-emoji">🎵</span>
+      </div>
+      
+      <!-- 音乐控制面板 -->
+      <div class="music-controls" v-show="showMusicControls">
+        <div class="music-info">
+          <span class="music-title">背景音乐</span>
+          <div class="music-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: musicProgress + '%' }"></div>
+            </div>
+            <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+          </div>
+        </div>
+        <div class="music-buttons">
+          <button class="control-btn" @click="toggleMusic">
+            <span v-if="isMusicPlaying">⏸️</span>
+            <span v-else>▶️</span>
+          </button>
+          <button class="control-btn" @click="stopMusic">⏹️</button>
+        </div>
+      </div>
+    </div>
+    
     <div class="content" v-if="currentDiary">
       <div class="title-section float">
         <h1 class="main-title text-gradient-romantic">{{ currentDiary.title }}</h1>
@@ -24,21 +55,47 @@
       </div>
 
       <div class="media-section hover-lift">
-                 <van-swipe 
-           v-if="currentDiary.images && currentDiary.images.length > 0"
-           class="image-swipe glow"
-           :autoplay="4000"
-           indicator-color="#ff6b9d"
-         >
-           <van-swipe-item v-for="(image, index) in currentDiary.images" :key="index">
-             <img 
-               :src="image" 
-               :alt="`回忆图片 ${index + 1}`" 
-               class="memory-image" 
-               @click="previewImage(index)"
-             />
-           </van-swipe-item>
-         </van-swipe>
+        <!-- 图片轮播 -->
+        <van-swipe 
+          v-if="currentDiary.images && currentDiary.images.length > 0"
+          class="image-swipe glow"
+          :autoplay="4000"
+          indicator-color="#ff6b9d"
+        >
+          <van-swipe-item v-for="(image, index) in currentDiary.images" :key="index">
+            <img 
+              :src="image" 
+              :alt="`回忆图片 ${index + 1}`" 
+              class="memory-image" 
+              @click="previewImage(index)"
+            />
+          </van-swipe-item>
+        </van-swipe>
+        
+        <!-- 视频播放器 -->
+        <div v-if="currentDiary.videos && currentDiary.videos.length > 0" class="video-section">
+          <div class="video-header">
+            <span class="video-emoji">🎬</span>
+            <h3 class="video-title">美好视频</h3>
+          </div>
+          <div class="video-container">
+            <video 
+              v-for="(video, index) in currentDiary.videos" 
+              :key="index"
+              :src="video"
+              class="video-player"
+              controls
+              preload="metadata"
+              poster=""
+              @click="playVideo(index)"
+              @ended="onVideoEnded"
+              @play="onVideoPlay"
+              @pause="onVideoPause"
+            >
+              您的浏览器不支持视频播放
+            </video>
+          </div>
+        </div>
       </div>
 
       <div class="description-section">
@@ -130,6 +187,16 @@ const loveCount = ref('')
 const loveSeconds = ref('')
 const displayText = ref('')
 const typingComplete = ref(false)
+
+// 音乐播放相关
+const isMusicPlaying = ref(false)
+const showMusicControls = ref(false)
+const currentTime = ref(0)
+const duration = ref(0)
+const musicProgress = ref(0)
+const audioElement = ref(null)
+const progressTimer = ref(null)
+
 let timer = null
 let typingTimer = null
 
@@ -225,6 +292,25 @@ const previewImage = (index) => {
   }
 }
 
+// 视频播放相关方法
+const playVideo = (index) => {
+  console.log('播放视频:', index)
+  // 可以在这里添加视频播放逻辑
+}
+
+const onVideoEnded = () => {
+  console.log('视频播放结束')
+  showToast('视频播放完成')
+}
+
+const onVideoPlay = () => {
+  console.log('视频开始播放')
+}
+
+const onVideoPause = () => {
+  console.log('视频暂停')
+}
+
 // 花瓣数据 - 使用computed缓存，避免重复计算
 // 动画控制状态
 const isAnimationActive = ref(true)
@@ -276,6 +362,11 @@ const loadLatestDiary = async () => {
       if (currentDiary.value.description) {
         startTyping(currentDiary.value.description)
       }
+      
+      // 初始化音乐播放器
+      if (currentDiary.value.backgroundMusic) {
+        initAudio()
+      }
     } else {
       showToast('没有找到日记数据')
     }
@@ -283,6 +374,86 @@ const loadLatestDiary = async () => {
     console.error('加载日记失败:', error)
     showToast('加载失败，请稍后重试')
   }
+}
+
+// 音乐播放相关方法
+const toggleMusicControls = () => {
+  showMusicControls.value = !showMusicControls.value
+}
+
+const toggleMusic = () => {
+  if (!audioElement.value) return
+  
+  if (isMusicPlaying.value) {
+    audioElement.value.pause()
+  } else {
+    audioElement.value.play()
+  }
+}
+
+const stopMusic = () => {
+  if (!audioElement.value) return
+  audioElement.value.pause()
+  audioElement.value.currentTime = 0
+  isMusicPlaying.value = false
+  musicProgress.value = 0
+  currentTime.value = 0
+}
+
+const initAudio = () => {
+  if (!currentDiary.value?.backgroundMusic) return
+  
+  audioElement.value = new Audio(currentDiary.value.backgroundMusic)
+  audioElement.value.loop = true
+  
+  audioElement.value.addEventListener('loadedmetadata', () => {
+    duration.value = audioElement.value.duration
+  })
+  
+  audioElement.value.addEventListener('play', () => {
+    isMusicPlaying.value = true
+    startProgressTimer()
+  })
+  
+  audioElement.value.addEventListener('pause', () => {
+    isMusicPlaying.value = false
+    stopProgressTimer()
+  })
+  
+  audioElement.value.addEventListener('ended', () => {
+    isMusicPlaying.value = false
+    stopProgressTimer()
+  })
+  
+  audioElement.value.addEventListener('error', (e) => {
+    console.error('音频播放错误:', e)
+    showToast('音乐播放失败')
+  })
+}
+
+const startProgressTimer = () => {
+  if (progressTimer.value) return
+  
+  progressTimer.value = setInterval(() => {
+    if (audioElement.value && !audioElement.value.paused) {
+      currentTime.value = audioElement.value.currentTime
+      musicProgress.value = (audioElement.value.currentTime / audioElement.value.duration) * 100
+    }
+  }, 100)
+}
+
+const stopProgressTimer = () => {
+  if (progressTimer.value) {
+    clearInterval(progressTimer.value)
+    progressTimer.value = null
+  }
+}
+
+const formatTime = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '0:00'
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
 onMounted(() => {
@@ -294,6 +465,16 @@ onUnmounted(() => {
   stopTimer() // 组件卸载时停止计时器
   if (typingTimer) {
     clearTimeout(typingTimer) // 清理打字机定时器
+  }
+  
+  // 清理音乐播放器
+  if (audioElement.value) {
+    audioElement.value.pause()
+    audioElement.value = null
+  }
+  if (progressTimer.value) {
+    clearInterval(progressTimer.value)
+    progressTimer.value = null
   }
 })
 
@@ -402,17 +583,78 @@ onDeactivated(() => {
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     
-         .memory-image {
-       width: 100%;
-       height: 300px;
-       object-fit: cover;
-       cursor: pointer;
-       transition: transform 0.3s ease;
-       
-       &:hover {
-         transform: scale(1.02);
-       }
-     }
+    .memory-image {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      
+      &:hover {
+        transform: scale(1.02);
+      }
+    }
+  }
+  
+  /* 视频播放器样式 */
+  .video-section {
+    margin-top: 20px;
+    
+    .video-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      
+      .video-emoji {
+        font-size: 24px;
+        animation: heartbeat 2s ease-in-out infinite;
+      }
+      
+      .video-title {
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        margin: 0;
+        text-align: center;
+      }
+    }
+    
+    .video-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      
+      .video-player {
+        width: 100%;
+        height: 300px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        background: #000;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          transform: scale(1.02);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        &::-webkit-media-controls {
+          background: rgba(0, 0, 0, 0.7);
+        }
+        
+        &::-webkit-media-controls-panel {
+          background: rgba(0, 0, 0, 0.7);
+        }
+        
+        &::-webkit-media-controls-play-button {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 50%;
+        }
+      }
+    }
   }
 }
 
@@ -556,12 +798,174 @@ onDeactivated(() => {
     padding: 15px;
   }
   
+  .global-floating-music-player {
+    right: 15px;
+    
+    .music-icon {
+      width: 35px;
+      height: 35px;
+      
+      .music-emoji {
+        font-size: 18px;
+      }
+    }
+    
+    .music-controls {
+      width: 240px;
+      right: -20px;
+    }
+  }
+}
+
+/* 全局悬浮音乐播放器样式 */
+.global-floating-music-player {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  transform: translateY(-50%);
+  z-index: 1000;
+  
+  .music-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.7) 0%, rgba(255, 143, 171, 0.7) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255, 107, 157, 0.3);
+    transition: all 0.3s ease;
+    position: relative;
+    
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(255, 107, 157, 0.4);
+    }
+    
+    &.playing {
+      animation: rotate 3s linear infinite;
+    }
+    
+    .music-emoji {
+      font-size: 20px;
+      color: white;
+    }
+  }
+  
+  .music-controls {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    width: 280px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: slideIn 0.3s ease;
+    z-index: 1000;
+    
+    .music-info {
+      margin-bottom: 12px;
+      
+      .music-title {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+      }
+      
+      .music-progress {
+        .progress-bar {
+          width: 100%;
+          height: 4px;
+          background: rgba(0, 0, 0, 0.1);
+          border-radius: 2px;
+          overflow: hidden;
+          margin-bottom: 6px;
+          
+          .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b9d 0%, #ff8fab 100%);
+            border-radius: 2px;
+            transition: width 0.1s ease;
+          }
+        }
+        
+        .time-display {
+          font-size: 12px;
+          color: #666;
+          font-family: 'Courier New', monospace;
+        }
+      }
+    }
+    
+    .music-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      
+      .control-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+        }
+        
+        &:active {
+          transform: scale(0.95);
+        }
+      }
+    }
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
   .title-section .main-title {
     font-size: 28px;
   }
   
   .media-section .image-swipe .memory-image {
     height: 250px;
+  }
+  
+  .media-section .video-section .video-container .video-player {
+    height: 200px;
   }
   
   .action-section .action-btn {

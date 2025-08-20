@@ -109,8 +109,16 @@ const form = ref({
 })
 
 const onDateConfirm = (value) => {
-  form.value.date = dayjs(value).format('YYYY-MM-DD')
-  showDatePicker.value = false
+  try {
+    // 直接使用dayjs处理日期值
+    form.value.date = dayjs(value).format('YYYY-MM-DD')
+    showDatePicker.value = false
+  } catch (error) {
+    console.error('日期处理错误:', error)
+    // 如果出错，使用当前日期
+    form.value.date = dayjs().format('YYYY-MM-DD')
+    showDatePicker.value = false
+  }
 }
 
 const afterRead = (file) => {

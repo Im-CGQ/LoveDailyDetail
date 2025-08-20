@@ -105,7 +105,7 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=1',
         'https://picsum.photos/400/300?random=2'
       ],
-      backgroundMusic: null,
+      backgroundMusic: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
       video: null
     },
     {
@@ -118,7 +118,7 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=4'
       ],
       backgroundMusic: null,
-      video: null
+      video: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
     },
     {
       id: 3,
@@ -129,7 +129,7 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=5',
         'https://picsum.photos/400/300?random=6'
       ],
-      backgroundMusic: null,
+      backgroundMusic: 'https://www.soundjay.com/nature/sounds/rain-01.wav',
       video: null
     },
     {
@@ -142,7 +142,19 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=8'
       ],
       backgroundMusic: null,
-      video: null
+      video: 'https://sample-videos.com/zip/10/mp4/SampleVideo_640x360_1mb.mp4'
+    },
+    {
+      id: 5,
+      title: '冬日雪景',
+      date: '2024-12-25',
+      description: '圣诞节下雪了！我们一起堆雪人，打雪仗，在雪地里留下了我们的脚印。白色的世界很美，但最美的还是你的笑容。',
+      images: [
+        'https://picsum.photos/400/300?random=9',
+        'https://picsum.photos/400/300?random=10'
+      ],
+      backgroundMusic: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      video: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4'
     }
   ]
 }

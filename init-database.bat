@@ -1,5 +1,8 @@
 @echo off
-echo 初始化数据库...
+chcp 65001 >nul
+echo ========================================
+echo           数据库初始化工具
+echo ========================================
 echo.
 
 echo 请确保MySQL服务已启动，并且已安装MySQL客户端
@@ -13,7 +16,7 @@ set /p MYSQL_PASS=请输入MySQL密码:
 echo.
 echo 正在执行数据库初始化脚本...
 
-mysql -u%MYSQL_USER% -p%MYSQL_PASS% < backend/database/init.sql
+mysql -u%MYSQL_USER% -p%MYSQL_PASS% --default-character-set=utf8mb4 < backend/database/init.sql
 
 if %ERRORLEVEL% EQU 0 (
     echo.
@@ -27,10 +30,19 @@ if %ERRORLEVEL% EQU 0 (
 ) else (
     echo.
     echo ❌ 数据库初始化失败！
-    echo 请检查：
-    echo 1. MySQL服务是否启动
-    echo 2. 用户名密码是否正确
-    echo 3. 是否有创建数据库的权限
+    echo.
+    echo 可能的原因：
+    echo 1. MySQL服务未启动
+    echo 2. 用户名或密码错误
+    echo 3. 没有创建数据库的权限
+    echo 4. MySQL客户端未安装或不在PATH中
+    echo.
+    echo 解决方案：
+    echo 1. 启动MySQL服务: net start mysql
+    echo 2. 检查用户名密码
+    echo 3. 使用管理员权限运行此脚本
+    echo 4. 确保MySQL客户端已安装
 )
 
+echo.
 pause 
