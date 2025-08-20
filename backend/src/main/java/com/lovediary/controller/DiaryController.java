@@ -3,7 +3,10 @@ package com.lovediary.controller;
 import com.lovediary.dto.ApiResponse;
 import com.lovediary.dto.DiaryDTO;
 import com.lovediary.entity.Diary;
+import com.lovediary.entity.User;
 import com.lovediary.service.DiaryService;
+import com.lovediary.service.UserService;
+import com.lovediary.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +23,32 @@ public class DiaryController {
 
     @Autowired
     private DiaryService diaryService;
+    
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // 获取当前用户ID的辅助方法
+    private Long getCurrentUserId(String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.extractUsername(token);
+            User user = userService.findByUsername(username).orElse(null);
+            return user != null ? user.getId() : null;
+        }
+        return null;
+    }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Diary>>> getAllDiaries() {
+    public ResponseEntity<ApiResponse<List<Diary>>> getAllDiaries(@RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            List<Diary> diaries = diaryService.getAllDiaries();
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            List<Diary> diaries = diaryService.getDiariesByUserId(userId);
             return ResponseEntity.ok(ApiResponse.success("获取日记列表成功", diaries));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记列表失败：" + e.getMessage()));
@@ -32,9 +56,20 @@ public class DiaryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Diary>> getDiaryById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Diary>> getDiaryById(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
             Diary diary = diaryService.getDiaryById(id);
+            if (diary.getUser().getId() != userId) {
+                return ResponseEntity.ok(ApiResponse.error("无权查看此日记"));
+            }
+            
             return ResponseEntity.ok(ApiResponse.success("获取日记成功", diary));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记失败：" + e.getMessage()));
@@ -43,9 +78,14 @@ public class DiaryController {
 
     @GetMapping("/date/{date}")
     public ResponseEntity<ApiResponse<Diary>> getDiaryByDate(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            Diary diary = diaryService.getDiaryByDate(date);
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            Diary diary = diaryService.getDiaryByDateAndUserId(date, userId);
             return ResponseEntity.ok(ApiResponse.success("获取日记成功", diary));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记失败：" + e.getMessage()));
@@ -53,9 +93,13 @@ public class DiaryController {
     }
 
     @GetMapping("/latest")
-    public ResponseEntity<ApiResponse<Diary>> getLatestDiary() {
+    public ResponseEntity<ApiResponse<Diary>> getLatestDiary(@RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            List<Diary> diaries = diaryService.getAllDiaries();
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            List<Diary> diaries = diaryService.getDiariesByUserId(userId);
             if (!diaries.isEmpty()) {
                 return ResponseEntity.ok(ApiResponse.success("获取最新日记成功", diaries.get(0)));
             } else {
@@ -67,12 +111,17 @@ public class DiaryController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Diary>> createDiary(@Valid @RequestBody DiaryDTO diaryDTO) {
+    public ResponseEntity<ApiResponse<Diary>> createDiary(@Valid @RequestBody DiaryDTO diaryDTO,
+                                                         @RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            if (diaryService.existsByDate(diaryDTO.getDate())) {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            if (diaryService.existsByDateAndUserId(diaryDTO.getDate(), userId)) {
                 return ResponseEntity.ok(ApiResponse.error("该日期已存在日记"));
             }
-            Diary createdDiary = diaryService.createDiary(diaryDTO);
+            Diary createdDiary = diaryService.createDiary(diaryDTO, userId);
             return ResponseEntity.ok(ApiResponse.success("创建日记成功", createdDiary));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("创建日记失败：" + e.getMessage()));
@@ -80,8 +129,21 @@ public class DiaryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Diary>> updateDiary(@PathVariable Long id, @Valid @RequestBody DiaryDTO diaryDTO) {
+    public ResponseEntity<ApiResponse<Diary>> updateDiary(
+            @PathVariable Long id, 
+            @Valid @RequestBody DiaryDTO diaryDTO,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
+            Diary existingDiary = diaryService.getDiaryById(id);
+            if (existingDiary.getUser().getId() != userId) {
+                return ResponseEntity.ok(ApiResponse.error("无权更新此日记"));
+            }
+            
             Diary updatedDiary = diaryService.updateDiary(id, diaryDTO);
             return ResponseEntity.ok(ApiResponse.success("更新日记成功", updatedDiary));
         } catch (Exception e) {
@@ -90,8 +152,20 @@ public class DiaryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<String>> deleteDiary(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteDiary(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
+            Diary existingDiary = diaryService.getDiaryById(id);
+            if (existingDiary.getUser().getId() != userId) {
+                return ResponseEntity.ok(ApiResponse.error("无权删除此日记"));
+            }
+            
             diaryService.deleteDiary(id);
             return ResponseEntity.ok(ApiResponse.success("删除日记成功", "日记已删除"));
         } catch (Exception e) {
@@ -102,9 +176,14 @@ public class DiaryController {
     @GetMapping("/range")
     public ResponseEntity<ApiResponse<List<Diary>>> getDiariesByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            List<Diary> diaries = diaryService.getDiariesByDateRange(startDate, endDate);
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            List<Diary> diaries = diaryService.getDiariesByDateRange(startDate, endDate, userId);
             return ResponseEntity.ok(ApiResponse.success("获取日期范围日记成功", diaries));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日期范围日记失败：" + e.getMessage()));

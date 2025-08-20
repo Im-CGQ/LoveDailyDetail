@@ -12,17 +12,17 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private DiaryService diaryService;
+    // @Autowired
+    // private DiaryService diaryService;
 
     @Override
     public void run(String... args) throws Exception {
         // 初始化默认用户
         userService.initializeDefaultUser();
         
-        // 初始化示例日记数据
-        diaryService.initializeSampleData();
+        // 暂时注释掉日记数据初始化，避免依赖问题
+        // diaryService.initializeSampleData();
         
-        System.out.println("数据初始化完成！");
+        System.out.println("用户初始化完成！");
     }
 } 

@@ -203,7 +203,7 @@ let typingTimer = null
 // 设置在一起的日期时间（可以修改这个日期）
 // 格式：YYYY-MM-DD HH:mm:ss
 // 例如：'2024-01-15 14:30:00' 表示2024年1月15日下午2点30分
-const togetherDate = '2024-01-15 14:30:00'
+const togetherDate = '2025-05-30 14:30:00'
 
 // 计算在一起的时间
 const calculateLoveTime = () => {

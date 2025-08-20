@@ -44,14 +44,33 @@ api.interceptors.response.use(
   }
 )
 
+// 注册接口
+export const register = async (username, password, confirmPassword, displayName) => {
+  try {
+    const response = await api.post('/auth/register', {
+      username,
+      password,
+      confirmPassword,
+      displayName
+    })
+    
+    if (response.data.success) {
+      return response.data
+    } else {
+      throw new Error(response.data.message || '注册失败')
+    }
+  } catch (error) {
+    console.error('注册失败:', error.message)
+    throw new Error(error.response?.data?.message || '注册失败，请检查网络连接')
+  }
+}
+
 // 登录接口
 export const login = async (username, password, role = 'user') => {
   try {
-    // 尝试调用真实API
     const response = await api.post('/auth/login', {
       username,
-      password,
-      role
+      password
     })
     
     if (response.data.success) {
@@ -60,90 +79,52 @@ export const login = async (username, password, role = 'user') => {
       throw new Error(response.data.message || '登录失败')
     }
   } catch (error) {
-    // 如果后端未启动，使用mock数据
-    console.log('后端连接失败，使用mock数据:', error.message)
-    
-    // 模拟API调用延迟
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    if (username === 'admin' && password === 'admin') {
-      return {
-        success: true,
-        data: {
-          token: 'mock_token_' + Date.now(),
-          user: {
-            username,
-            role,
-            avatar: null
-          }
-        }
-      }
-    } else {
-      throw new Error('用户名或密码错误')
-    }
+    console.error('登录失败:', error.message)
+    throw new Error(error.response?.data?.message || '登录失败，请检查网络连接')
   }
 }
 
 // 登出接口
 export const logout = async () => {
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return { success: true }
+    const response = await api.post('/auth/logout')
+    return response.data
   } catch (error) {
-    throw error
+    console.error('登出失败:', error.message)
+    // 即使后端登出失败，也要清除本地状态
+    return { success: true }
   }
 }
 
 // 获取用户信息
 export const getUserInfo = async () => {
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const response = await api.get('/auth/user-info')
     
-    const username = localStorage.getItem('auth_username')
-    const role = localStorage.getItem('auth_role')
-    
-    if (!username || !role) {
-      throw new Error('用户未登录')
-    }
-    
-    return {
-      success: true,
-      data: {
-        username,
-        role,
-        avatar: null
-      }
+    if (response.data.success) {
+      return response.data
+    } else {
+      throw new Error(response.data.message || '获取用户信息失败')
     }
   } catch (error) {
-    throw error
+    console.error('获取用户信息失败:', error.message)
+    throw new Error(error.response?.data?.message || '获取用户信息失败')
   }
 }
 
 // 刷新token
 export const refreshToken = async () => {
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const response = await api.post('/auth/refresh-token')
     
-    const username = localStorage.getItem('auth_username')
-    const role = localStorage.getItem('auth_role')
-    
-    if (!username || !role) {
-      throw new Error('用户未登录')
-    }
-    
-    const newToken = 'mock_token_' + Date.now()
-    
-    return {
-      success: true,
-      data: {
-        token: newToken
-      }
+    if (response.data.success) {
+      return response.data
+    } else {
+      throw new Error(response.data.message || '刷新token失败')
     }
   } catch (error) {
-    throw error
+    console.error('刷新token失败:', error.message)
+    throw new Error(error.response?.data?.message || '刷新token失败')
   }
 }
 

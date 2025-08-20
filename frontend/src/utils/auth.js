@@ -1,35 +1,14 @@
 import dayjs from 'dayjs'
 
-// 生成JWT token（模拟）
+// 生成JWT token（已废弃，现在使用后端返回的真实token）
 export const generateToken = (username, role, remember = true) => {
-  const payload = {
-    username,
-    role,
-    exp: remember ? dayjs().add(1, 'month').unix() : dayjs().add(1, 'day').unix(),
-    iat: dayjs().unix()
-  }
-  
-  // 简单的base64编码模拟JWT
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-  const payloadStr = btoa(JSON.stringify(payload))
-  const signature = btoa('love_diary_secret_key_' + Date.now())
-  
-  return `${header}.${payloadStr}.${signature}`
+  console.warn('generateToken 已废弃，请使用后端返回的真实token')
+  return 'deprecated_token'
 }
 
-// 验证token
+// 验证token（简化版，主要检查是否存在）
 export const validateToken = (token) => {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return false
-    
-    const payload = JSON.parse(atob(parts[1]))
-    const now = dayjs().unix()
-    
-    return payload.exp > now
-  } catch (error) {
-    return false
-  }
+  return token && token.length > 0 && token !== 'deprecated_token'
 }
 
 // 保存登录状态

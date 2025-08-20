@@ -2,7 +2,9 @@ package com.lovediary.service.impl;
 
 import com.lovediary.dto.DiaryDTO;
 import com.lovediary.entity.Diary;
+import com.lovediary.entity.User;
 import com.lovediary.repository.DiaryRepository;
+import com.lovediary.repository.UserRepository;
 import com.lovediary.service.DiaryService;
 import com.lovediary.service.OssService;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +23,17 @@ import java.util.List;
 public class DiaryServiceImpl implements DiaryService {
 
     private final DiaryRepository diaryRepository;
+    private final UserRepository userRepository;
     private final OssService ossService;
 
     @Override
     public List<Diary> getAllDiaries() {
         return diaryRepository.findAllByOrderByDateDesc();
+    }
+
+    @Override
+    public List<Diary> getDiariesByUserId(Long userId) {
+        return diaryRepository.findByUserIdOrderByDateDesc(userId);
     }
 
     @Override
@@ -35,19 +43,23 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
-    public Diary getDiaryByDate(LocalDate date) {
-        return diaryRepository.findByDate(date)
+    public Diary getDiaryByDateAndUserId(LocalDate date, Long userId) {
+        return diaryRepository.findByDateAndUserId(date, userId)
                 .orElseThrow(() -> new RuntimeException("该日期没有日记"));
     }
 
     @Override
-    public Diary createDiary(DiaryDTO diaryDTO) {
-        if (diaryRepository.existsByDate(diaryDTO.getDate())) {
+    public Diary createDiary(DiaryDTO diaryDTO, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                
+        if (diaryRepository.existsByDateAndUserId(diaryDTO.getDate(), userId)) {
             throw new RuntimeException("该日期已存在日记");
         }
 
         Diary diary = new Diary();
         BeanUtils.copyProperties(diaryDTO, diary);
+        diary.setUser(user);
         return diaryRepository.save(diary);
     }
 
@@ -65,8 +77,8 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
-    public List<Diary> getDiariesByYearAndMonth(int year, int month) {
-        return diaryRepository.findByYearAndMonth(year, month);
+    public List<Diary> getDiariesByYearAndMonth(int year, int month, Long userId) {
+        return diaryRepository.findByYearAndMonthAndUserId(year, month, userId);
     }
 
     @Override
@@ -75,13 +87,13 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
-    public List<Diary> getDiariesByDateRange(LocalDate startDate, LocalDate endDate) {
-        return diaryRepository.findByDateBetween(startDate, endDate);
+    public List<Diary> getDiariesByDateRange(LocalDate startDate, LocalDate endDate, Long userId) {
+        return diaryRepository.findByDateBetweenAndUserId(startDate, endDate, userId);
     }
 
     @Override
-    public boolean existsByDate(LocalDate date) {
-        return diaryRepository.existsByDate(date);
+    public boolean existsByDateAndUserId(LocalDate date, Long userId) {
+        return diaryRepository.existsByDateAndUserId(date, userId);
     }
 
     @Override
@@ -102,6 +114,44 @@ public class DiaryServiceImpl implements DiaryService {
         return diaryRepository.findAllByOrderByDateDesc().stream()
                 .limit(limit)
                 .collect(java.util.stream.Collectors.toList());
+    }
+    
+    @Override
+    public Page<Diary> getDiariesWithPaginationByUserId(Pageable pageable, Long userId) {
+        return diaryRepository.findByUserIdOrderByDateDesc(userId, pageable);
+    }
+    
+    @Override
+    public List<Diary> getRecentDiariesByUserId(int limit, Long userId) {
+        return diaryRepository.findByUserIdOrderByDateDesc(userId).stream()
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toList());
+    }
+    
+    @Override
+    public List<Diary> getDiariesByDateRangeForAdmin(LocalDate startDate, LocalDate endDate) {
+        return diaryRepository.findByDateBetween(startDate, endDate);
+    }
+    
+    @Override
+    public Diary createDiaryForAdmin(DiaryDTO diaryDTO) {
+        // 管理员创建日记时，默认使用ID为1的用户（通常是管理员用户）
+        User user = userRepository.findById(1L)
+                .orElseThrow(() -> new RuntimeException("默认用户不存在"));
+                
+        if (diaryRepository.existsByDate(diaryDTO.getDate())) {
+            throw new RuntimeException("该日期已存在日记");
+        }
+
+        Diary diary = new Diary();
+        BeanUtils.copyProperties(diaryDTO, diary);
+        diary.setUser(user);
+        return diaryRepository.save(diary);
+    }
+    
+    @Override
+    public boolean existsByDate(LocalDate date) {
+        return diaryRepository.existsByDate(date);
     }
 
     private void createSampleDiaries() {

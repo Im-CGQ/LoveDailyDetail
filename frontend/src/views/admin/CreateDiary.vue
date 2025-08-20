@@ -80,6 +80,8 @@
       <van-date-picker
         v-model="currentDate"
         title="选择日期"
+        :min-date="new Date(2020, 0, 1)"
+        :max-date="new Date(2030, 11, 31)"
         @confirm="onDateConfirm"
         @cancel="showDatePicker = false"
       />
@@ -99,11 +101,11 @@ const router = useRouter()
 
 const loading = ref(false)
 const showDatePicker = ref(false)
-const currentDate = ref([new Date()])
+const currentDate = ref(new Date())
 
 const form = ref({
   title: '',
-  date: '',
+  date: dayjs().format('YYYY-MM-DD'),
   description: '',
   images: [],
   videos: [],
@@ -113,14 +115,31 @@ const form = ref({
 const onDateConfirm = (value) => {
   try {
     console.log('日期确认值:', value, '类型:', typeof value, '是否为数组:', Array.isArray(value))
-    // 处理数组格式的日期值
-    const selectedDate = Array.isArray(value) ? value[0] : value
-    currentDate.value = [selectedDate]
+    
+    // 确保日期值有效
+    let selectedDate
+    if (Array.isArray(value)) {
+      selectedDate = value[0]
+    } else if (value instanceof Date) {
+      selectedDate = value
+    } else {
+      selectedDate = new Date(value)
+    }
+    
+    // 验证日期是否有效
+    if (isNaN(selectedDate.getTime())) {
+      throw new Error('无效的日期值')
+    }
+    
+    currentDate.value = selectedDate
     form.value.date = dayjs(selectedDate).format('YYYY-MM-DD')
     showDatePicker.value = false
   } catch (error) {
     console.error('日期处理错误:', error)
-    form.value.date = dayjs().format('YYYY-MM-DD')
+    // 使用当前日期作为默认值
+    const now = new Date()
+    currentDate.value = now
+    form.value.date = dayjs(now).format('YYYY-MM-DD')
     showDatePicker.value = false
   }
 }

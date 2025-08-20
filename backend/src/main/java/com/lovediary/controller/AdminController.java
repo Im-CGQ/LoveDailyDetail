@@ -3,8 +3,11 @@ package com.lovediary.controller;
 import com.lovediary.dto.ApiResponse;
 import com.lovediary.dto.DiaryDTO;
 import com.lovediary.entity.Diary;
+import com.lovediary.entity.User;
 import com.lovediary.service.DiaryService;
 import com.lovediary.service.OssSignatureService;
+import com.lovediary.service.UserService;
+import com.lovediary.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,9 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/admin")
-@CrossOrigin(origins = "*")
+// @RestController
+// @RequestMapping("/admin")
+// @CrossOrigin(origins = "*")
 public class AdminController {
 
     @Autowired
@@ -33,14 +36,43 @@ public class AdminController {
     
     @Autowired
     private OssSignatureService ossSignatureService;
+    
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    /**
+     * 获取当前用户ID
+     */
+    private Long getCurrentUserId(String token) {
+        if (token == null || !token.startsWith("Bearer ")) {
+            return null;
+        }
+        try {
+            String actualToken = token.substring(7);
+            String username = jwtUtil.extractUsername(actualToken);
+            User user = userService.findByUsername(username).orElse(null);
+            return user != null ? user.getId() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     /**
      * 获取后台统计数据
      */
     @GetMapping("/stats")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getStats() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getStats(
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            List<Diary> allDiaries = diaryService.getAllDiaries();
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
+            List<Diary> allDiaries = diaryService.getDiariesByUserId(userId);
             
             // 计算本月日记数量
             LocalDate now = LocalDate.now();
@@ -48,12 +80,12 @@ public class AdminController {
             LocalDate startOfMonth = currentMonth.atDay(1);
             LocalDate endOfMonth = currentMonth.atEndOfMonth();
             
-            List<Diary> thisMonthDiaries = diaryService.getDiariesByDateRange(startOfMonth, endOfMonth);
+            List<Diary> thisMonthDiaries = diaryService.getDiariesByDateRange(startOfMonth, endOfMonth, userId);
             
             // 计算今年日记数量
             LocalDate startOfYear = LocalDate.of(now.getYear(), 1, 1);
             LocalDate endOfYear = LocalDate.of(now.getYear(), 12, 31);
-            List<Diary> thisYearDiaries = diaryService.getDiariesByDateRange(startOfYear, endOfYear);
+            List<Diary> thisYearDiaries = diaryService.getDiariesByDateRange(startOfYear, endOfYear, userId);
             
             // 统计图片和视频数量
             long totalImages = allDiaries.stream()
@@ -85,10 +117,16 @@ public class AdminController {
     @GetMapping("/diaries")
     public ResponseEntity<ApiResponse<Page<Diary>>> getDiariesWithPagination(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
             Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "date"));
-            Page<Diary> diaries = diaryService.getDiariesWithPagination(pageable);
+            Page<Diary> diaries = diaryService.getDiariesWithPaginationByUserId(pageable, userId);
             return ResponseEntity.ok(ApiResponse.success("获取日记列表成功", diaries));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记列表失败：" + e.getMessage()));
@@ -100,9 +138,15 @@ public class AdminController {
      */
     @GetMapping("/diaries/recent")
     public ResponseEntity<ApiResponse<List<Diary>>> getRecentDiaries(
-            @RequestParam(defaultValue = "5") int limit) {
+            @RequestParam(defaultValue = "5") int limit,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            List<Diary> diaries = diaryService.getRecentDiaries(limit);
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
+            List<Diary> diaries = diaryService.getRecentDiariesByUserId(limit, userId);
             return ResponseEntity.ok(ApiResponse.success("获取最近日记成功", diaries));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取最近日记失败：" + e.getMessage()));
@@ -113,9 +157,20 @@ public class AdminController {
      * 根据ID获取日记详情
      */
     @GetMapping("/diaries/{id}")
-    public ResponseEntity<ApiResponse<Diary>> getDiaryById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Diary>> getDiaryById(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
             Diary diary = diaryService.getDiaryById(id);
+            if (diary.getUser().getId() != userId) {
+                return ResponseEntity.ok(ApiResponse.error("无权查看此日记"));
+            }
+            
             return ResponseEntity.ok(ApiResponse.success("获取日记详情成功", diary));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记详情失败：" + e.getMessage()));
@@ -126,12 +181,19 @@ public class AdminController {
      * 创建日记
      */
     @PostMapping("/diaries")
-    public ResponseEntity<ApiResponse<Diary>> createDiary(@Valid @RequestBody DiaryDTO diaryDTO) {
+    public ResponseEntity<ApiResponse<Diary>> createDiary(
+            @Valid @RequestBody DiaryDTO diaryDTO,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            if (diaryService.existsByDate(diaryDTO.getDate())) {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
+            if (diaryService.existsByDateAndUserId(diaryDTO.getDate(), userId)) {
                 return ResponseEntity.ok(ApiResponse.error("该日期已存在日记"));
             }
-            Diary createdDiary = diaryService.createDiary(diaryDTO);
+            Diary createdDiary = diaryService.createDiary(diaryDTO, userId);
             return ResponseEntity.ok(ApiResponse.success("创建日记成功", createdDiary));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("创建日记失败：" + e.getMessage()));
@@ -142,8 +204,21 @@ public class AdminController {
      * 更新日记
      */
     @PutMapping("/diaries/{id}")
-    public ResponseEntity<ApiResponse<Diary>> updateDiary(@PathVariable Long id, @Valid @RequestBody DiaryDTO diaryDTO) {
+    public ResponseEntity<ApiResponse<Diary>> updateDiary(
+            @PathVariable Long id, 
+            @Valid @RequestBody DiaryDTO diaryDTO,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
+            Diary existingDiary = diaryService.getDiaryById(id);
+            if (existingDiary.getUser().getId() != userId) {
+                return ResponseEntity.ok(ApiResponse.error("无权更新此日记"));
+            }
+            
             Diary updatedDiary = diaryService.updateDiary(id, diaryDTO);
             return ResponseEntity.ok(ApiResponse.success("更新日记成功", updatedDiary));
         } catch (Exception e) {
@@ -155,8 +230,20 @@ public class AdminController {
      * 删除日记
      */
     @DeleteMapping("/diaries/{id}")
-    public ResponseEntity<ApiResponse<String>> deleteDiary(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteDiary(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
+            Diary existingDiary = diaryService.getDiaryById(id);
+            if (existingDiary.getUser().getId() != userId) {
+                return ResponseEntity.ok(ApiResponse.error("无权删除此日记"));
+            }
+            
             diaryService.deleteDiary(id);
             return ResponseEntity.ok(ApiResponse.success("删除日记成功", "日记已删除"));
         } catch (Exception e) {

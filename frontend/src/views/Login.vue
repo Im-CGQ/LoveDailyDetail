@@ -66,6 +66,17 @@
             {{ isAdmin ? '切换到前台' : '切换到后台' }}
           </van-button>
         </div>
+        <div class="register-link" v-if="!isAdmin">
+          <p class="register-tip">还没有账号？</p>
+          <van-button 
+            size="small" 
+            type="default"
+            @click="goToRegister"
+            class="register-btn"
+          >
+            立即注册
+          </van-button>
+        </div>
       </div>
     </div>
   </div>
@@ -95,6 +106,11 @@ const switchMode = () => {
   form.value = { username: '', password: '' }
 }
 
+// 跳转到注册页面
+const goToRegister = () => {
+  router.push('/register')
+}
+
 
 
 // 登录提交
@@ -102,12 +118,16 @@ const onSubmit = async (values) => {
   loading.value = true
   
   try {
-    const role = isAdmin.value ? 'admin' : 'user'
-    const response = await login(values.username, values.password, role)
+    const response = await login(values.username, values.password)
     
     if (response.success) {
-      const token = generateToken(values.username, role, rememberMe.value)
-      saveLoginState(token, role, values.username, rememberMe.value)
+      // 使用后端返回的token和用户信息
+      const token = response.data.token
+      const user = response.data.user
+      const role = user.role.toLowerCase()
+      
+      // 保存登录状态
+      saveLoginState(token, role, user.username, rememberMe.value)
       
       showToast({
         message: '登录成功',
@@ -118,7 +138,7 @@ const onSubmit = async (values) => {
       const redirect = route.query.redirect
       if (redirect) {
         router.push(redirect)
-      } else if (isAdmin.value) {
+      } else if (role === 'admin') {
         router.push('/admin')
       } else {
         router.push('/home')
@@ -257,6 +277,27 @@ onMounted(() => {
   
   .mode-switch {
     .switch-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 107, 157, 0.3);
+      color: #ff6b9d;
+      font-size: 14px;
+      
+      &:hover {
+        background: rgba(255, 107, 157, 0.1);
+      }
+    }
+  }
+  
+  .register-link {
+    margin-top: 15px;
+    
+    .register-tip {
+      color: #999;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    
+    .register-btn {
       background: rgba(255, 255, 255, 0.2);
       border: 1px solid rgba(255, 107, 157, 0.3);
       color: #ff6b9d;

@@ -3,6 +3,7 @@ package com.lovediary.controller;
 import com.lovediary.dto.ApiResponse;
 import com.lovediary.dto.LoginRequest;
 import com.lovediary.dto.LoginResponse;
+import com.lovediary.dto.RegisterRequest;
 import com.lovediary.entity.User;
 import com.lovediary.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,36 @@ public class AuthController {
             return ResponseEntity.ok(ApiResponse.error("Token无效"));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("验证失败：" + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest request) {
+        try {
+            // 验证密码确认
+            if (!request.getPassword().equals(request.getConfirmPassword())) {
+                return ResponseEntity.ok(ApiResponse.error("两次输入的密码不一致"));
+            }
+            
+            // 检查用户名是否已存在
+            if (userService.existsByUsername(request.getUsername())) {
+                return ResponseEntity.ok(ApiResponse.error("用户名已存在"));
+            }
+            
+            // 注册用户
+            boolean success = userService.registerUser(
+                request.getUsername(), 
+                request.getPassword(), 
+                request.getDisplayName()
+            );
+            
+            if (success) {
+                return ResponseEntity.ok(ApiResponse.success("注册成功，请登录"));
+            } else {
+                return ResponseEntity.ok(ApiResponse.error("注册失败"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("注册失败：" + e.getMessage()));
         }
     }
 } 
