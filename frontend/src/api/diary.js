@@ -106,7 +106,7 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=2'
       ],
       backgroundMusic: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-      video: null
+      videos: []
     },
     {
       id: 2,
@@ -118,7 +118,7 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=4'
       ],
       backgroundMusic: null,
-      video: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+      videos: ['https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4']
     },
     {
       id: 3,
@@ -130,7 +130,7 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=6'
       ],
       backgroundMusic: 'https://www.soundjay.com/nature/sounds/rain-01.wav',
-      video: null
+      videos: []
     },
     {
       id: 4,
@@ -142,7 +142,7 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=8'
       ],
       backgroundMusic: null,
-      video: 'https://sample-videos.com/zip/10/mp4/SampleVideo_640x360_1mb.mp4'
+      videos: ['https://sample-videos.com/zip/10/mp4/SampleVideo_640x360_1mb.mp4']
     },
     {
       id: 5,
@@ -154,7 +154,7 @@ const getMockDiaries = () => {
         'https://picsum.photos/400/300?random=10'
       ],
       backgroundMusic: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-      video: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4'
+      videos: ['https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4']
     }
   ]
 }

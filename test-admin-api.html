@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin API 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .api-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .api-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #ff6b9d;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            border-left-color: #ff4757;
+            background: #fff5f5;
+        }
+        .success {
+            border-left-color: #2ed573;
+            background: #f0fff4;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin API 测试页面</h1>
+        
+        <div class="api-section">
+            <h3>1. 获取统计数据</h3>
+            <button onclick="testGetStats()">测试获取统计数据</button>
+            <div id="stats-result" class="result"></div>
+        </div>
+
+        <div class="api-section">
+            <h3>2. 获取分页日记列表</h3>
+            <div class="form-group">
+                <label>页码:</label>
+                <input type="number" id="page" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>每页大小:</label>
+                <input type="number" id="size" value="10" min="1" max="50">
+            </div>
+            <button onclick="testGetDiariesWithPagination()">测试获取分页日记</button>
+            <div id="pagination-result" class="result"></div>
+        </div>
+
+        <div class="api-section">
+            <h3>3. 获取最近日记</h3>
+            <div class="form-group">
+                <label>数量限制:</label>
+                <input type="number" id="limit" value="5" min="1" max="20">
+            </div>
+            <button onclick="testGetRecentDiaries()">测试获取最近日记</button>
+            <div id="recent-result" class="result"></div>
+        </div>
+
+        <div class="api-section">
+            <h3>4. 获取日记详情</h3>
+            <div class="form-group">
+                <label>日记ID:</label>
+                <input type="number" id="diary-id" value="1" min="1">
+            </div>
+            <button onclick="testGetDiaryById()">测试获取日记详情</button>
+            <div id="detail-result" class="result"></div>
+        </div>
+
+        <div class="api-section">
+            <h3>5. 创建日记</h3>
+            <div class="form-group">
+                <label>标题:</label>
+                <input type="text" id="create-title" value="测试日记">
+            </div>
+            <div class="form-group">
+                <label>日期:</label>
+                <input type="date" id="create-date" value="2024-12-01">
+            </div>
+            <div class="form-group">
+                <label>描述:</label>
+                <textarea id="create-description">这是一个测试日记，用于验证创建功能。</textarea>
+            </div>
+            <button onclick="testCreateDiary()">测试创建日记</button>
+            <div id="create-result" class="result"></div>
+        </div>
+
+        <div class="api-section">
+            <h3>6. 更新日记</h3>
+            <div class="form-group">
+                <label>日记ID:</label>
+                <input type="number" id="update-id" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>标题:</label>
+                <input type="text" id="update-title" value="更新后的标题">
+            </div>
+            <div class="form-group">
+                <label>日期:</label>
+                <input type="date" id="update-date" value="2024-12-01">
+            </div>
+            <div class="form-group">
+                <label>描述:</label>
+                <textarea id="update-description">这是更新后的描述。</textarea>
+            </div>
+            <button onclick="testUpdateDiary()">测试更新日记</button>
+            <div id="update-result" class="result"></div>
+        </div>
+
+        <div class="api-section">
+            <h3>7. 删除日记</h3>
+            <div class="form-group">
+                <label>日记ID:</label>
+                <input type="number" id="delete-id" value="1" min="1">
+            </div>
+            <button onclick="testDeleteDiary()">测试删除日记</button>
+            <div id="delete-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+
+        // 显示结果
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = 'result ' + (isError ? 'error' : 'success');
+        }
+
+        // 通用请求函数
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                return { success: true, data };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        // 1. 测试获取统计数据
+        async function testGetStats() {
+            const result = await makeRequest(`${API_BASE_URL}/admin/stats`);
+            showResult('stats-result', result, !result.success);
+        }
+
+        // 2. 测试获取分页日记列表
+        async function testGetDiariesWithPagination() {
+            const page = document.getElementById('page').value;
+            const size = document.getElementById('size').value;
+            const result = await makeRequest(`${API_BASE_URL}/admin/diaries?page=${page}&size=${size}`);
+            showResult('pagination-result', result, !result.success);
+        }
+
+        // 3. 测试获取最近日记
+        async function testGetRecentDiaries() {
+            const limit = document.getElementById('limit').value;
+            const result = await makeRequest(`${API_BASE_URL}/admin/diaries/recent?limit=${limit}`);
+            showResult('recent-result', result, !result.success);
+        }
+
+        // 4. 测试获取日记详情
+        async function testGetDiaryById() {
+            const id = document.getElementById('diary-id').value;
+            const result = await makeRequest(`${API_BASE_URL}/admin/diaries/${id}`);
+            showResult('detail-result', result, !result.success);
+        }
+
+        // 5. 测试创建日记
+        async function testCreateDiary() {
+            const diaryData = {
+                title: document.getElementById('create-title').value,
+                date: document.getElementById('create-date').value,
+                description: document.getElementById('create-description').value,
+                images: [],
+                videos: [],
+                backgroundMusic: null
+            };
+
+            const result = await makeRequest(`${API_BASE_URL}/admin/diaries`, {
+                method: 'POST',
+                body: JSON.stringify(diaryData)
+            });
+            showResult('create-result', result, !result.success);
+        }
+
+        // 6. 测试更新日记
+        async function testUpdateDiary() {
+            const id = document.getElementById('update-id').value;
+            const diaryData = {
+                title: document.getElementById('update-title').value,
+                date: document.getElementById('update-date').value,
+                description: document.getElementById('update-description').value,
+                images: [],
+                videos: [],
+                backgroundMusic: null
+            };
+
+            const result = await makeRequest(`${API_BASE_URL}/admin/diaries/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(diaryData)
+            });
+            showResult('update-result', result, !result.success);
+        }
+
+        // 7. 测试删除日记
+        async function testDeleteDiary() {
+            const id = document.getElementById('delete-id').value;
+            const result = await makeRequest(`${API_BASE_URL}/admin/diaries/${id}`, {
+                method: 'DELETE'
+            });
+            showResult('delete-result', result, !result.success);
+        }
+    </script>
+</body>
+</html> 

@@ -50,6 +50,18 @@
               </div>
               <div class="diary-title">{{ diary.title }}</div>
               <div class="diary-desc">{{ diary.description }}</div>
+              
+              <!-- 媒体标记 -->
+              <div class="media-badges">
+                <div v-if="diary.videos && diary.videos.length > 0" class="media-badge video-badge" title="包含视频">
+                  <van-icon name="video-o" />
+                  <span>视频</span>
+                </div>
+                <div v-if="diary.backgroundMusic" class="media-badge music-badge" title="包含音乐">
+                  <van-icon name="music-o" />
+                  <span>音乐</span>
+                </div>
+              </div>
             </div>
             
             <div class="diary-media" v-if="diary.images && diary.images.length > 0">
@@ -108,6 +120,12 @@
             >
               <span class="day-number">{{ day.dayNumber }}</span>
               <div v-if="day.hasDiary" class="diary-indicator">💕</div>
+              
+              <!-- 媒体标记 -->
+              <div v-if="day.hasDiary" class="media-indicators">
+                <div v-if="day.hasVideo" class="media-icon video-icon" title="包含视频">🎥</div>
+                <div v-if="day.hasMusic" class="media-icon music-icon" title="包含音乐">🎵</div>
+              </div>
             </div>
           </div>
         </div>
@@ -199,12 +217,15 @@ const calendarDays = computed(() => {
   const prevMonthDays = []
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
     const date = firstDay.subtract(i + 1, 'day')
+    const diary = getDiaryOnDate(date)
     prevMonthDays.push({
       key: `prev-${date.format('YYYY-MM-DD')}`,
       date: date,
       dayNumber: date.date(),
       isCurrentMonth: false,
       hasDiary: hasDiaryOnDate(date),
+      hasVideo: diary ? hasVideo(diary) : false,
+      hasMusic: diary ? hasBackgroundMusic(diary) : false,
       isToday: date.isSame(dayjs(), 'day')
     })
   }
@@ -213,12 +234,15 @@ const calendarDays = computed(() => {
   const currentMonthDays = []
   for (let i = 1; i <= lastDay.date(); i++) {
     const date = dayjs().year(year).month(month).date(i)
+    const diary = getDiaryOnDate(date)
     currentMonthDays.push({
       key: `current-${date.format('YYYY-MM-DD')}`,
       date: date,
       dayNumber: i,
       isCurrentMonth: true,
       hasDiary: hasDiaryOnDate(date),
+      hasVideo: diary ? hasVideo(diary) : false,
+      hasMusic: diary ? hasBackgroundMusic(diary) : false,
       isToday: date.isSame(dayjs(), 'day')
     })
   }
@@ -228,12 +252,15 @@ const calendarDays = computed(() => {
   const nextMonthDays = []
   for (let i = 1; i <= 6 - lastDayOfWeek; i++) {
     const date = lastDay.add(i, 'day')
+    const diary = getDiaryOnDate(date)
     nextMonthDays.push({
       key: `next-${date.format('YYYY-MM-DD')}`,
       date: date,
       dayNumber: date.date(),
       isCurrentMonth: false,
       hasDiary: hasDiaryOnDate(date),
+      hasVideo: diary ? hasVideo(diary) : false,
+      hasMusic: diary ? hasBackgroundMusic(diary) : false,
       isToday: date.isSame(dayjs(), 'day')
     })
   }
@@ -245,6 +272,22 @@ const calendarDays = computed(() => {
 const hasDiaryOnDate = (date) => {
   const dateStr = date.format('YYYY-MM-DD')
   return diaries.value.some(diary => diary.date === dateStr)
+}
+
+// 获取指定日期的日记
+const getDiaryOnDate = (date) => {
+  const dateStr = date.format('YYYY-MM-DD')
+  return diaries.value.find(diary => diary.date === dateStr)
+}
+
+// 检查日记是否有视频
+const hasVideo = (diary) => {
+  return diary.videos && diary.videos.length > 0
+}
+
+// 检查日记是否有背景音乐
+const hasBackgroundMusic = (diary) => {
+  return diary.backgroundMusic && diary.backgroundMusic.trim() !== ''
 }
 
 // 切换视图模式
@@ -472,6 +515,56 @@ onMounted(() => {
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
+        
+        .media-badges {
+          display: flex;
+          gap: 6px;
+          margin-top: 10px;
+          
+          .media-badge {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            padding: 3px 6px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            
+            .van-icon {
+              font-size: 12px;
+            }
+            
+            span {
+              color: white;
+              font-weight: 600;
+            }
+            
+            &.video-badge {
+              background: rgba(255, 71, 87, 0.3);
+              border-color: rgba(255, 71, 87, 0.5);
+              
+              &:hover {
+                background: rgba(255, 71, 87, 0.4);
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+              }
+            }
+            
+            &.music-badge {
+              background: rgba(46, 213, 115, 0.3);
+              border-color: rgba(46, 213, 115, 0.5);
+              
+              &:hover {
+                background: rgba(46, 213, 115, 0.4);
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(46, 213, 115, 0.3);
+              }
+            }
+          }
+        }
       }
       
       .diary-media {
@@ -589,6 +682,31 @@ onMounted(() => {
           bottom: 4px;
           font-size: 12px;
           animation: heartbeat 2s ease-in-out infinite;
+        }
+        
+        .media-indicators {
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          display: flex;
+          gap: 2px;
+          
+          .media-icon {
+            font-size: 10px;
+            padding: 1px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+            
+            &.video-icon {
+              color: #ff4757;
+            }
+            
+            &.music-icon {
+              color: #2ed573;
+            }
+          }
         }
         
         &.other-month {

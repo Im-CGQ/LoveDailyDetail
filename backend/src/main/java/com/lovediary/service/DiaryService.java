@@ -2,6 +2,8 @@ package com.lovediary.service;
 
 import com.lovediary.dto.DiaryDTO;
 import com.lovediary.entity.Diary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -30,4 +32,9 @@ public interface DiaryService {
     boolean existsByDate(LocalDate date);
 
     void initializeSampleData();
+
+    // 新增的admin相关方法
+    Page<Diary> getDiariesWithPagination(Pageable pageable);
+
+    List<Diary> getRecentDiaries(int limit);
 } 

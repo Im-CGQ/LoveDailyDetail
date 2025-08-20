@@ -1,0 +1,179 @@
+package com.lovediary.controller;
+
+import com.lovediary.dto.ApiResponse;
+import com.lovediary.dto.DiaryDTO;
+import com.lovediary.entity.Diary;
+import com.lovediary.service.DiaryService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.validation.Valid;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/admin")
+@CrossOrigin(origins = "*")
+public class AdminController {
+
+    @Autowired
+    private DiaryService diaryService;
+
+    /**
+     * 获取后台统计数据
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getStats() {
+        try {
+            List<Diary> allDiaries = diaryService.getAllDiaries();
+            
+            // 计算本月日记数量
+            LocalDate now = LocalDate.now();
+            YearMonth currentMonth = YearMonth.from(now);
+            LocalDate startOfMonth = currentMonth.atDay(1);
+            LocalDate endOfMonth = currentMonth.atEndOfMonth();
+            
+            List<Diary> thisMonthDiaries = diaryService.getDiariesByDateRange(startOfMonth, endOfMonth);
+            
+            // 计算今年日记数量
+            LocalDate startOfYear = LocalDate.of(now.getYear(), 1, 1);
+            LocalDate endOfYear = LocalDate.of(now.getYear(), 12, 31);
+            List<Diary> thisYearDiaries = diaryService.getDiariesByDateRange(startOfYear, endOfYear);
+            
+            // 统计图片和视频数量
+            long totalImages = allDiaries.stream()
+                    .filter(diary -> diary.getImages() != null)
+                    .mapToLong(diary -> diary.getImages().size())
+                    .sum();
+            
+            long totalVideos = allDiaries.stream()
+                    .filter(diary -> diary.getVideos() != null)
+                    .mapToLong(diary -> diary.getVideos().size())
+                    .sum();
+            
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("totalDiaries", allDiaries.size());
+            stats.put("thisMonthDiaries", thisMonthDiaries.size());
+            stats.put("thisYearDiaries", thisYearDiaries.size());
+            stats.put("totalImages", totalImages);
+            stats.put("totalVideos", totalVideos);
+            
+            return ResponseEntity.ok(ApiResponse.success("获取统计数据成功", stats));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取统计数据失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 分页获取日记列表
+     */
+    @GetMapping("/diaries")
+    public ResponseEntity<ApiResponse<Page<Diary>>> getDiariesWithPagination(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "date"));
+            Page<Diary> diaries = diaryService.getDiariesWithPagination(pageable);
+            return ResponseEntity.ok(ApiResponse.success("获取日记列表成功", diaries));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取日记列表失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取最近日记
+     */
+    @GetMapping("/diaries/recent")
+    public ResponseEntity<ApiResponse<List<Diary>>> getRecentDiaries(
+            @RequestParam(defaultValue = "5") int limit) {
+        try {
+            List<Diary> diaries = diaryService.getRecentDiaries(limit);
+            return ResponseEntity.ok(ApiResponse.success("获取最近日记成功", diaries));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取最近日记失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 根据ID获取日记详情
+     */
+    @GetMapping("/diaries/{id}")
+    public ResponseEntity<ApiResponse<Diary>> getDiaryById(@PathVariable Long id) {
+        try {
+            Diary diary = diaryService.getDiaryById(id);
+            return ResponseEntity.ok(ApiResponse.success("获取日记详情成功", diary));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取日记详情失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 创建日记
+     */
+    @PostMapping("/diaries")
+    public ResponseEntity<ApiResponse<Diary>> createDiary(@Valid @RequestBody DiaryDTO diaryDTO) {
+        try {
+            if (diaryService.existsByDate(diaryDTO.getDate())) {
+                return ResponseEntity.ok(ApiResponse.error("该日期已存在日记"));
+            }
+            Diary createdDiary = diaryService.createDiary(diaryDTO);
+            return ResponseEntity.ok(ApiResponse.success("创建日记成功", createdDiary));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("创建日记失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 更新日记
+     */
+    @PutMapping("/diaries/{id}")
+    public ResponseEntity<ApiResponse<Diary>> updateDiary(@PathVariable Long id, @Valid @RequestBody DiaryDTO diaryDTO) {
+        try {
+            Diary updatedDiary = diaryService.updateDiary(id, diaryDTO);
+            return ResponseEntity.ok(ApiResponse.success("更新日记成功", updatedDiary));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("更新日记失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 删除日记
+     */
+    @DeleteMapping("/diaries/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteDiary(@PathVariable Long id) {
+        try {
+            diaryService.deleteDiary(id);
+            return ResponseEntity.ok(ApiResponse.success("删除日记成功", "日记已删除"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("删除日记失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 文件上传
+     */
+    @PostMapping("/upload")
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("type") String type) {
+        try {
+            String fileUrl = diaryService.uploadFile(file, type);
+            Map<String, String> result = new HashMap<>();
+            result.put("url", fileUrl);
+            return ResponseEntity.ok(ApiResponse.success("文件上传成功", result));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("文件上传失败：" + e.getMessage()));
+        }
+    }
+} 

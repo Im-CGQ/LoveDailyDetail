@@ -45,7 +45,7 @@
           <van-button 
             size="small" 
             type="danger" 
-            @click="deleteDiary(diary)"
+            @click="deleteDiaryHandler(diary)"
           >
             删除
           </van-button>
@@ -56,16 +56,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
 import dayjs from 'dayjs'
+import { getDiariesWithPagination, deleteDiary } from '@/api/admin.js'
 
 const router = useRouter()
 
 const loading = ref(false)
 const finished = ref(false)
 const diaries = ref([])
+const currentPage = ref(1)
+const pageSize = ref(10)
+const hasMore = ref(true)
 
 const formatDate = (date) => {
   return dayjs(date).format('YYYY年MM月DD日')
@@ -75,56 +79,66 @@ const editDiary = (diary) => {
   router.push(`/admin/diary/edit/${diary.id}`)
 }
 
-const deleteDiary = async (diary) => {
+const deleteDiaryHandler = async (diary) => {
   try {
     await showConfirmDialog({
       title: '确认删除',
       message: `确定要删除"${diary.title}"吗？`
     })
     
-    // 模拟删除操作
-    const index = diaries.value.findIndex(d => d.id === diary.id)
-    if (index > -1) {
-      diaries.value.splice(index, 1)
-      showToast('删除成功')
+    await deleteDiary(diary.id)
+    showToast('删除成功')
+    
+    // 重新加载数据
+    diaries.value = []
+    currentPage.value = 1
+    hasMore.value = true
+    finished.value = false
+    await loadDiaries()
+  } catch (error) {
+    if (error) {
+      console.error('删除失败:', error)
+      showToast('删除失败，请重试')
     }
-  } catch {
-    // 用户取消删除
   }
 }
 
-const onLoad = () => {
-  // 模拟加载数据
-  setTimeout(() => {
-    const newDiaries = [
-      {
-        id: 1,
-        title: '我们的第一次约会',
-        date: '2024-01-15',
-        description: '今天是我们第一次约会，一起去看了电影，吃了火锅，度过了美好的一天。',
-        images: ['https://picsum.photos/200/150?random=1']
-      },
-      {
-        id: 2,
-        title: '情人节特别回忆',
-        date: '2024-02-14',
-        description: '情人节这天，我们一起去了游乐园，坐了摩天轮，在最高点许下了美好的愿望。',
-        images: ['https://picsum.photos/200/150?random=2']
-      },
-      {
-        id: 3,
-        title: '春天的野餐',
-        date: '2024-03-20',
-        description: '春天来了，我们一起去公园野餐，享受阳光和美食，还有彼此的陪伴。',
-        images: ['https://picsum.photos/200/150?random=3']
-      }
-    ]
+const loadDiaries = async () => {
+  try {
+    const result = await getDiariesWithPagination(currentPage.value, pageSize.value)
     
-    diaries.value.push(...newDiaries)
-    loading.value = false
-    finished.value = true
-  }, 1000)
+    if (currentPage.value === 1) {
+      diaries.value = result.content
+    } else {
+      diaries.value.push(...result.content)
+    }
+    
+    hasMore.value = currentPage.value < result.totalPages
+    currentPage.value++
+    
+    if (!hasMore.value) {
+      finished.value = true
+    }
+  } catch (error) {
+    console.error('加载日记列表失败:', error)
+    showToast('加载失败，请重试')
+  }
 }
+
+const onLoad = async () => {
+  if (!hasMore.value) {
+    finished.value = true
+    return
+  }
+  
+  loading.value = true
+  await loadDiaries()
+  loading.value = false
+}
+
+onMounted(() => {
+  loadDiaries()
+})
 </script>
 
 <style scoped>

@@ -54,32 +54,45 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { showToast } from 'vant'
 import dayjs from 'dayjs'
+import { getAdminStats, getRecentDiaries } from '@/api/admin.js'
 
 const router = useRouter()
 
-const totalDiaries = ref(5)
-const thisMonthDiaries = ref(2)
+const totalDiaries = ref(0)
+const thisMonthDiaries = ref(0)
+const recentDiaries = ref([])
 
-const recentDiaries = ref([
-  {
-    id: 1,
-    title: '我们的第一次约会',
-    date: '2024-01-15'
-  },
-  {
-    id: 2,
-    title: '情人节特别回忆',
-    date: '2024-02-14'
-  },
-  {
-    id: 3,
-    title: '春天的野餐',
-    date: '2024-03-20'
+// 加载统计数据
+const loadStats = async () => {
+  try {
+    const stats = await getAdminStats()
+    totalDiaries.value = stats.totalDiaries
+    thisMonthDiaries.value = stats.thisMonthDiaries
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+    showToast('加载统计数据失败')
   }
-])
+}
+
+// 加载最近日记
+const loadRecentDiaries = async () => {
+  try {
+    const diaries = await getRecentDiaries(5)
+    recentDiaries.value = diaries
+  } catch (error) {
+    console.error('加载最近日记失败:', error)
+    showToast('加载最近日记失败')
+  }
+}
+
+onMounted(() => {
+  loadStats()
+  loadRecentDiaries()
+})
 
 const formatDate = (date) => {
   return dayjs(date).format('YYYY年MM月DD日')

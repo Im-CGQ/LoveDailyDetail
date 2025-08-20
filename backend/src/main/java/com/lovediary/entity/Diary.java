@@ -32,8 +32,10 @@ public class Diary {
     @Column(name = "image_url")
     private List<String> images;
 
+    @ElementCollection
+    @CollectionTable(name = "diary_videos", joinColumns = @JoinColumn(name = "diary_id"))
     @Column(name = "video_url")
-    private String video;
+    private List<String> videos;
 
     @Column(name = "background_music_url")
     private String backgroundMusic;

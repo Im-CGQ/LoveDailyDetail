@@ -46,8 +46,8 @@
       <div class="upload-section">
         <h3>视频上传</h3>
         <van-uploader
-          v-model="form.video"
-          :max-count="1"
+          v-model="form.videos"
+          :max-count="3"
           accept="video/*"
           :after-read="afterVideoRead"
         />
@@ -92,6 +92,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import dayjs from 'dayjs'
+import { createDiary, uploadFile } from '@/api/admin.js'
 
 const router = useRouter()
 
@@ -104,7 +105,7 @@ const form = ref({
   date: '',
   description: '',
   images: [],
-  video: [],
+  videos: [],
   backgroundMusic: []
 })
 
@@ -121,32 +122,73 @@ const onDateConfirm = (value) => {
   }
 }
 
-const afterRead = (file) => {
-  // 模拟上传到阿里云OSS
-  file.url = URL.createObjectURL(file.file)
-  showToast('图片上传成功')
+const afterRead = async (file) => {
+  try {
+    const result = await uploadFile(file.file, 'image')
+    file.url = result.url
+    showToast('图片上传成功')
+  } catch (error) {
+    console.error('图片上传失败:', error)
+    showToast('图片上传失败')
+    // 移除上传失败的文件
+    const index = form.value.images.findIndex(f => f.file === file.file)
+    if (index > -1) {
+      form.value.images.splice(index, 1)
+    }
+  }
 }
 
-const afterVideoRead = (file) => {
-  file.url = URL.createObjectURL(file.file)
-  showToast('视频上传成功')
+const afterVideoRead = async (file) => {
+  try {
+    const result = await uploadFile(file.file, 'video')
+    file.url = result.url
+    showToast('视频上传成功')
+  } catch (error) {
+    console.error('视频上传失败:', error)
+    showToast('视频上传失败')
+    // 移除上传失败的文件
+    const index = form.value.videos.findIndex(f => f.file === file.file)
+    if (index > -1) {
+      form.value.videos.splice(index, 1)
+    }
+  }
 }
 
-const afterMusicRead = (file) => {
-  file.url = URL.createObjectURL(file.file)
-  showToast('音乐上传成功')
+const afterMusicRead = async (file) => {
+  try {
+    const result = await uploadFile(file.file, 'audio')
+    file.url = result.url
+    showToast('音乐上传成功')
+  } catch (error) {
+    console.error('音乐上传失败:', error)
+    showToast('音乐上传失败')
+    // 移除上传失败的文件
+    const index = form.value.backgroundMusic.findIndex(f => f.file === file.file)
+    if (index > -1) {
+      form.value.backgroundMusic.splice(index, 1)
+    }
+  }
 }
 
 const onSubmit = async (values) => {
   loading.value = true
   
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 准备提交的数据
+    const diaryData = {
+      title: form.value.title,
+      date: form.value.date,
+      description: form.value.description,
+      images: form.value.images.map(file => file.url),
+      videos: form.value.videos.map(file => file.url),
+      backgroundMusic: form.value.backgroundMusic.length > 0 ? form.value.backgroundMusic[0].url : null
+    }
     
+    await createDiary(diaryData)
     showToast('创建成功')
     router.push('/admin/diary/list')
   } catch (error) {
+    console.error('创建失败:', error)
     showToast('创建失败，请重试')
   } finally {
     loading.value = false

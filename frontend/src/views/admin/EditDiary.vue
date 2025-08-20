@@ -46,8 +46,8 @@
       <div class="upload-section">
         <h3>视频上传</h3>
         <van-uploader
-          v-model="form.video"
-          :max-count="1"
+          v-model="form.videos"
+          :max-count="3"
           accept="video/*"
           :after-read="afterVideoRead"
         />
@@ -92,6 +92,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import dayjs from 'dayjs'
+import { getDiaryById, updateDiary, uploadFile } from '@/api/admin.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,51 +115,104 @@ const onDateConfirm = (value) => {
   }
 }
 
-const afterRead = (file) => {
-  file.url = URL.createObjectURL(file.file)
-  showToast('图片上传成功')
+const afterRead = async (file) => {
+  try {
+    const result = await uploadFile(file.file, 'image')
+    file.url = result.url
+    showToast('图片上传成功')
+  } catch (error) {
+    console.error('图片上传失败:', error)
+    showToast('图片上传失败')
+    // 移除上传失败的文件
+    const index = form.value.images.findIndex(f => f.file === file.file)
+    if (index > -1) {
+      form.value.images.splice(index, 1)
+    }
+  }
 }
 
-const afterVideoRead = (file) => {
-  file.url = URL.createObjectURL(file.file)
-  showToast('视频上传成功')
+const afterVideoRead = async (file) => {
+  try {
+    const result = await uploadFile(file.file, 'video')
+    file.url = result.url
+    showToast('视频上传成功')
+  } catch (error) {
+    console.error('视频上传失败:', error)
+    showToast('视频上传失败')
+    // 移除上传失败的文件
+    const index = form.value.videos.findIndex(f => f.file === file.file)
+    if (index > -1) {
+      form.value.videos.splice(index, 1)
+    }
+  }
 }
 
-const afterMusicRead = (file) => {
-  file.url = URL.createObjectURL(file.file)
-  showToast('音乐上传成功')
+const afterMusicRead = async (file) => {
+  try {
+    const result = await uploadFile(file.file, 'audio')
+    file.url = result.url
+    showToast('音乐上传成功')
+  } catch (error) {
+    console.error('音乐上传失败:', error)
+    showToast('音乐上传失败')
+    // 移除上传失败的文件
+    const index = form.value.backgroundMusic.findIndex(f => f.file === file.file)
+    if (index > -1) {
+      form.value.backgroundMusic.splice(index, 1)
+    }
+  }
 }
 
 const onSubmit = async (values) => {
   loading.value = true
   
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 准备提交的数据
+    const diaryData = {
+      title: form.value.title,
+      date: form.value.date,
+      description: form.value.description,
+      images: form.value.images.map(file => file.url || file),
+      videos: form.value.videos.map(file => file.url || file),
+      backgroundMusic: form.value.backgroundMusic.length > 0 ? (form.value.backgroundMusic[0].url || form.value.backgroundMusic[0]) : null
+    }
+    
+    await updateDiary(form.value.id, diaryData)
     showToast('保存成功')
     router.push('/admin/diary/list')
   } catch (error) {
+    console.error('保存失败:', error)
     showToast('保存失败，请重试')
   } finally {
     loading.value = false
   }
 }
 
-const loadDiary = () => {
-  // 模拟加载数据
-  const mockDiary = {
-    id: route.params.id,
-    title: '我们的第一次约会',
-    date: '2024-01-15',
-    description: '今天是我们第一次约会，一起去看了电影，吃了火锅，度过了美好的一天。',
-    images: [],
-    video: [],
-    backgroundMusic: []
+const loadDiary = async () => {
+  try {
+    const diary = await getDiaryById(route.params.id)
+    if (diary) {
+      form.value = {
+        id: diary.id,
+        title: diary.title,
+        date: diary.date,
+        description: diary.description,
+        images: diary.images ? diary.images.map(url => ({ url })) : [],
+        videos: diary.videos ? diary.videos.map(url => ({ url })) : [],
+        backgroundMusic: diary.backgroundMusic ? [{ url: diary.backgroundMusic }] : []
+      }
+      
+      // 将日期字符串转换为Date对象
+      currentDate.value = new Date(diary.date)
+    } else {
+      showToast('日记不存在')
+      router.push('/admin/diary/list')
+    }
+  } catch (error) {
+    console.error('加载日记失败:', error)
+    showToast('加载日记失败')
+    router.push('/admin/diary/list')
   }
-  
-  form.value = mockDiary
-  
-  // 将日期字符串转换为Date对象
-  currentDate.value = new Date(mockDiary.date)
 }
 
 onMounted(() => {

@@ -23,7 +23,7 @@ public class DiaryDTO {
 
     private List<String> images;
 
-    private String video;
+    private List<String> videos;
 
     private String backgroundMusic;
 } 
