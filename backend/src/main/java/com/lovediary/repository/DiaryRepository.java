@@ -24,6 +24,6 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     @Query("SELECT d FROM Diary d WHERE YEAR(d.date) = ?1 AND MONTH(d.date) = ?2 ORDER BY d.date DESC")
     List<Diary> findByYearAndMonth(int year, int month);
     
-    @Query("SELECT d FROM Diary d ORDER BY d.date DESC LIMIT ?1")
+    @Query("SELECT d FROM Diary d ORDER BY d.date DESC")
     List<Diary> findTopNByOrderByDateDesc(int limit);
 } 

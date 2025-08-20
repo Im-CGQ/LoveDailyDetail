@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSS调试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .policy-decode {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>OSS调试页面</h1>
+    
+    <div class="debug-section">
+        <h3>1. 获取OSS签名</h3>
+        <button onclick="testSignature()" class="test-btn">获取签名</button>
+        <div id="signatureResult" class="result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>2. 策略解码</h3>
+        <div id="policyDecode" class="policy-decode"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>3. 测试上传</h3>
+        <input type="file" id="testFile" accept="image/*">
+        <button onclick="testUpload()" class="test-btn">测试上传</button>
+        <div id="uploadResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let lastSignature = null;
+        
+        async function getOssSignature(fileName, fileType) {
+            try {
+                const response = await fetch(`${API_BASE}/admin/oss/signature?fileName=${encodeURIComponent(fileName)}&fileType=${fileType}`);
+                const data = await response.json();
+                if (data.success) {
+                    return data.data;
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                throw new Error('获取签名失败: ' + error.message);
+            }
+        }
+        
+        function decodePolicy(policyBase64) {
+            try {
+                const policyJson = atob(policyBase64);
+                return JSON.parse(policyJson);
+            } catch (error) {
+                return '策略解码失败: ' + error.message;
+            }
+        }
+        
+        async function testSignature() {
+            const resultDiv = document.getElementById('signatureResult');
+            try {
+                resultDiv.className = 'result';
+                resultDiv.textContent = '正在获取签名...';
+                
+                const signature = await getOssSignature('test.jpg', 'image');
+                lastSignature = signature;
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '签名获取成功！\n\n' + JSON.stringify(signature, null, 2);
+                
+                // 解码策略
+                const policyDecodeDiv = document.getElementById('policyDecode');
+                const decodedPolicy = decodePolicy(signature.policy);
+                policyDecodeDiv.innerHTML = '<strong>解码后的策略:</strong><br>' + 
+                    JSON.stringify(decodedPolicy, null, 2);
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '签名获取失败: ' + error.message;
+            }
+        }
+        
+        async function testUpload() {
+            const fileInput = document.getElementById('testFile');
+            const resultDiv = document.getElementById('uploadResult');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请选择文件';
+                return;
+            }
+            
+            if (!lastSignature) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请先获取签名';
+                return;
+            }
+            
+            try {
+                resultDiv.className = 'result';
+                resultDiv.textContent = '正在上传...';
+                
+                const file = fileInput.files[0];
+                const signature = await getOssSignature(file.name, 'image');
+                
+                // 构建FormData
+                const formData = new FormData();
+                formData.append('key', signature.fileName);
+                formData.append('policy', signature.policy);
+                formData.append('OSSAccessKeyId', signature.accessid);
+                formData.append('signature', signature.signature);
+                formData.append('success_action_status', '200');
+                formData.append('file', file);
+                
+                // 调试信息
+                console.log('上传参数:', {
+                    key: signature.fileName,
+                    policy: signature.policy,
+                    OSSAccessKeyId: signature.accessid,
+                    signature: signature.signature,
+                    host: signature.host
+                });
+                
+                // 上传到OSS
+                const response = await fetch(signature.host, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const fileUrl = signature.urlPrefix + signature.fileName;
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `上传成功！\n文件URL: ${fileUrl}`;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `上传失败，状态码: ${response.status}\n错误信息: ${errorText}`;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '上传失败: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -4,6 +4,7 @@ import com.lovediary.dto.ApiResponse;
 import com.lovediary.dto.DiaryDTO;
 import com.lovediary.entity.Diary;
 import com.lovediary.service.DiaryService;
+import com.lovediary.service.OssSignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +30,9 @@ public class AdminController {
 
     @Autowired
     private DiaryService diaryService;
+    
+    @Autowired
+    private OssSignatureService ossSignatureService;
 
     /**
      * 获取后台统计数据
@@ -161,7 +165,22 @@ public class AdminController {
     }
 
     /**
-     * 文件上传
+     * 获取OSS上传签名
+     */
+    @GetMapping("/oss/signature")
+    public ResponseEntity<ApiResponse<Map<String, String>>> getOssSignature(
+            @RequestParam("fileName") String fileName,
+            @RequestParam("fileType") String fileType) {
+        try {
+            Map<String, String> signature = ossSignatureService.getUploadSignature(fileName, fileType);
+            return ResponseEntity.ok(ApiResponse.success("获取上传签名成功", signature));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取上传签名失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 文件上传（保留原有接口用于兼容）
      */
     @PostMapping("/upload")
     public ResponseEntity<ApiResponse<Map<String, String>>> uploadFile(

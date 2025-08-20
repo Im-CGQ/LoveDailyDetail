@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSS测试服务器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>OSS测试服务器</h1>
+    
+    <div class="test-section">
+        <h3>1. 测试后端签名接口</h3>
+        <button onclick="testSignature()" class="test-btn">测试签名接口</button>
+        <div id="signatureResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 测试OSS上传</h3>
+        <input type="file" id="testFile" accept="image/*">
+        <button onclick="testUpload()" class="test-btn">测试上传</button>
+        <div id="uploadResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        async function testSignature() {
+            const resultDiv = document.getElementById('signatureResult');
+            try {
+                resultDiv.className = 'result';
+                resultDiv.textContent = '正在测试签名接口...';
+                
+                const response = await fetch(`${API_BASE}/admin/oss/signature?fileName=test.jpg&fileType=image`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '签名接口正常！\n\n' + JSON.stringify(data.data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '签名接口错误：' + data.message;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '签名接口测试失败: ' + error.message;
+            }
+        }
+        
+        async function testUpload() {
+            const fileInput = document.getElementById('testFile');
+            const resultDiv = document.getElementById('uploadResult');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请选择文件';
+                return;
+            }
+            
+            try {
+                resultDiv.className = 'result';
+                resultDiv.textContent = '正在测试上传...';
+                
+                const file = fileInput.files[0];
+                
+                // 1. 获取签名
+                const signatureResponse = await fetch(`${API_BASE}/admin/oss/signature?fileName=${encodeURIComponent(file.name)}&fileType=image`);
+                const signatureData = await signatureResponse.json();
+                
+                if (!signatureData.success) {
+                    throw new Error('获取签名失败：' + signatureData.message);
+                }
+                
+                const signature = signatureData.data;
+                
+                // 2. 构建FormData
+                const formData = new FormData();
+                formData.append('key', signature.fileName);
+                formData.append('policy', signature.policy);
+                formData.append('OSSAccessKeyId', signature.accessid);
+                formData.append('signature', signature.signature);
+                formData.append('success_action_status', '200');
+                formData.append('file', file);
+                
+                // 3. 上传到OSS
+                const uploadResponse = await fetch(signature.host, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (uploadResponse.ok) {
+                    const fileUrl = signature.urlPrefix + signature.fileName;
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `上传成功！\n文件URL: ${fileUrl}`;
+                } else {
+                    const errorText = await uploadResponse.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `上传失败，状态码: ${uploadResponse.status}\n错误信息: ${errorText}`;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '上传测试失败: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 

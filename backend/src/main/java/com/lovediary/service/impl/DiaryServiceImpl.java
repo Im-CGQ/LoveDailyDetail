@@ -99,7 +99,9 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public List<Diary> getRecentDiaries(int limit) {
-        return diaryRepository.findTopNByOrderByDateDesc(limit);
+        return diaryRepository.findAllByOrderByDateDesc().stream()
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private void createSampleDiaries() {

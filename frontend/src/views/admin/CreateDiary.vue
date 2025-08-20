@@ -92,13 +92,14 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import dayjs from 'dayjs'
-import { createDiary, uploadFile } from '@/api/admin.js'
+import { createDiary } from '@/api/admin.js'
+import { uploadImage, uploadVideo, uploadMusic } from '@/api/upload.js'
 
 const router = useRouter()
 
 const loading = ref(false)
 const showDatePicker = ref(false)
-const currentDate = ref(new Date())
+const currentDate = ref([new Date()])
 
 const form = ref({
   title: '',
@@ -111,12 +112,14 @@ const form = ref({
 
 const onDateConfirm = (value) => {
   try {
-    // 直接使用dayjs处理日期值
-    form.value.date = dayjs(value).format('YYYY-MM-DD')
+    console.log('日期确认值:', value, '类型:', typeof value, '是否为数组:', Array.isArray(value))
+    // 处理数组格式的日期值
+    const selectedDate = Array.isArray(value) ? value[0] : value
+    currentDate.value = [selectedDate]
+    form.value.date = dayjs(selectedDate).format('YYYY-MM-DD')
     showDatePicker.value = false
   } catch (error) {
     console.error('日期处理错误:', error)
-    // 如果出错，使用当前日期
     form.value.date = dayjs().format('YYYY-MM-DD')
     showDatePicker.value = false
   }
@@ -124,8 +127,8 @@ const onDateConfirm = (value) => {
 
 const afterRead = async (file) => {
   try {
-    const result = await uploadFile(file.file, 'image')
-    file.url = result.url
+    const url = await uploadImage(file.file)
+    file.url = url
     showToast('图片上传成功')
   } catch (error) {
     console.error('图片上传失败:', error)
@@ -140,8 +143,8 @@ const afterRead = async (file) => {
 
 const afterVideoRead = async (file) => {
   try {
-    const result = await uploadFile(file.file, 'video')
-    file.url = result.url
+    const url = await uploadVideo(file.file)
+    file.url = url
     showToast('视频上传成功')
   } catch (error) {
     console.error('视频上传失败:', error)
@@ -156,8 +159,8 @@ const afterVideoRead = async (file) => {
 
 const afterMusicRead = async (file) => {
   try {
-    const result = await uploadFile(file.file, 'audio')
-    file.url = result.url
+    const url = await uploadMusic(file.file)
+    file.url = url
     showToast('音乐上传成功')
   } catch (error) {
     console.error('音乐上传失败:', error)
