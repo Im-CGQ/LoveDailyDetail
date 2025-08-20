@@ -1,0 +1,66 @@
+// 主题色彩 - 更丰富的渐变
+$primary-color: #ff6b9d;
+$secondary-color: #ff8fab;
+$accent-color: #ffc2d1;
+$gradient-primary: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 50%, #ffc2d1 100%);
+$gradient-secondary: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+$gradient-romantic: linear-gradient(45deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+$gradient-sunset: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+$gradient-ocean: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+$gradient-purple: linear-gradient(135deg, #c471f5 0%, #fa71cd 100%);
+
+// 文字颜色
+$text-primary: #333333;
+$text-secondary: #666666;
+$text-light: #999999;
+$text-white: #ffffff;
+
+// 背景颜色
+$bg-primary: #ffffff;
+$bg-secondary: #f8f9fa;
+$bg-light: #f5f5f5;
+
+// 边框颜色
+$border-color: #e5e5e5;
+$border-light: #f0f0f0;
+
+// 阴影 - 更丰富的阴影效果
+$shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+$shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.15);
+$shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.2);
+$shadow-glow: 0 0 20px rgba(255, 107, 157, 0.3);
+$shadow-romantic: 0 0 30px rgba(255, 138, 171, 0.4);
+
+// 圆角
+$border-radius-small: 4px;
+$border-radius-medium: 8px;
+$border-radius-large: 16px;
+$border-radius-circle: 50%;
+
+// 间距
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+
+// 字体大小
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-xxl: 24px;
+
+// 动画 - 更丰富的动画效果
+$transition-fast: 0.2s ease;
+$transition-normal: 0.3s ease;
+$transition-slow: 0.5s ease;
+$transition-bounce: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+$transition-elastic: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+// 断点
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px; 
