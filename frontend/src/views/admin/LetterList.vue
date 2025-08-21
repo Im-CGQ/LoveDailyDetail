@@ -135,11 +135,9 @@ const countdownTimer = ref(null)
 const loadLetters = async () => {
   try {
     if (activeTab.value === 'received') {
-      const response = await getReceivedLetters()
-      receivedLetters.value = response.data || []
+      receivedLetters.value = await getReceivedLetters()
     } else {
-      const response = await getSentLetters()
-      sentLetters.value = response.data || []
+      sentLetters.value = await getSentLetters()
     }
   } catch (error) {
     showToast('加载信件失败')
@@ -156,8 +154,7 @@ const handleTabChange = (index) => {
 // 查看信件详情
 const viewLetter = async (letter) => {
   try {
-    const response = await getLetterById(letter.id)
-    selectedLetter.value = response.data
+    selectedLetter.value = await getLetterById(letter.id)
     letterDetailVisible.value = true
   } catch (error) {
     showToast('获取信件详情失败')

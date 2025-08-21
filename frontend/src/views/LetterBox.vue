@@ -134,15 +134,9 @@ const countdownTimer = ref(null)
 const loadLetters = async () => {
   try {
     if (activeTab.value === 'unlocked') {
-      const response = await getUnlockedLetters()
-      if (response.success) {
-        unlockedLetters.value = response.data
-      }
+      unlockedLetters.value = await getUnlockedLetters()
     } else {
-      const response = await getLockedLetters()
-      if (response.success) {
-        lockedLetters.value = response.data
-      }
+      lockedLetters.value = await getLockedLetters()
     }
   } catch (error) {
     showToast('加载信件失败')
@@ -158,11 +152,8 @@ const handleTabChange = (name) => {
 // 查看信件详情
 const viewLetter = async (letter) => {
   try {
-    const response = await getLetterById(letter.id)
-    if (response.success) {
-      selectedLetter.value = response.data
-      letterDetailVisible.value = true
-    }
+    selectedLetter.value = await getLetterById(letter.id)
+    letterDetailVisible.value = true
   } catch (error) {
     showToast('获取信件详情失败')
   }
