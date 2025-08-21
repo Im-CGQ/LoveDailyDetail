@@ -1,7 +1,24 @@
 import axios from 'axios'
 
+// 动态获取API地址
+const getApiBaseUrl = () => {
+  // 如果在开发环境且是本地访问，使用localhost
+  if (import.meta.env.DEV && window.location.hostname === 'localhost') {
+    return 'http://localhost:8080/api'
+  }
+  
+  // 如果在开发环境且是IP访问（手机端），使用当前主机IP
+  if (import.meta.env.DEV) {
+    const hostname = window.location.hostname
+    return `http://${hostname}:8080/api`
+  }
+  
+  // 生产环境使用相对路径
+  return '/api'
+}
+
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: getApiBaseUrl(),
   timeout: 30000
 })
 

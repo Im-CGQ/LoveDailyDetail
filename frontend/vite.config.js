@@ -11,12 +11,12 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: '0.0.0.0',
+    host: '0.0.0.0', // 允许外部访问
     proxy: {
       '/api': {
-        target: 'http://192.168.169.209:8080',
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        rewrite: (path) => path.replace(/^\/api/, '/api') // 保持/api前缀
       }
     }
   },
