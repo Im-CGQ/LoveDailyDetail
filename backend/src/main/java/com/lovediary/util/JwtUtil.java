@@ -23,12 +23,16 @@ public class JwtUtil {
     private Long expiration;
 
     private SecretKey getSigningKey() {
-        // 确保密钥长度至少为256位（32字节）
+        // 确保密钥长度至少为256位（32字节）用于HS256算法
         byte[] keyBytes = secret.getBytes();
         if (keyBytes.length < 32) {
-            // 如果密钥太短，进行填充
+            // 如果密钥太短，进行填充到32字节
             byte[] paddedKey = new byte[32];
             System.arraycopy(keyBytes, 0, paddedKey, 0, Math.min(keyBytes.length, 32));
+            // 如果原始密钥不够长，用原始密钥填充剩余部分
+            for (int i = keyBytes.length; i < 32; i++) {
+                paddedKey[i] = keyBytes[i % keyBytes.length];
+            }
             return Keys.hmacShaKeyFor(paddedKey);
         }
         return Keys.hmacShaKeyFor(keyBytes);
@@ -46,7 +50,7 @@ public class JwtUtil {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 

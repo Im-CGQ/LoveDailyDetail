@@ -46,18 +46,26 @@ public class UserService {
 
     @Transactional
     public void initializeDefaultUser() {
-        // 只在不存在时才创建 admin 用户
-        if (!userRepository.existsByUsername("admin")) {
+        // 检查admin用户是否存在
+        Optional<User> existingAdmin = userRepository.findByUsername("admin");
+        
+        if (existingAdmin.isPresent()) {
+            // 如果存在，更新密码确保正确
+            User admin = existingAdmin.get();
+            admin.setPassword(passwordEncoder.encode("admin"));
+            admin.setDisplayName("管理员");
+            admin.setRole(User.Role.ADMIN);
+            userRepository.save(admin);
+            System.out.println("Admin 用户密码已更新: admin/admin");
+        } else {
+            // 如果不存在，创建新的admin用户
             User admin = new User();
             admin.setUsername("admin");
             admin.setPassword(passwordEncoder.encode("admin"));
             admin.setDisplayName("管理员");
             admin.setRole(User.Role.ADMIN);
             userRepository.save(admin);
-            
             System.out.println("Admin 用户已创建: admin/admin");
-        } else {
-            System.out.println("Admin 用户已存在");
         }
     }
 
