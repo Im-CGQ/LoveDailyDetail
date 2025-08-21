@@ -91,4 +91,28 @@ public class AuthController {
             return ResponseEntity.ok(ApiResponse.error("注册失败：" + e.getMessage()));
         }
     }
+
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<User>> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.ok(ApiResponse.error("未提供有效的认证令牌"));
+            }
+            
+            String actualToken = token.substring(7);
+            String username = userService.getUsernameFromToken(actualToken);
+            if (username == null) {
+                return ResponseEntity.ok(ApiResponse.error("无效的认证令牌"));
+            }
+            
+            User user = userService.findByUsername(username).orElse(null);
+            if (user == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户不存在"));
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success("获取用户信息成功", user));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取用户信息失败：" + e.getMessage()));
+        }
+    }
 } 

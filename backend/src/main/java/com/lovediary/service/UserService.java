@@ -44,6 +44,14 @@ public class UserService {
         return null;
     }
 
+    public String getUsernameFromToken(String token) {
+        try {
+            return jwtUtil.extractUsername(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Transactional
     public void initializeDefaultUser() {
         // 检查admin用户是否存在

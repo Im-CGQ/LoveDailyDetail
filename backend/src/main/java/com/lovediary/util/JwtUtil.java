@@ -76,15 +76,22 @@ public class JwtUtil {
     }
 
     public Long getUserIdFromToken(String token) {
+        System.out.println("JwtUtil - getUserIdFromToken called with token: " + (token != null ? token.substring(0, Math.min(50, token.length())) + "..." : "null"));
         final Claims claims = extractAllClaims(token);
+        System.out.println("JwtUtil - All claims: " + claims);
         Object userIdObj = claims.get("userId");
+        System.out.println("JwtUtil - userId from claims: " + userIdObj + " (type: " + (userIdObj != null ? userIdObj.getClass().getName() : "null") + ")");
         if (userIdObj != null) {
             if (userIdObj instanceof Integer) {
-                return ((Integer) userIdObj).longValue();
+                Long result = ((Integer) userIdObj).longValue();
+                System.out.println("JwtUtil - Converted Integer to Long: " + result);
+                return result;
             } else if (userIdObj instanceof Long) {
+                System.out.println("JwtUtil - Already Long: " + userIdObj);
                 return (Long) userIdObj;
             }
         }
+        System.out.println("JwtUtil - No userId found in token");
         return null;
     }
 

@@ -88,6 +88,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import { generateToken, saveLoginState, checkLoginState, clearLoginState } from '@/utils/auth'
 import { login } from '@/api/auth'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const route = useRoute()
@@ -118,25 +119,16 @@ const onSubmit = async (values) => {
   loading.value = true
   
   try {
-    const response = await login(values.username, values.password)
+    const userStore = useUserStore()
+    const response = await userStore.userLogin(values.username, values.password, rememberMe.value)
     
-    if (response.success) {
-      // 使用后端返回的token和用户信息
-      const token = response.data.token
-      const user = response.data.user
-      const role = user.role.toLowerCase()
-      
-      // 保存登录状态
-      saveLoginState(token, role, user.username, rememberMe.value)
-      
-      showToast({
-        message: '登录成功',
-        icon: 'success'
-      })
-      
-      // 登录后统一进入欢迎页
-      router.push('/')
-    }
+    showToast({
+      message: '登录成功',
+      icon: 'success'
+    })
+    
+    // 登录后统一进入欢迎页
+    router.push('/')
   } catch (error) {
     showToast({
       message: error.message || '登录失败，请重试',

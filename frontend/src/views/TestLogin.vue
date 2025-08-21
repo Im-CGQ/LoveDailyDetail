@@ -16,6 +16,7 @@
         <van-button type="primary" @click="goToLogin">去登录</van-button>
         <van-button type="default" @click="clearLogin">清除登录</van-button>
         <van-button type="default" @click="refreshPage">刷新页面</van-button>
+        <van-button type="default" @click="testApiCall">测试API</van-button>
       </div>
       
       <div class="debug-info">
@@ -30,6 +31,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { checkLoginState, getCurrentUser, clearLoginState } from '@/utils/auth'
+import { showToast } from 'vant'
 
 const router = useRouter()
 const isLoggedIn = ref(false)
@@ -52,6 +54,30 @@ const updateStatus = () => {
     auth_expires: localStorage.getItem('auth_expires'),
     admin_token: localStorage.getItem('admin_token')
   }, null, 2)
+}
+
+// 添加测试API调用的功能
+const testApiCall = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/admin/diaries/recent?limit=5', {
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      showToast('API调用成功')
+      console.log('API响应:', data)
+    } else {
+      showToast(`API调用失败: ${response.status}`)
+      console.error('API错误:', response.status, response.statusText)
+    }
+  } catch (error) {
+    showToast('API调用异常')
+    console.error('API异常:', error)
+  }
 }
 
 const goToLogin = () => {

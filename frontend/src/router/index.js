@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { checkLoginState, clearLoginState } from '@/utils/auth'
+import { useUserStore } from '@/stores/user'
 
 const routes = [
   {
@@ -25,6 +26,12 @@ const routes = [
     name: 'Detail',
     component: () => import('@/views/Detail.vue'),
     meta: { title: '美好回忆', requiresAuth: true }
+  },
+  {
+    path: '/letters',
+    name: 'LetterBox',
+    component: () => import('@/views/LetterBox.vue'),
+    meta: { title: '我的信箱', requiresAuth: true }
   },
   {
     path: '/test-scroll',
@@ -75,6 +82,16 @@ const routes = [
         path: 'diary/list',
         name: 'DiaryList',
         component: () => import('@/views/admin/DiaryList.vue')
+      },
+      {
+        path: 'write-letter',
+        name: 'WriteLetter',
+        component: () => import('@/views/admin/WriteLetter.vue')
+      },
+      {
+        path: 'letters',
+        name: 'LetterList',
+        component: () => import('@/views/admin/LetterList.vue')
       }
     ]
   }
@@ -86,7 +103,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 设置页面标题
   document.title = to.meta.title || '记录和女朋友的每一天'
   
@@ -94,6 +111,27 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth) {
     if (!checkLoginState()) {
       // 跳转到登录页面，并传递目标路径
+      const isAdminPage = to.path.startsWith('/admin')
+      next({
+        path: '/login',
+        query: { 
+          mode: isAdminPage ? 'admin' : 'user',
+          redirect: to.fullPath 
+        }
+      })
+      return
+    }
+    
+    // 如果需要登录且已登录，初始化用户状态
+    try {
+      const userStore = useUserStore()
+      if (!userStore.isLoggedIn || !userStore.userInfo) {
+        await userStore.initUserState()
+      }
+    } catch (error) {
+      console.error('初始化用户状态失败:', error)
+      // 如果初始化失败，清除登录状态并跳转到登录页
+      clearLoginState()
       const isAdminPage = to.path.startsWith('/admin')
       next({
         path: '/login',

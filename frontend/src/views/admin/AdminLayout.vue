@@ -11,7 +11,7 @@
     <div class="content">
       <!-- 导航菜单 -->
       <div class="nav-menu">
-        <van-grid :column-num="4" :border="false">
+        <van-grid :column-num="3" :border="false">
           <van-grid-item 
             icon="home-o" 
             text="首页" 
@@ -30,8 +30,39 @@
             @click="$router.push('/admin/diary/list')"
             :class="{ active: $route.path === '/admin/diary/list' }"
           />
+        </van-grid>
+        
+        <van-grid :column-num="2" :border="false" class="second-row">
+          <van-grid-item 
+            icon="edit" 
+            text="写封信" 
+            @click="$router.push('/admin/write-letter')"
+            :class="{ active: $route.path === '/admin/write-letter' }"
+          />
+          <van-grid-item 
+            icon="envelop-o" 
+            text="我的信件" 
+            @click="$router.push('/admin/letters')"
+            :class="{ active: $route.path === '/admin/letters' }"
+          />
+        </van-grid>
+      </div>
+      
+      <!-- 二级导航菜单 -->
+      <div class="sub-nav-menu" v-if="showSubNav">
+        <van-grid :column-num="3" :border="false">
+          <van-grid-item 
+            icon="arrow-left" 
+            text="回到用户端" 
+            @click="goToFrontend"
+          />
           <van-grid-item 
             icon="setting-o" 
+            text="系统设置" 
+            @click="showSettings"
+          />
+          <van-grid-item 
+            icon="log-out" 
             text="退出登录" 
             @click="logout"
           />
@@ -48,12 +79,29 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { computed } from 'vue'
 import { clearLoginState } from '@/utils/auth'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 
+const showSubNav = computed(() => {
+  return true // 总是显示二级导航
+})
+
 const goToFrontend = () => {
-  router.push('/home')
+  // 跳转到用户端首页，如果有伴侣关系则跳转到信箱，否则跳转到欢迎页
+  const userStore = useUserStore()
+  if (userStore.hasPartner) {
+    router.push('/letters')
+  } else {
+    router.push('/')
+  }
+}
+
+const showSettings = () => {
+  // 系统设置功能
+  console.log('系统设置')
 }
 
 const logout = () => {
@@ -75,6 +123,16 @@ const logout = () => {
     color: white !important;
     font-weight: bold;
     font-size: 18px;
+  }
+  
+  @media (max-width: 480px) {
+    :deep(.van-nav-bar__title) {
+      font-size: 16px;
+    }
+    
+    :deep(.van-nav-bar__text) {
+      font-size: 12px;
+    }
   }
   
   :deep(.van-nav-bar__text) {
@@ -109,6 +167,10 @@ const logout = () => {
   margin-bottom: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   
+  .second-row {
+    margin-top: 10px;
+  }
+  
   :deep(.van-grid-item) {
     cursor: pointer;
     transition: all 0.3s ease;
@@ -125,6 +187,75 @@ const logout = () => {
       .van-grid-item__text {
         color: #ff6b9d;
         font-weight: 600;
+      }
+    }
+    
+    .van-grid-item__text {
+      font-size: 12px;
+      line-height: 1.2;
+      margin-top: 8px;
+    }
+    
+    .van-grid-item__icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+  }
+}
+
+.sub-nav-menu {
+  background: white;
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  
+  :deep(.van-grid-item) {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    .van-grid-item__text {
+      font-size: 12px;
+      line-height: 1.2;
+      margin-top: 8px;
+    }
+    
+    .van-grid-item__icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    
+    &:first-child {
+      .van-grid-item__icon {
+        color: #667eea;
+      }
+      
+      .van-grid-item__text {
+        color: #667eea;
+      }
+    }
+    
+    &:nth-child(2) {
+      .van-grid-item__icon {
+        color: #ff9500;
+      }
+      
+      .van-grid-item__text {
+        color: #ff9500;
+      }
+    }
+    
+    &:last-child {
+      .van-grid-item__icon {
+        color: #ff3b30;
+      }
+      
+      .van-grid-item__text {
+        color: #ff3b30;
       }
     }
   }
@@ -145,10 +276,76 @@ const logout = () => {
   
   .nav-menu {
     padding: 15px;
+    
+    :deep(.van-grid-item) {
+      .van-grid-item__text {
+        font-size: 11px;
+        line-height: 1.1;
+        margin-top: 6px;
+      }
+      
+      .van-grid-item__icon {
+        font-size: 20px;
+        margin-bottom: 2px;
+      }
+    }
+  }
+  
+  .sub-nav-menu {
+    padding: 12px;
+    
+    :deep(.van-grid-item) {
+      .van-grid-item__text {
+        font-size: 10px;
+        line-height: 1.1;
+        margin-top: 6px;
+      }
+      
+      .van-grid-item__icon {
+        font-size: 18px;
+        margin-bottom: 2px;
+      }
+    }
   }
   
   .page-content {
     padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-menu {
+    padding: 12px;
+    
+    :deep(.van-grid-item) {
+      .van-grid-item__text {
+        font-size: 10px;
+        line-height: 1.0;
+        margin-top: 4px;
+      }
+      
+      .van-grid-item__icon {
+        font-size: 18px;
+        margin-bottom: 2px;
+      }
+    }
+  }
+  
+  .sub-nav-menu {
+    padding: 10px;
+    
+    :deep(.van-grid-item) {
+      .van-grid-item__text {
+        font-size: 9px;
+        line-height: 1.0;
+        margin-top: 4px;
+      }
+      
+      .van-grid-item__icon {
+        font-size: 16px;
+        margin-bottom: 2px;
+      }
+    }
   }
 }
 </style> 

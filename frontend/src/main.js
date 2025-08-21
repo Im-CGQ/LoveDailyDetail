@@ -12,15 +12,19 @@ import '@vant/touch-emulator'
 
 // 引入全局样式
 import './styles/index.scss'
-// const env = import.meta.env.VITE_APP_ENV;
-// console.log(env,'env');
 
-// if (env === 'uat') {
-new VConsole();
-// }
+// 只在开发环境且需要调试时启用VConsole
+const env = import.meta.env.MODE;
+const enableVConsole = import.meta.env.VITE_ENABLE_VCONSOLE === 'true';
+
+if (env === 'development' && enableVConsole) {
+  new VConsole();
+}
+
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 app.use(Vant)
 

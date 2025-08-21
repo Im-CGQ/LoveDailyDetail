@@ -7,6 +7,7 @@ USE love_diary;
 DROP TABLE IF EXISTS diary_images;
 DROP TABLE IF EXISTS diary_videos;
 DROP TABLE IF EXISTS diaries;
+DROP TABLE IF EXISTS letters;
 DROP TABLE IF EXISTS partner_invitations;
 DROP TABLE IF EXISTS users;
 
@@ -62,6 +63,21 @@ CREATE TABLE diary_videos (
     FOREIGN KEY (diary_id) REFERENCES diaries(id) ON DELETE CASCADE
 );
 
+-- 创建信件表
+CREATE TABLE letters (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    unlock_time TIMESTAMP NOT NULL,
+    sender_id BIGINT NOT NULL,
+    receiver_id BIGINT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- 插入默认管理员用户 (用户名: admin, 密码: admin)
 INSERT INTO users (username, password, display_name, role) VALUES 
 ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '管理员', 'ADMIN');
@@ -89,10 +105,19 @@ INSERT INTO diary_videos (diary_id, video_url) VALUES
 (1, 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'),
 (2, 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4');
 
+-- 插入示例信件数据
+INSERT INTO letters (title, content, unlock_time, sender_id, receiver_id, is_read) VALUES 
+('给未来的自己', '亲爱的自己，希望未来的你能看到这封信时，已经实现了所有的梦想。记住要永远保持初心，勇敢前行！', '2025-01-01 00:00:00', 1, 1, false),
+('给伴侣的信', '亲爱的，感谢你一直以来的陪伴和支持。我们的爱情故事还在继续，期待与你一起创造更多美好的回忆。', '2024-12-25 00:00:00', 1, 1, false);
+
 -- 创建索引
 CREATE INDEX idx_diaries_date ON diaries(date);
 CREATE INDEX idx_diary_images_diary_id ON diary_images(diary_id);
 CREATE INDEX idx_diary_videos_diary_id ON diary_videos(diary_id);
 CREATE INDEX idx_partner_invitations_from_user ON partner_invitations(from_user_id);
 CREATE INDEX idx_partner_invitations_to_user ON partner_invitations(to_user_id);
-CREATE INDEX idx_partner_invitations_status ON partner_invitations(status); 
+CREATE INDEX idx_partner_invitations_status ON partner_invitations(status);
+CREATE INDEX idx_letters_sender_id ON letters(sender_id);
+CREATE INDEX idx_letters_receiver_id ON letters(receiver_id);
+CREATE INDEX idx_letters_unlock_time ON letters(unlock_time);
+CREATE INDEX idx_letters_is_read ON letters(is_read); 

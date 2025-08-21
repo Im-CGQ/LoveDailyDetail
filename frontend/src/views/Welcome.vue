@@ -65,7 +65,7 @@
 
       <div class="welcome-content">
         <div class="feature-list">
-          <div class="feature-item">
+          <div class="feature-item" @click="goToCalendar">
             <span class="feature-icon">📅</span>
             <div class="feature-text">
               <h3>时光日历</h3>
@@ -73,7 +73,7 @@
             </div>
           </div>
           
-          <div class="feature-item">
+          <div class="feature-item" @click="goToHome">
             <span class="feature-icon">📸</span>
             <div class="feature-text">
               <h3>照片回忆</h3>
@@ -81,7 +81,15 @@
             </div>
           </div>
           
-          <div class="feature-item">
+          <div class="feature-item" @click="goToLetterBox">
+            <span class="feature-icon">📮</span>
+            <div class="feature-text">
+              <h3>我的信箱</h3>
+              <p>查看收到的信件</p>
+            </div>
+          </div>
+          
+          <div class="feature-item" @click="goToHome">
             <span class="feature-icon">💌</span>
             <div class="feature-text">
               <h3>情感记录</h3>
@@ -221,6 +229,26 @@ const goToAdmin = () => {
   } else {
     // 未登录，跳转到登录页面
     router.push('/login?mode=admin')
+  }
+}
+
+const goToCalendar = () => {
+  if (checkLoginState()) {
+    // 已登录，直接跳转到日历页面
+    router.push('/calendar')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login?mode=user')
+  }
+}
+
+const goToLetterBox = () => {
+  if (checkLoginState()) {
+    // 已登录，直接跳转到信箱页面
+    router.push('/letters')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login?mode=user')
   }
 }
 
@@ -451,6 +479,18 @@ const handleLogout = () => {
   background: rgba(255, 107, 157, 0.05);
   border-radius: 15px;
   border: 1px solid rgba(255, 107, 157, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 107, 157, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
   
   .feature-icon {
     font-size: 32px;
