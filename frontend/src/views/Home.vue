@@ -127,37 +127,7 @@
           class="action-btn share-btn"
         >
           <span class="btn-icon">💌</span>
-          分享美好回忆
-        </van-button>
-        
-        <van-button 
-          type="default" 
-          size="large" 
-          @click="$router.push('/test-scroll')"
-          class="action-btn test-btn"
-        >
-          <span class="btn-icon">🧪</span>
-          测试滚动
-        </van-button>
-        
-        <van-button 
-          type="default" 
-          size="large" 
-          @click="$router.push('/login?mode=admin')"
-          class="action-btn admin-btn"
-        >
-          <span class="btn-icon">⚙️</span>
-          后台管理
-        </van-button>
-        
-        <van-button 
-          type="default" 
-          size="large" 
-          @click="$router.push('/test-login')"
-          class="action-btn test-login-btn"
-        >
-          <span class="btn-icon">🔍</span>
-          测试登录
+          创建美好回忆
         </van-button>
       </div>
     </div>
@@ -273,7 +243,7 @@ const goToCreateDiary = () => {
 }
 
 const shareMemory = () => {
-  showToast('分享功能开发中...')
+  router.push('/admin/diary/create')
 }
 
 // 打字机效果
@@ -721,41 +691,7 @@ onUnmounted(() => {
       }
     }
     
-    &.test-btn {
-      background: rgba(255, 193, 7, 0.2);
-      border: 2px solid rgba(255, 193, 7, 0.3);
-      color: white;
-      backdrop-filter: blur(10px);
-      
-      &:hover {
-        background: rgba(255, 193, 7, 0.3);
-        transform: translateY(-2px);
-      }
-    }
-    
-         &.admin-btn {
-       background: rgba(102, 126, 234, 0.2);
-       border: 2px solid rgba(102, 126, 234, 0.3);
-       color: white;
-       backdrop-filter: blur(10px);
-       
-       &:hover {
-         background: rgba(102, 126, 234, 0.3);
-         transform: translateY(-2px);
-       }
-     }
-     
-     &.test-login-btn {
-       background: rgba(34, 197, 94, 0.2);
-       border: 2px solid rgba(34, 197, 94, 0.3);
-       color: white;
-       backdrop-filter: blur(10px);
-       
-       &:hover {
-         background: rgba(34, 197, 94, 0.3);
-         transform: translateY(-2px);
-       }
-     }
+
   }
 }
 

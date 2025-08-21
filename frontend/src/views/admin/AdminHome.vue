@@ -1,7 +1,5 @@
 <template>
   <div class="admin-home">
-    <h1>后台管理</h1>
-    
     <div class="stats">
       <div class="stat-card">
         <div class="stat-number">{{ totalDiaries }}</div>
@@ -105,26 +103,15 @@ const editDiary = (diary) => {
 
 <style scoped>
 .admin-home {
-  h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #333;
-    background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 32px;
-    font-weight: bold;
-  }
 }
 
 .stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
   gap: 20px;
   margin-bottom: 30px;
   
   .stat-card {
+    flex: 1;
     background: white;
     padding: 20px;
     border-radius: 12px;

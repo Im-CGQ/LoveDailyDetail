@@ -40,40 +40,38 @@
         />
 
         <div class="toolbar">
-          <van-button-group>
-            <van-button 
-              size="small" 
-              @click="insertText('❤️')"
-              type="primary"
-              plain
-            >
-              爱心
-            </van-button>
-            <van-button 
-              size="small" 
-              @click="insertText('🌸')"
-              type="primary"
-              plain
-            >
-              花朵
-            </van-button>
-            <van-button 
-              size="small" 
-              @click="insertText('✨')"
-              type="primary"
-              plain
-            >
-              星星
-            </van-button>
-            <van-button 
-              size="small" 
-              @click="insertText('💕')"
-              type="primary"
-              plain
-            >
-              爱心
-            </van-button>
-          </van-button-group>
+          <van-button 
+            size="small" 
+            @click="insertText('❤️')"
+            type="primary"
+            plain
+          >
+            ❤️ 爱心
+          </van-button>
+          <van-button 
+            size="small" 
+            @click="insertText('🌸')"
+            type="primary"
+            plain
+          >
+            🌸 花朵
+          </van-button>
+          <van-button 
+            size="small" 
+            @click="insertText('✨')"
+            type="primary"
+            plain
+          >
+            ✨ 星星
+          </van-button>
+          <van-button 
+            size="small" 
+            @click="insertText('💕')"
+            type="primary"
+            plain
+          >
+            💕 爱心
+          </van-button>
         </div>
 
         <div class="form-actions">
@@ -84,14 +82,6 @@
             block
           >
             {{ hasPartner ? '发送给伴侣' : '发送给自己' }}
-          </van-button>
-          <van-button 
-            type="default" 
-            @click="resetForm"
-            block
-            style="margin-top: 10px;"
-          >
-            重置
           </van-button>
         </div>
       </van-form>
@@ -254,15 +244,7 @@ const confirmSend = async () => {
   }
 }
 
-// 重置表单
-const resetForm = () => {
-  const tomorrow = getDefaultTime()
-  form.title = ''
-  form.content = ''
-  form.unlockTime = formatDateTimeForAPI(tomorrow)
-  form.receiverId = null
-  currentDate.value = tomorrow
-}
+
 
 // 组件挂载时设置默认时间
 onMounted(() => {
@@ -292,18 +274,28 @@ onMounted(() => {
   }
   
   .form-container {
-    background: #fff;
     border-radius: 8px;
     overflow: hidden;
   }
   
   .toolbar {
     padding: 15px;
-    background: #f8f9fa;
     border-top: 1px solid #eee;
     display: flex;
     justify-content: center;
     gap: 10px;
+    
+    :deep(.van-button) {
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(255, 107, 157, 0.2);
+      }
+    }
   }
   
   .form-actions {
@@ -365,13 +357,30 @@ onMounted(() => {
 }
 
 :deep(.van-button--primary) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
   border: none;
 }
 
 :deep(.van-button--primary.van-button--plain) {
   background: transparent;
-  color: #667eea;
-  border-color: #667eea;
+  color: #ff6b9d;
+  border-color: #ff6b9d;
+  font-size: 16px;
+  padding: 8px 12px;
+  
+  &:hover {
+    background: rgba(255, 107, 157, 0.1);
+    color: #ff6b9d;
+  }
+  
+  &:active {
+    background: transparent;
+    color: #ff6b9d;
+  }
+  
+  &:focus {
+    background: transparent;
+    color: #ff6b9d;
+  }
 }
 </style>

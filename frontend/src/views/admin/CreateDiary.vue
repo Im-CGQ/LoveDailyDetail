@@ -1,6 +1,5 @@
 <template>
   <div class="create-diary">
-    <h2>创建新回忆</h2>
     
     <van-form @submit="onSubmit">
       <van-cell-group inset>
@@ -220,15 +219,18 @@ const onSubmit = async (values) => {
 
 <style scoped>
 .create-diary {
-  h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 28px;
-    font-weight: bold;
+  :deep(.van-cell) {
+    padding: 8px 16px;
+  }
+  
+  :deep(.van-field) {
+    .van-field__label {
+      margin-bottom: 2px;
+    }
+    
+    .van-field__control {
+      margin-top: 0;
+    }
   }
 }
 
@@ -261,8 +263,8 @@ const onSubmit = async (values) => {
   margin: 30px 16px;
   
   :deep(.van-button--primary) {
-    background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
-    border: none;
+    background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%) !important;
+    border: none !important;
     height: 48px;
     border-radius: 24px;
     font-size: 16px;
@@ -272,6 +274,7 @@ const onSubmit = async (values) => {
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(255, 107, 157, 0.3);
+      background: linear-gradient(135deg, #ff5a8c 0%, #ff7a9a 100%) !important;
     }
   }
 }

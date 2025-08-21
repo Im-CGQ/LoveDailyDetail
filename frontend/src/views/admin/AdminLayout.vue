@@ -1,14 +1,29 @@
 <template>
   <div class="admin-layout page-container">
-    <van-nav-bar 
-      title="后台管理" 
-      left-text="返回前台"
-      left-arrow
-      @click-left="goToFrontend"
-      class="nav-bar"
-    />
+
     
     <div class="content">
+
+          <!-- 二级导航菜单 -->
+      <div class="sub-nav-menu" v-if="showSubNav">
+        <van-grid :column-num="3" :border="false">
+                     <van-grid-item 
+             icon="wap-home-o" 
+             text="回到用户端" 
+             @click="goToFrontend"
+           />
+           <van-grid-item 
+             icon="setting-o" 
+             text="系统配置" 
+             @click="$router.push('/admin/system-config')"
+           />
+           <van-grid-item 
+             icon="close" 
+             text="退出登录" 
+             @click="logout"
+           />
+        </van-grid>
+      </div>
       <!-- 导航菜单 -->
       <div class="nav-menu">
         <van-grid :column-num="3" :border="false">
@@ -54,26 +69,7 @@
         </van-grid>
       </div>
       
-      <!-- 二级导航菜单 -->
-      <div class="sub-nav-menu" v-if="showSubNav">
-        <van-grid :column-num="3" :border="false">
-          <van-grid-item 
-            icon="arrow-left" 
-            text="回到用户端" 
-            @click="goToFrontend"
-          />
-          <van-grid-item 
-            icon="setting-o" 
-            text="系统配置" 
-            @click="$router.push('/admin/system-config')"
-          />
-          <van-grid-item 
-            icon="log-out" 
-            text="退出登录" 
-            @click="logout"
-          />
-        </van-grid>
-      </div>
+
       
       <!-- 页面内容 -->
       <div class="page-content">

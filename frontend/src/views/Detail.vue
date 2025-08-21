@@ -106,7 +106,7 @@
           class="action-btn btn-primary ripple"
         >
           <span class="btn-icon">💌</span>
-          分享回忆
+          创建美好回忆
         </van-button>
         
         <van-button 
@@ -156,7 +156,7 @@ const formatDate = (date) => {
 }
 
 const share = () => {
-  showToast('分享功能开发中...')
+  router.push('/admin/diary/create')
 }
 
 // 图片预览功能

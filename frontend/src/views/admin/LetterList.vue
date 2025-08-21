@@ -97,10 +97,11 @@
         <div class="detail-content" v-html="selectedLetter.content"></div>
         
         <div class="detail-actions">
-          <van-button @click="letterDetailVisible = false">关闭</van-button>
+          <van-button size="small" @click="letterDetailVisible = false">关闭</van-button>
           <van-button 
             v-if="selectedLetter && !selectedLetter.isRead && selectedLetter.isUnlocked"
             type="primary" 
+            size="small"
             @click="markAsReadHandler(selectedLetter.id)"
           >
             标记为已读
@@ -369,5 +370,11 @@ onBeforeUnmount(() => {
 :deep(.van-button--primary) {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
+}
+
+:deep(.van-tag) {
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1.2;
 }
 </style>

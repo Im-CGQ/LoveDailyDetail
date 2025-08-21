@@ -40,18 +40,7 @@ const routes = [
     meta: { title: '聊天记录', requiresAuth: true }
   },
 
-  {
-    path: '/test-scroll',
-    name: 'TestScroll',
-    component: () => import('@/views/TestScroll.vue'),
-    meta: { title: '滚动测试', requiresAuth: true }
-  },
-  {
-    path: '/test-login',
-    name: 'TestLogin',
-    component: () => import('@/views/TestLogin.vue'),
-    meta: { title: '登录测试' }
-  },
+
   {
     path: '/login',
     name: 'Login',

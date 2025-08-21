@@ -5,52 +5,45 @@
     <div class="heart-decoration heart-2">💖</div>
     <div class="heart-decoration heart-3">💝</div>
     
-    <div class="content" v-if="currentChatRecord">
-      <div class="title-section float">
-        <h1 class="main-title text-gradient-romantic">{{ getChatTypeDisplayName(currentChatRecord.chatType) }}</h1>
-        <p class="subtitle pulse">{{ formatDate(currentChatRecord.date) }}</p>
-        <div class="duration-counter">
-          <span class="counter-number">{{ currentChatRecord.durationMinutes }}</span>
-          <span class="counter-text">分钟</span>
-        </div>
-      </div>
+                                                                                                   <div class="page-header">
+                  <div class="placeholder"></div>
+                  <div class="total-duration-display">
+                    <span class="duration-number">{{ totalMinutes }}</span>
+                    <span class="duration-unit">分钟</span>
+                  </div>
+                  <van-button type="primary" @click="showAddDialog = true" class="create-btn">
+            <span class="btn-icon">📝</span>
+          </van-button>
+       </div>
 
-      <div class="description-section hover-lift">
-        <div class="description-content glow">
-          <h3 class="section-title">💬 聊天内容</h3>
-          <p class="description-text">{{ currentChatRecord.description || '暂无描述' }}</p>
-        </div>
+    <div class="content">
+      <van-list
+        v-model:loading="loading"
+        :finished="finished"
+        finished-text="没有更多了"
+        @load="loadChatRecords"
+      >
+        <div class="chat-record-item" v-for="record in chatRecords" :key="record.id">
+          <div class="record-header">
+            <div class="chat-type">
+              <span class="type-icon">{{ getChatTypeIcon(record.chatType) }}</span>
+              <span class="type-text">{{ record.chatType }}</span>
+              <span v-if="record.customType" class="custom-type">({{ record.customType }})</span>
+            </div>
+            <div class="duration">
+              <span class="duration-number">{{ record.durationMinutes }}</span>
+              <span class="duration-unit">分钟</span>
+            </div>
+          </div>
+          
+          <div class="record-date">{{ formatDate(record.date) }}</div>
+          
+          <div v-if="record.description" class="record-description">
+            {{ record.description }}
+          </div>
+                         </div>
+        </van-list>
       </div>
-
-      <div class="actions-section">
-        <van-button 
-          type="primary" 
-          size="large" 
-          @click="showAddDialog = true"
-          class="btn-primary ripple"
-        >
-          <span class="btn-icon">📝</span>
-          添加聊天记录
-        </van-button>
-      </div>
-    </div>
-
-    <div v-else class="empty-state">
-      <div class="empty-content">
-        <div class="empty-icon">💬</div>
-        <h2 class="empty-title">还没有聊天记录</h2>
-        <p class="empty-subtitle">记录和伴侣的每一次聊天时光</p>
-        <van-button 
-          type="primary" 
-          size="large" 
-          @click="showAddDialog = true"
-          class="btn-primary ripple"
-        >
-          <span class="btn-icon">📝</span>
-          添加第一条记录
-        </van-button>
-      </div>
-    </div>
 
     <!-- 添加聊天记录弹窗 -->
     <van-dialog v-model:show="showAddDialog" title="添加聊天记录" :show-confirm-button="false">
@@ -128,11 +121,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getAllChatRecords, createChatRecord } from '@/api/chatRecord'
 import { showToast } from 'vant'
 
-const currentChatRecord = ref(null)
+const chatRecords = ref([])
+const loading = ref(false)
+const finished = ref(false)
 const showAddDialog = ref(false)
 const showTypePicker = ref(false)
 const showDatePicker = ref(false)
@@ -154,15 +149,22 @@ const chatTypeOptions = [
   '自定义'
 ]
 
-// 获取聊天类型显示名称
-const getChatTypeDisplayName = (type) => {
-  const typeMap = {
-    '微信语音': '💬 微信语音聊天',
-    '微信聊天': '💬 微信文字聊天',
-    '小红书聊天': '📱 小红书聊天',
-    '自定义': form.value.customType || '💬 自定义聊天'
+// 计算总分钟时长
+const totalMinutes = computed(() => {
+  return chatRecords.value.reduce((total, record) => {
+    return total + (record.durationMinutes || 0)
+  }, 0)
+})
+
+// 获取聊天类型图标
+const getChatTypeIcon = (type) => {
+  const iconMap = {
+    '微信语音': '🎤',
+    '微信聊天': '💬',
+    '小红书聊天': '📱',
+    '自定义': '💭'
   }
-  return typeMap[type] || type
+  return iconMap[type] || '💬'
 }
 
 // 格式化日期
@@ -179,13 +181,20 @@ const formatDate = (date) => {
 
 // 加载聊天记录
 const loadChatRecords = async () => {
+  if (loading.value) return
+  
+  loading.value = true
   try {
     const records = await getAllChatRecords()
     if (records && records.length > 0) {
-      currentChatRecord.value = records[0] // 显示最新的记录
+      chatRecords.value = records
     }
+    finished.value = true
   } catch (error) {
     console.error('加载聊天记录失败:', error)
+    showToast('加载失败')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -263,178 +272,191 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .chat-record-page {
-  min-height: 100vh;
   padding: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
   position: relative;
   overflow: hidden;
 }
 
-.content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding-top: 40px;
-}
-
-.title-section {
-  text-align: center;
-  margin-bottom: 40px;
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
   
-  .main-title {
-    font-size: 32px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    background: linear-gradient(45deg, #ff6b9d, #c44569);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .subtitle {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 20px;
-  }
-  
-  .duration-counter {
+  .total-duration-display {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
+    gap: 4px;
     
-    .counter-number {
-      font-size: 48px;
+    .duration-number {
+      font-size: 24px;
       font-weight: bold;
       color: #ff6b9d;
     }
     
-    .counter-text {
-      font-size: 20px;
-      color: rgba(255, 255, 255, 0.9);
+    .duration-unit {
+      color: white;
+      font-size: 14px;
     }
   }
-}
-
-.description-section {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 30px;
-  margin-bottom: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   
-  .section-title {
-    font-size: 24px;
-    color: #333;
-    margin-bottom: 15px;
+  .placeholder {
+    width: 40px;
   }
   
-  .description-text {
+  .create-btn {
+    height: 40px;
+    width: 40px;
     font-size: 16px;
-    line-height: 1.6;
-    color: #666;
-  }
-}
-
-.actions-section {
-  text-align: center;
-  
-  .btn-primary {
-    height: 50px;
-    font-size: 18px;
     font-weight: 600;
-    border-radius: 25px;
-    padding: 0 30px;
+    border-radius: 50%;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
     
     .btn-icon {
-      margin-right: 8px;
+      margin: 0;
     }
   }
 }
 
-.empty-state {
+.content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.chat-record-item {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.chat-type {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 60vh;
+  gap: 8px;
   
-  .empty-content {
-    text-align: center;
-    color: white;
-    
-    .empty-icon {
-      font-size: 80px;
-      margin-bottom: 20px;
-    }
-    
-    .empty-title {
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    
-    .empty-subtitle {
-      font-size: 16px;
-      opacity: 0.8;
-      margin-bottom: 30px;
-    }
+  .type-icon {
+    font-size: 20px;
   }
+  
+  .type-text {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .custom-type {
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+.duration {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  .duration-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff6b9d;
+  }
+  
+  .duration-unit {
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+.record-date {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.record-description {
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
 }
 
 .add-chat-dialog {
   padding: 20px;
+  background: white;
+  border-radius: 15px;
   
   .form-actions {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 15px;
+    margin-top: 25px;
     justify-content: center;
     
     .van-button {
       flex: 1;
+      height: 45px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      transition: all 0.3s ease;
+      
+      &.van-button--default {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #6c757d;
+        
+        &:hover {
+          background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(108, 117, 125, 0.2);
+        }
+      }
+      
+      &.van-button--primary {
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff8e9e 100%);
+        color: white;
+        
+        &:hover {
+          background: linear-gradient(135deg, #ff5a8c 0%, #ff7d8e 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+        }
+      }
     }
   }
-}
-
-// 动画效果
-.float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.pulse {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.ripple {
-  position: relative;
-  overflow: hidden;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-  
-  &:active::after {
-    width: 300px;
-    height: 300px;
-  }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
 }
 
 // 响应式设计
@@ -443,12 +465,13 @@ onMounted(() => {
     padding: 15px;
   }
   
-  .title-section .main-title {
-    font-size: 24px;
+  .page-header h2 {
+    font-size: 20px;
   }
   
-  .description-section {
-    padding: 20px;
+  .content {
+    padding: 15px;
   }
 }
 </style>
+
