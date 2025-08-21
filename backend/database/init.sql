@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS diary_videos;
 DROP TABLE IF EXISTS diaries;
 DROP TABLE IF EXISTS letters;
 DROP TABLE IF EXISTS partner_invitations;
+DROP TABLE IF EXISTS system_configs;
 DROP TABLE IF EXISTS users;
 
 -- 创建用户表
@@ -22,6 +23,19 @@ CREATE TABLE users (
     partner_id BIGINT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (partner_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 创建系统配置表
+CREATE TABLE system_configs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(100) NOT NULL UNIQUE COMMENT '配置键',
+    config_value TEXT COMMENT '配置值',
+    config_type VARCHAR(20) DEFAULT 'STRING' COMMENT '配置类型：STRING, NUMBER, BOOLEAN, JSON',
+    description VARCHAR(255) COMMENT '配置描述',
+    user_id BIGINT NULL COMMENT '用户ID，NULL表示全局配置',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- 创建伴侣邀请表
@@ -97,6 +111,11 @@ CREATE TABLE chat_records (
 INSERT INTO users (username, password, display_name, role) VALUES 
 ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '管理员', 'ADMIN');
 
+-- 插入默认系统配置
+INSERT INTO system_configs (config_key, config_value, config_type, description, user_id) VALUES 
+('together_date', '2024-01-01', 'STRING', '在一起的时间', NULL),
+('background_music_autoplay', 'true', 'BOOLEAN', '背景音乐是否自动播放', NULL);
+
 -- 插入示例数据
 INSERT INTO diaries (title, date, description, user_id) VALUES 
 ('我们的第一次约会', '2024-01-15', '今天是我们第一次约会，一起去看了电影，吃了火锅，度过了美好的一天。我们聊了很多，发现彼此有很多共同话题，感觉时间过得特别快。', 1),
@@ -146,4 +165,6 @@ CREATE INDEX idx_letters_unlock_time ON letters(unlock_time);
 CREATE INDEX idx_letters_is_read ON letters(is_read);
 CREATE INDEX idx_chat_records_user_id ON chat_records(user_id);
 CREATE INDEX idx_chat_records_date ON chat_records(date);
-CREATE INDEX idx_chat_records_chat_type ON chat_records(chat_type); 
+CREATE INDEX idx_chat_records_chat_type ON chat_records(chat_type);
+CREATE INDEX idx_system_configs_key ON system_configs(config_key);
+CREATE INDEX idx_system_configs_user_id ON system_configs(user_id); 

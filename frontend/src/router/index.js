@@ -39,6 +39,7 @@ const routes = [
     component: () => import('@/views/ChatRecord.vue'),
     meta: { title: '聊天记录', requiresAuth: true }
   },
+
   {
     path: '/test-scroll',
     name: 'TestScroll',
@@ -113,6 +114,11 @@ const routes = [
         path: 'chat-record/edit/:id',
         name: 'EditChatRecord',
         component: () => import('@/views/admin/EditChatRecord.vue')
+      },
+      {
+        path: 'system-config',
+        name: 'AdminSystemConfig',
+        component: () => import('@/views/admin/SystemConfigList.vue')
       }
     ]
   }

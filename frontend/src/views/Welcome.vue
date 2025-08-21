@@ -17,7 +17,6 @@
       <div class="welcome-header float">
         <div class="logo heartbeat">💕</div>
         <h1 class="title text-gradient-romantic">美好回忆</h1>
-        <p class="subtitle pulse">记录和女朋友的每一天</p>
       </div>
 
       <!-- 伴侣状态显示区域 -->
@@ -104,6 +103,8 @@
               <p>记录聊天时光</p>
             </div>
           </div>
+          
+
         </div>
       </div>
 
@@ -269,6 +270,8 @@ const goToChatRecord = () => {
     router.push('/login?mode=user')
   }
 }
+
+
 
 // 获取伴侣信息
 const loadPartnerInfo = async () => {

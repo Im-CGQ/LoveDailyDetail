@@ -1,4 +1,4 @@
-import api from './auth.js'
+import api from './http.js'
 
 // 获取伴侣信息
 export const getPartnerInfo = async () => {
@@ -11,16 +11,14 @@ export const getPartnerInfo = async () => {
     }
   } catch (error) {
     console.error('获取伴侣信息失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '获取伴侣信息失败，请检查网络连接')
   }
 }
 
 // 邀请伴侣
 export const invitePartner = async (targetUsername) => {
   try {
-    const response = await api.post('/partner/invite', {
-      targetUsername
-    })
+    const response = await api.post('/partner/invite', { targetUsername })
     if (response.data.success) {
       return response.data
     } else {
@@ -28,14 +26,14 @@ export const invitePartner = async (targetUsername) => {
     }
   } catch (error) {
     console.error('邀请伴侣失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '邀请伴侣失败，请检查网络连接')
   }
 }
 
 // 接受邀请
 export const acceptInvitation = async (invitationId) => {
   try {
-    const response = await api.post(`/partner/accept/${invitationId}`)
+    const response = await api.post(`/partner/invitations/${invitationId}/accept`)
     if (response.data.success) {
       return response.data
     } else {
@@ -43,14 +41,14 @@ export const acceptInvitation = async (invitationId) => {
     }
   } catch (error) {
     console.error('接受邀请失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '接受邀请失败，请检查网络连接')
   }
 }
 
 // 拒绝邀请
 export const rejectInvitation = async (invitationId) => {
   try {
-    const response = await api.post(`/partner/reject/${invitationId}`)
+    const response = await api.post(`/partner/invitations/${invitationId}/reject`)
     if (response.data.success) {
       return response.data
     } else {
@@ -58,14 +56,14 @@ export const rejectInvitation = async (invitationId) => {
     }
   } catch (error) {
     console.error('拒绝邀请失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '拒绝邀请失败，请检查网络连接')
   }
 }
 
 // 解除伴侣关系
 export const unbindPartner = async () => {
   try {
-    const response = await api.post('/partner/unbind')
+    const response = await api.delete('/partner/unbind')
     if (response.data.success) {
       return response.data
     } else {
@@ -73,14 +71,14 @@ export const unbindPartner = async () => {
     }
   } catch (error) {
     console.error('解除伴侣关系失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '解除伴侣关系失败，请检查网络连接')
   }
 }
 
 // 取消邀请
 export const cancelInvitation = async (invitationId) => {
   try {
-    const response = await api.post(`/partner/cancel/${invitationId}`)
+    const response = await api.delete(`/partner/invitations/${invitationId}`)
     if (response.data.success) {
       return response.data
     } else {
@@ -88,6 +86,6 @@ export const cancelInvitation = async (invitationId) => {
     }
   } catch (error) {
     console.error('取消邀请失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '取消邀请失败，请检查网络连接')
   }
 }

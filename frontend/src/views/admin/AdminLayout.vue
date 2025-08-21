@@ -64,8 +64,8 @@
           />
           <van-grid-item 
             icon="setting-o" 
-            text="系统设置" 
-            @click="showSettings"
+            text="系统配置" 
+            @click="$router.push('/admin/system-config')"
           />
           <van-grid-item 
             icon="log-out" 
@@ -105,10 +105,7 @@ const goToFrontend = () => {
   }
 }
 
-const showSettings = () => {
-  // 系统设置功能
-  console.log('系统设置')
-}
+
 
 const logout = () => {
   clearLoginState()

@@ -1,4 +1,4 @@
-import api from './auth.js'
+import api from './http.js'
 
 // 创建信件
 export const createLetter = async (data) => {
@@ -11,7 +11,7 @@ export const createLetter = async (data) => {
     }
   } catch (error) {
     console.error('创建信件失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '创建信件失败，请检查网络连接')
   }
 }
 
@@ -25,9 +25,8 @@ export const getSentLetters = async () => {
       throw new Error(response.data.message || '获取发送信件列表失败')
     }
   } catch (error) {
-    // 如果后端未启动，使用mock数据
-    console.log('后端连接失败，使用mock数据:', error.message)
-    return getMockSentLetters()
+    console.error('获取发送信件列表失败:', error.message)
+    throw new Error(error.response?.data?.message || '获取发送信件列表失败，请检查网络连接')
   }
 }
 
@@ -41,9 +40,8 @@ export const getReceivedLetters = async () => {
       throw new Error(response.data.message || '获取接收信件列表失败')
     }
   } catch (error) {
-    // 如果后端未启动，使用mock数据
-    console.log('后端连接失败，使用mock数据:', error.message)
-    return getMockReceivedLetters()
+    console.error('获取接收信件列表失败:', error.message)
+    throw new Error(error.response?.data?.message || '获取接收信件列表失败，请检查网络连接')
   }
 }
 
@@ -57,9 +55,8 @@ export const getUnlockedLetters = async () => {
       throw new Error(response.data.message || '获取已解锁信件列表失败')
     }
   } catch (error) {
-    // 如果后端未启动，使用mock数据
-    console.log('后端连接失败，使用mock数据:', error.message)
-    return getMockUnlockedLetters()
+    console.error('获取已解锁信件列表失败:', error.message)
+    throw new Error(error.response?.data?.message || '获取已解锁信件列表失败，请检查网络连接')
   }
 }
 
@@ -73,9 +70,8 @@ export const getLockedLetters = async () => {
       throw new Error(response.data.message || '获取未解锁信件列表失败')
     }
   } catch (error) {
-    // 如果后端未启动，使用mock数据
-    console.log('后端连接失败，使用mock数据:', error.message)
-    return getMockLockedLetters()
+    console.error('获取未解锁信件列表失败:', error.message)
+    throw new Error(error.response?.data?.message || '获取未解锁信件列表失败，请检查网络连接')
   }
 }
 
@@ -90,7 +86,7 @@ export const getLetterById = async (letterId) => {
     }
   } catch (error) {
     console.error('获取信件详情失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '获取信件详情失败，请检查网络连接')
   }
 }
 
@@ -99,13 +95,13 @@ export const markAsRead = async (letterId) => {
   try {
     const response = await api.put(`/letters/${letterId}/read`)
     if (response.data.success) {
-      return true
+      return response.data.data
     } else {
-      throw new Error(response.data.message || '标记已读失败')
+      throw new Error(response.data.message || '标记信件为已读失败')
     }
   } catch (error) {
-    console.error('标记已读失败:', error.message)
-    throw error
+    console.error('标记信件为已读失败:', error.message)
+    throw new Error(error.response?.data?.message || '标记信件为已读失败，请检查网络连接')
   }
 }
 
@@ -120,47 +116,6 @@ export const deleteLetter = async (letterId) => {
     }
   } catch (error) {
     console.error('删除信件失败:', error.message)
-    throw error
+    throw new Error(error.response?.data?.message || '删除信件失败，请检查网络连接')
   }
-}
-
-// Mock数据
-const getMockSentLetters = () => {
-  return [
-    {
-      id: 1,
-      title: '给未来的自己',
-      content: '亲爱的自己，希望未来的你能看到这封信时，已经实现了所有的梦想。记住要永远保持初心，勇敢前行！',
-      unlockTime: '2025-01-01T00:00:00',
-      senderId: 1,
-      receiverId: 1,
-      isRead: false,
-      createdAt: '2024-01-15T10:30:00',
-      updatedAt: '2024-01-15T10:30:00'
-    }
-  ]
-}
-
-const getMockReceivedLetters = () => {
-  return [
-    {
-      id: 2,
-      title: '给伴侣的信',
-      content: '亲爱的，感谢你一直以来的陪伴和支持。我们的爱情故事还在继续，期待与你一起创造更多美好的回忆。',
-      unlockTime: '2024-12-25T00:00:00',
-      senderId: 1,
-      receiverId: 1,
-      isRead: false,
-      createdAt: '2024-01-14T20:15:00',
-      updatedAt: '2024-01-14T20:15:00'
-    }
-  ]
-}
-
-const getMockUnlockedLetters = () => {
-  return getMockReceivedLetters().filter(letter => new Date(letter.unlockTime) <= new Date())
-}
-
-const getMockLockedLetters = () => {
-  return getMockReceivedLetters().filter(letter => new Date(letter.unlockTime) > new Date())
 }
