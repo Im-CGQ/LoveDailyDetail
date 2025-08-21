@@ -96,6 +96,14 @@
               <p>写下内心的感受</p>
             </div>
           </div>
+          
+          <div class="feature-item" @click="goToChatRecord">
+            <span class="feature-icon">💬</span>
+            <div class="feature-text">
+              <h3>聊天记录</h3>
+              <p>记录聊天时光</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -246,6 +254,16 @@ const goToLetterBox = () => {
   if (checkLoginState()) {
     // 已登录，直接跳转到信箱页面
     router.push('/letters')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login?mode=user')
+  }
+}
+
+const goToChatRecord = () => {
+  if (checkLoginState()) {
+    // 已登录，直接跳转到聊天记录页面
+    router.push('/chat-record')
   } else {
     // 未登录，跳转到登录页面
     router.push('/login?mode=user')

@@ -34,6 +34,12 @@ const routes = [
     meta: { title: '我的信箱', requiresAuth: true }
   },
   {
+    path: '/chat-record',
+    name: 'ChatRecord',
+    component: () => import('@/views/ChatRecord.vue'),
+    meta: { title: '聊天记录', requiresAuth: true }
+  },
+  {
     path: '/test-scroll',
     name: 'TestScroll',
     component: () => import('@/views/TestScroll.vue'),
@@ -92,6 +98,21 @@ const routes = [
         path: 'letters',
         name: 'LetterList',
         component: () => import('@/views/admin/LetterList.vue')
+      },
+      {
+        path: 'chat-records',
+        name: 'ChatRecordList',
+        component: () => import('@/views/admin/ChatRecordList.vue')
+      },
+      {
+        path: 'chat-record/create',
+        name: 'CreateChatRecord',
+        component: () => import('@/views/admin/CreateChatRecord.vue')
+      },
+      {
+        path: 'chat-record/edit/:id',
+        name: 'EditChatRecord',
+        component: () => import('@/views/admin/EditChatRecord.vue')
       }
     ]
   }

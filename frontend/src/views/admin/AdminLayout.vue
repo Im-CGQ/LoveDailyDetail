@@ -32,7 +32,7 @@
           />
         </van-grid>
         
-        <van-grid :column-num="2" :border="false" class="second-row">
+        <van-grid :column-num="3" :border="false" class="second-row">
           <van-grid-item 
             icon="edit" 
             text="写封信" 
@@ -44,6 +44,12 @@
             text="我的信件" 
             @click="$router.push('/admin/letters')"
             :class="{ active: $route.path === '/admin/letters' }"
+          />
+          <van-grid-item 
+            icon="chat-o" 
+            text="聊天记录" 
+            @click="$router.push('/admin/chat-records')"
+            :class="{ active: $route.path === '/admin/chat-records' }"
           />
         </van-grid>
       </div>
