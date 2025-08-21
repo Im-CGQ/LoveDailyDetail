@@ -55,6 +55,16 @@ public class SystemConfigServiceImpl implements SystemConfigService {
 
     @Override
     public SystemConfigDTO saveConfig(SystemConfigDTO configDTO) {
+        // 如果是更新操作，需要先获取现有实体的ID
+        if (configDTO.getId() == null) {
+            // 尝试查找现有配置
+            Optional<SystemConfig> existingConfig = systemConfigRepository.findByConfigKey(configDTO.getConfigKey());
+            if (existingConfig.isPresent()) {
+                // 如果找到现有配置，设置ID以进行更新
+                configDTO.setId(existingConfig.get().getId());
+            }
+        }
+        
         SystemConfig config = convertToEntity(configDTO);
         config = systemConfigRepository.save(config);
         return convertToDTO(config);
@@ -74,13 +84,22 @@ public class SystemConfigServiceImpl implements SystemConfigService {
 
     @Override
     public void setTogetherDate(String togetherDate) {
-        SystemConfigDTO config = new SystemConfigDTO();
-        config.setConfigKey("together_date");
-        config.setConfigValue(togetherDate);
-        config.setConfigType("STRING");
-        config.setDescription("在一起的时间");
-        config.setUserId(null); // 全局配置
-        saveConfig(config);
+        // 先检查配置是否存在
+        SystemConfigDTO existingConfig = getConfigByKey("together_date");
+        if (existingConfig != null) {
+            // 如果存在，更新现有配置
+            existingConfig.setConfigValue(togetherDate);
+            saveConfig(existingConfig);
+        } else {
+            // 如果不存在，创建新配置
+            SystemConfigDTO config = new SystemConfigDTO();
+            config.setConfigKey("together_date");
+            config.setConfigValue(togetherDate);
+            config.setConfigType("STRING");
+            config.setDescription("在一起的时间");
+            config.setUserId(null); // 全局配置
+            saveConfig(config);
+        }
     }
 
     @Override
@@ -91,13 +110,22 @@ public class SystemConfigServiceImpl implements SystemConfigService {
 
     @Override
     public void setBackgroundMusicAutoplay(boolean autoplay) {
-        SystemConfigDTO config = new SystemConfigDTO();
-        config.setConfigKey("background_music_autoplay");
-        config.setConfigValue(String.valueOf(autoplay));
-        config.setConfigType("BOOLEAN");
-        config.setDescription("背景音乐是否自动播放");
-        config.setUserId(null); // 全局配置
-        saveConfig(config);
+        // 先检查配置是否存在
+        SystemConfigDTO existingConfig = getConfigByKey("background_music_autoplay");
+        if (existingConfig != null) {
+            // 如果存在，更新现有配置
+            existingConfig.setConfigValue(String.valueOf(autoplay));
+            saveConfig(existingConfig);
+        } else {
+            // 如果不存在，创建新配置
+            SystemConfigDTO config = new SystemConfigDTO();
+            config.setConfigKey("background_music_autoplay");
+            config.setConfigValue(String.valueOf(autoplay));
+            config.setConfigType("BOOLEAN");
+            config.setDescription("背景音乐是否自动播放");
+            config.setUserId(null); // 全局配置
+            saveConfig(config);
+        }
     }
 
     @Override
