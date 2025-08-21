@@ -34,6 +34,20 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public List<Diary> getDiariesByUserId(Long userId) {
+        // 获取用户信息
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (!userOpt.isPresent()) {
+            return diaryRepository.findByUserIdOrderByDateDesc(userId);
+        }
+        
+        User user = userOpt.get();
+        
+        // 如果用户有伴侣，返回用户和伴侣的日记
+        if (user.getPartnerId() != null) {
+            return diaryRepository.findByUserIdOrUserIdOrderByDateDesc(userId, user.getPartnerId());
+        }
+        
+        // 否则只返回用户的日记
         return diaryRepository.findByUserIdOrderByDateDesc(userId);
     }
 

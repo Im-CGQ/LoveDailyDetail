@@ -167,9 +167,39 @@
       </div>
     </div>
 
-    <div v-else class="loading-section">
+    <div v-else-if="isLoading" class="loading-section">
       <div class="loading-heart heartbeat">💕</div>
       <p class="loading-text">正在加载美好回忆...</p>
+    </div>
+    
+    <div v-else class="no-diary-section">
+      <div class="no-diary-content">
+        <div class="no-diary-icon heartbeat">📝</div>
+        <h2 class="no-diary-title">还没有美好回忆</h2>
+        <p class="no-diary-subtitle">开始记录你们的美好时光吧</p>
+        
+        <div class="no-diary-actions">
+          <van-button 
+            type="primary" 
+            size="large" 
+            @click="goToCreateDiary"
+            class="create-diary-btn ripple"
+          >
+            <span class="btn-icon">✍️</span>
+            写第一篇日记
+          </van-button>
+          
+          <van-button 
+            type="default" 
+            size="large" 
+            @click="goToCalendar"
+            class="view-calendar-btn"
+          >
+            <span class="btn-icon">📅</span>
+            查看时光日历
+          </van-button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -183,6 +213,7 @@ import { getLatestDiary } from '@/api/diary'
 
 const router = useRouter()
 const currentDiary = ref(null)
+const isLoading = ref(true)
 const loveCount = ref('')
 const loveSeconds = ref('')
 const displayText = ref('')
@@ -240,6 +271,10 @@ const formatDate = (date) => {
 
 const goToCalendar = () => {
   router.push('/calendar')
+}
+
+const goToCreateDiary = () => {
+  router.push('/admin/diary/create')
 }
 
 const shareMemory = () => {
@@ -353,6 +388,7 @@ const petalStyles = computed(() => {
 })
 
 const loadLatestDiary = async () => {
+  isLoading.value = true
   try {
     const diary = await getLatestDiary()
     if (diary) {
@@ -367,12 +403,13 @@ const loadLatestDiary = async () => {
       if (currentDiary.value.backgroundMusic) {
         initAudio()
       }
-    } else {
-      showToast('没有找到日记数据')
     }
+    // 如果没有日记，currentDiary.value 保持为 null，会显示无日记界面
   } catch (error) {
     console.error('加载日记失败:', error)
     showToast('加载失败，请稍后重试')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -790,6 +827,76 @@ onDeactivated(() => {
     color: white;
     font-size: 18px;
     font-weight: 500;
+  }
+}
+
+.no-diary-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 20px;
+}
+
+.no-diary-content {
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  
+  .no-diary-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    color: #ff6b9d;
+  }
+  
+  .no-diary-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 10px;
+  }
+  
+  .no-diary-subtitle {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 30px;
+  }
+}
+
+.no-diary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  
+  .van-button {
+    height: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 25px;
+    
+    .btn-icon {
+      margin-right: 8px;
+    }
+  }
+  
+  .create-diary-btn {
+    background: linear-gradient(135deg, #ff6b9d 0%, #ff8e9e 100%);
+    border: none;
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(135deg, #ff5a8c 0%, #ff7d8e 100%);
+    }
+  }
+  
+  .view-calendar-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
   }
 }
 

@@ -9,10 +9,14 @@ import { onMounted } from 'vue'
 
 onMounted(() => {
   // 设置移动端视口
-  const meta = document.createElement('meta')
-  meta.name = 'viewport'
-  meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
-  document.head.appendChild(meta)
+  try {
+    const meta = document.createElement('meta')
+    meta.name = 'viewport'
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+    document.head.appendChild(meta)
+  } catch (error) {
+    console.warn('设置视口失败:', error)
+  }
 })
 </script>
 

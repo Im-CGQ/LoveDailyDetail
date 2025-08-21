@@ -77,10 +77,14 @@
       window.addEventListener('load', () => {
         setTimeout(() => {
           const loading = document.getElementById('loading');
-          loading.classList.add('hidden');
-          setTimeout(() => {
-            loading.style.display = 'none';
-          }, 500);
+          if (loading) {
+            loading.classList.add('hidden');
+            setTimeout(() => {
+              if (loading) {
+                loading.style.display = 'none';
+              }
+            }, 500);
+          }
         }, 1000);
       });
     </script>

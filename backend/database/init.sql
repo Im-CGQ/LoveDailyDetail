@@ -7,6 +7,7 @@ USE love_diary;
 DROP TABLE IF EXISTS diary_images;
 DROP TABLE IF EXISTS diary_videos;
 DROP TABLE IF EXISTS diaries;
+DROP TABLE IF EXISTS partner_invitations;
 DROP TABLE IF EXISTS users;
 
 -- 创建用户表
@@ -16,7 +17,22 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     display_name VARCHAR(100),
     role VARCHAR(10) DEFAULT 'ADMIN',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    partner_id BIGINT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (partner_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 创建伴侣邀请表
+CREATE TABLE partner_invitations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    from_user_id BIGINT NOT NULL,
+    to_user_id BIGINT NOT NULL,
+    status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, ACCEPTED, REJECTED
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_invitation (from_user_id, to_user_id)
 );
 
 -- 创建日记表
@@ -76,4 +92,7 @@ INSERT INTO diary_videos (diary_id, video_url) VALUES
 -- 创建索引
 CREATE INDEX idx_diaries_date ON diaries(date);
 CREATE INDEX idx_diary_images_diary_id ON diary_images(diary_id);
-CREATE INDEX idx_diary_videos_diary_id ON diary_videos(diary_id); 
+CREATE INDEX idx_diary_videos_diary_id ON diary_videos(diary_id);
+CREATE INDEX idx_partner_invitations_from_user ON partner_invitations(from_user_id);
+CREATE INDEX idx_partner_invitations_to_user ON partner_invitations(to_user_id);
+CREATE INDEX idx_partner_invitations_status ON partner_invitations(status); 

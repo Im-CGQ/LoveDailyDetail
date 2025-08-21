@@ -134,15 +134,8 @@ const onSubmit = async (values) => {
         icon: 'success'
       })
       
-      // 检查是否有重定向路径
-      const redirect = route.query.redirect
-      if (redirect) {
-        router.push(redirect)
-      } else if (role === 'admin') {
-        router.push('/admin')
-      } else {
-        router.push('/home')
-      }
+      // 登录后统一进入欢迎页
+      router.push('/')
     }
   } catch (error) {
     showToast({
@@ -159,9 +152,8 @@ const onSubmit = async (values) => {
 // 初始化
 onMounted(() => {
   if (checkLoginState()) {
-    const role = localStorage.getItem('auth_role')
-    const targetPath = role === 'admin' ? '/admin' : '/home'
-    router.push(targetPath)
+    // 已登录访问登录页时，统一进入欢迎页
+    router.push('/')
     return
   }
   

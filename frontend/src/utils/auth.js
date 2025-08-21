@@ -73,4 +73,9 @@ export const hasPermission = (requiredRole) => {
   if (!user) return false
   
   return user.role === requiredRole
+}
+
+// 获取token
+export const getToken = () => {
+  return localStorage.getItem('auth_token')
 } 

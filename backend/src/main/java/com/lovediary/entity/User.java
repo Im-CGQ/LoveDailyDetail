@@ -27,6 +27,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role = Role.ADMIN;
 
+    @Column(name = "partner_id")
+    private Long partnerId;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;

@@ -44,4 +44,8 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     
     // 用户分页查询
     Page<Diary> findByUserIdOrderByDateDesc(Long userId, Pageable pageable);
+    
+    // 查询用户或伴侣的日记
+    @Query("SELECT d FROM Diary d WHERE d.user.id = ?1 OR d.user.id = ?2 ORDER BY d.date DESC")
+    List<Diary> findByUserIdOrUserIdOrderByDateDesc(Long userId1, Long userId2);
 } 

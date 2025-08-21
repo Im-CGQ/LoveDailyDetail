@@ -39,7 +39,7 @@ public class UserService {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            return jwtUtil.generateToken(username, user.getRole().name());
+            return jwtUtil.generateToken(username, user.getRole().name(), user.getId());
         }
         return null;
     }
