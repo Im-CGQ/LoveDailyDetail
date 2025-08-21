@@ -6,14 +6,7 @@
     <div class="heart-decoration heart-3">💝</div>
     
     <div class="welcome-container glass-effect">
-      <div class="top-actions" v-if="isLoggedIn">
-        <van-button size="small" type="default" @click="goToAdmin" class="admin-btn-small" title="后台管理">
-          <span class="btn-icon">⚙️</span>
-        </van-button>
-        <van-button size="small" type="default" @click="handleLogout" class="logout-btn" title="退出登录">
-          <span class="btn-icon">🚪</span>
-        </van-button>
-      </div>
+      
       <div class="welcome-header float">
         <div class="logo heartbeat">💕</div>
         <h1 class="title text-gradient-romantic">美好回忆</h1>
@@ -72,13 +65,7 @@
             </div>
           </div>
           
-          <div class="feature-item" @click="goToHome">
-            <span class="feature-icon">📸</span>
-            <div class="feature-text">
-              <h3>照片回忆</h3>
-              <p>珍藏美好的瞬间</p>
-            </div>
-          </div>
+
           
           <div class="feature-item" @click="goToLetterBox">
             <span class="feature-icon">📮</span>
@@ -88,13 +75,7 @@
             </div>
           </div>
           
-          <div class="feature-item" @click="goToHome">
-            <span class="feature-icon">💌</span>
-            <div class="feature-text">
-              <h3>情感记录</h3>
-              <p>写下内心的感受</p>
-            </div>
-          </div>
+
           
           <div class="feature-item" @click="goToChatRecord">
             <span class="feature-icon">💬</span>
@@ -108,18 +89,30 @@
         </div>
       </div>
 
-      <div class="welcome-actions">
-        <van-button 
-          type="primary" 
-          size="large" 
-          @click="goToLogin"
-          class="btn-primary ripple"
-          style="z-index: 1000; position: relative;"
-        >
-          <span class="btn-icon">💕</span>
-          开始使用
-        </van-button>
-      </div>
+             <div class="welcome-actions">
+         <van-button 
+           type="primary" 
+           size="large" 
+           @click="goToLogin"
+           class="btn-primary ripple"
+           style="z-index: 1000; position: relative;"
+         >
+           <span class="btn-icon">💕</span>
+           开始使用
+         </van-button>
+         
+         <!-- 管理按钮组 -->
+         <div v-if="isLoggedIn" class="admin-actions">
+           <van-button size="small" type="default" @click="goToAdmin" class="admin-btn" title="后台管理">
+             <span class="btn-icon">🎛️</span>
+             <span class="btn-text">管理</span>
+           </van-button>
+           <van-button size="small" type="default" @click="handleLogout" class="logout-btn" title="退出登录">
+             <span class="btn-icon">🚶</span>
+             <span class="btn-text">退出</span>
+           </van-button>
+         </div>
+       </div>
     </div>
 
     <!-- 邀请伴侣弹窗 -->
@@ -403,7 +396,7 @@ const handleLogout = () => {
 .welcome-container {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 25px;
-  padding: 40px;
+  padding: 35px;
   width: 100%;
   max-width: 500px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
@@ -413,55 +406,61 @@ const handleLogout = () => {
   z-index: 10;
 }
 
-.top-actions {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+.admin-actions {
   display: flex;
-  gap: 8px;
-  z-index: 1000;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 0px;
   
   .van-button {
-    height: 32px;
-    width: 32px;
-    font-size: 12px;
-    border-radius: 50%;
-    padding: 0;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 13px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    z-index: 1001;
+    gap: 6px;
+    border: none;
+    transition: all 0.3s ease;
     
     .btn-icon {
-      font-size: 14px;
+      font-size: 16px;
+    }
+    
+    .btn-text {
+      font-size: 13px;
+      font-weight: 500;
     }
   }
   
-  .admin-btn-small {
-    background: rgba(102, 126, 234, 0.1);
-    border: 1px solid rgba(102, 126, 234, 0.2);
-    color: #667eea;
+  .admin-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
     
     &:hover {
-      background: rgba(102, 126, 234, 0.2);
+      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
     }
   }
   
   .logout-btn {
-    background: rgba(255, 107, 157, 0.1);
-    border: 1px solid rgba(255, 107, 157, 0.2);
-    color: #ff6b9d;
+    background: linear-gradient(135deg, #ff6b9d 0%, #f093fb 100%);
+    color: white;
     
     &:hover {
-      background: rgba(255, 107, 157, 0.2);
+      background: linear-gradient(135deg, #f55a8b 0%, #e085e8 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 107, 157, 0.3);
     }
   }
 }
 
 .welcome-header {
   text-align: center;
-  margin-bottom: 35px;
+  margin-bottom: 20px;
+  margin-top: 15px;
   
   .logo {
     font-size: 48px;
@@ -483,7 +482,7 @@ const handleLogout = () => {
 }
 
 .welcome-content {
-  margin-bottom: 35px;
+  margin-bottom: 25px;
 }
 
 .feature-list {
@@ -495,8 +494,8 @@ const handleLogout = () => {
 .feature-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 15px;
+  gap: 12px;
+  padding: 12px;
   background: rgba(255, 107, 157, 0.05);
   border-radius: 15px;
   border: 1px solid rgba(255, 107, 157, 0.1);
@@ -545,7 +544,7 @@ const handleLogout = () => {
 .welcome-actions {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   
   .van-button {
     height: 50px;
@@ -562,7 +561,7 @@ const handleLogout = () => {
 
 @media (max-width: 768px) {
   .welcome-container {
-    padding: 30px 25px;
+    padding: 25px 20px;
     margin: 10px;
   }
   
@@ -580,12 +579,30 @@ const handleLogout = () => {
     height: 48px;
     font-size: 16px;
   }
+  
+  .admin-actions {
+    gap: 10px;
+    margin-top: 0px;
+    
+    .van-button {
+      height: 36px;
+      padding: 0 12px;
+      
+      .btn-text {
+        font-size: 12px;
+      }
+      
+      .btn-icon {
+        font-size: 14px;
+      }
+    }
+  }
 }
 
 // 伴侣状态区域样式
 .partner-status-section {
-  margin-bottom: 25px;
-  padding: 20px;
+  margin-bottom: 20px;
+  padding: 15px;
   background: rgba(255, 107, 157, 0.05);
   border-radius: 15px;
   border: 1px solid rgba(255, 107, 157, 0.1);
@@ -593,12 +610,13 @@ const handleLogout = () => {
 
 .partner-invite-section,
 .partner-info-section,
-.partner-invitation-section {
+.partner-invitation-section,
+.partner-sent-invitation-section {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   cursor: pointer;
-  padding: 15px;
+  padding: 12px;
   border-radius: 12px;
   transition: all 0.3s ease;
   
@@ -644,7 +662,7 @@ const handleLogout = () => {
 .invite-dialog-content,
 .partner-dialog-content,
 .invitation-dialog-content {
-  padding: 20px;
+  padding: 15px;
 }
 
 .invite-tip {
@@ -659,7 +677,7 @@ const handleLogout = () => {
 .invitation-actions {
   display: flex;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 15px;
   justify-content: center;
   
   .van-button {

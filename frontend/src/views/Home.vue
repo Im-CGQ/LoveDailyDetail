@@ -5,12 +5,7 @@
     <div class="heart-decoration heart-2">💖</div>
     <div class="heart-decoration heart-3">💝</div>
     
-    <!-- 飘落花瓣 -->
-    <div class="falling-petals" v-if="isAnimationActive">
-      <div v-for="petal in petalStyles" :key="petal.id" class="falling-petal" :style="petal.style">
-        {{ petal.emoji }}
-      </div>
-    </div>
+
 
     <!-- 全局悬浮音乐播放器 -->
     <div class="global-floating-music-player" v-if="currentDiary && currentDiary.backgroundMusic">
@@ -346,46 +341,7 @@ const onVideoPause = () => {
   console.log('视频暂停')
 }
 
-// 花瓣数据 - 使用computed缓存，避免重复计算
-// 动画控制状态
-const isAnimationActive = ref(true)
 
-// 检测设备性能，自动调整花瓣数量
-const getPetalCount = () => {
-  // 检测是否为低性能设备
-  const isLowPerformance = navigator.hardwareConcurrency <= 4 || 
-                          navigator.deviceMemory <= 4 ||
-                          /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-  
-  return isLowPerformance ? 4 : 8
-}
-
-// 花瓣数据 - 使用computed缓存，避免重复计算
-const petalStyles = computed(() => {
-  const petals = ['🌸', '🌺', '🌷', '🌹', '🌻', '🌼', '💐', '🌿']
-  const petalCount = getPetalCount()
-  
-  return Array.from({ length: petalCount }, (_, index) => {
-    // 使用固定的随机种子，确保每次返回相同的结果
-    const seed = index + 1
-    const random = (min, max) => {
-      const x = Math.sin(seed) * 10000
-      return min + (x - Math.floor(x)) * (max - min)
-    }
-    
-    return {
-      id: index,
-      emoji: petals[index % petals.length],
-      style: {
-        left: `${random(0, 100)}%`,
-        animationDelay: `${random(0, 10)}s`,
-        animationDuration: `${random(8, 14)}s`,
-        fontSize: `${random(16, 24)}px`,
-        animationPlayState: isAnimationActive.value ? 'running' : 'paused'
-      }
-    }
-  })
-})
 
 const loadLatestDiary = async () => {
   isLoading.value = true
@@ -515,15 +471,7 @@ onUnmounted(() => {
   }
 })
 
-// 页面激活时恢复动画
-onActivated(() => {
-  isAnimationActive.value = true
-})
 
-// 页面失活时暂停动画
-onDeactivated(() => {
-  isAnimationActive.value = false
-})
 </script>
 
 <style lang="scss" scoped>
