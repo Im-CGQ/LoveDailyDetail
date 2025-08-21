@@ -13,8 +13,8 @@
              @click="goToFrontend"
            />
            <van-grid-item 
-             icon="setting-o" 
-             text="系统配置" 
+             icon="star-o" 
+             text="回忆配置" 
              @click="$router.push('/admin/system-config')"
            />
            <van-grid-item 

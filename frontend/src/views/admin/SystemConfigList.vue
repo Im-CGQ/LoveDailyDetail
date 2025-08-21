@@ -1,20 +1,25 @@
 <template>
   <div class="system-config-list">
     <van-nav-bar
-      title="系统配置管理"
+      title="回忆配置"
       left-text="返回"
       left-arrow
       @click-left="goBack"
-    />
+    >
+      <template #title>
+        <van-icon name="star-o" style="margin-right: 4px;" />
+        回忆配置
+      </template>
+    </van-nav-bar>
     
     <div class="content">
-      <!-- 在一起时间配置 -->
-      <van-cell-group title="在一起时间配置">
+      <!-- 在一起时间 -->
+      <van-cell-group title="在一起时间">
         <van-cell title="在一起的时间" :value="togetherDate" @click="showDatePicker = true" />
       </van-cell-group>
       
-      <!-- 背景音乐配置 -->
-      <van-cell-group title="背景音乐配置">
+      <!-- 背景音乐 -->
+      <van-cell-group title="背景音乐">
         <van-cell title="自动播放背景音乐">
           <template #right-icon>
             <van-switch v-model="backgroundMusicAutoplay" @change="onAutoplayChange" />
@@ -22,17 +27,7 @@
         </van-cell>
       </van-cell-group>
       
-      <!-- 重置按钮 -->
-      <div class="reset-button">
-        <van-button 
-          type="default" 
-          size="large" 
-          @click="resetToDefault"
-          block
-        >
-          重置为默认配置
-        </van-button>
-      </div>
+
     </div>
     
     <!-- 日期选择器 -->
@@ -109,26 +104,7 @@ const onAutoplayChange = async (value) => {
   }
 }
 
-const resetToDefault = async () => {
-  try {
-    await showConfirmDialog({
-      title: '确认重置',
-      message: '确定要重置为默认配置吗？'
-    })
-    
-    // 重置配置
-    await setTogetherDate('2024-01-01')
-    await setBackgroundMusicAutoplay(true)
-    
-    // 重新加载配置
-    await loadConfigs()
-    showToast('重置成功')
-  } catch (error) {
-    if (error.message !== 'cancel') {
-      showToast(error.message)
-    }
-  }
-}
+
 
 const formatDate = (date) => {
   const year = date.getFullYear()
@@ -153,10 +129,7 @@ onMounted(() => {
   padding: 16px;
 }
 
-.reset-button {
-  margin-top: 20px;
-  padding: 0 16px;
-}
+
 
 :deep(.van-cell-group__title) {
   font-size: 14px;
