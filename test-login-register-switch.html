@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录注册切换测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>登录注册切换功能测试</h1>
+        
+        <div class="test-section">
+            <h3>1. 登录页面测试</h3>
+            <p>测试登录页面的注册切换按钮功能</p>
+            <a href="http://localhost:3000/login" target="_blank" class="btn btn-success">打开登录页面</a>
+            <div class="status info">
+                <strong>测试步骤：</strong><br>
+                1. 打开登录页面<br>
+                2. 查看是否有"立即注册"按钮<br>
+                3. 点击"立即注册"按钮<br>
+                4. 验证是否跳转到注册页面
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 注册页面测试</h3>
+            <p>测试注册页面的登录切换按钮功能</p>
+            <a href="http://localhost:3000/register" target="_blank" class="btn btn-success">打开注册页面</a>
+            <div class="status info">
+                <strong>测试步骤：</strong><br>
+                1. 打开注册页面<br>
+                2. 查看是否有"立即登录"按钮<br>
+                3. 点击"立即登录"按钮<br>
+                4. 验证是否跳转到登录页面
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 功能验证</h3>
+            <p>验证登录和注册功能是否正常工作</p>
+            <button onclick="testLogin()" class="btn btn-warning">测试登录功能</button>
+            <button onclick="testRegister()" class="btn btn-warning">测试注册功能</button>
+            <div id="testResult" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 快速导航</h3>
+            <p>快速访问各个页面</p>
+            <a href="http://localhost:3000/" target="_blank" class="btn">首页</a>
+            <a href="http://localhost:3000/login" target="_blank" class="btn">登录页</a>
+            <a href="http://localhost:3000/register" target="_blank" class="btn">注册页</a>
+            <a href="http://localhost:3000/login?mode=admin" target="_blank" class="btn">管理员登录</a>
+        </div>
+    </div>
+
+    <script>
+        async function testLogin() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'status info';
+            resultDiv.textContent = '正在测试登录功能...';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'status success';
+                    resultDiv.textContent = '✅ 登录功能正常！可以使用 admin/admin 登录';
+                } else {
+                    resultDiv.className = 'status error';
+                    resultDiv.textContent = `❌ 登录失败：${data.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.textContent = `❌ 测试失败：${error.message}\n请确保后端服务正在运行`;
+            }
+        }
+        
+        async function testRegister() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'status info';
+            resultDiv.textContent = '正在测试注册功能...';
+            
+            try {
+                const testUsername = 'testuser_' + Date.now();
+                const response = await fetch('http://localhost:8080/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: testUsername,
+                        password: 'test123',
+                        confirmPassword: 'test123',
+                        displayName: '测试用户'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'status success';
+                    resultDiv.textContent = `✅ 注册功能正常！测试用户 ${testUsername} 注册成功`;
+                } else {
+                    resultDiv.className = 'status error';
+                    resultDiv.textContent = `❌ 注册失败：${data.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.textContent = `❌ 测试失败：${error.message}\n请确保后端服务正在运行`;
+            }
+        }
+        
+        // 页面加载时自动检查服务状态
+        window.onload = function() {
+            setTimeout(async () => {
+                try {
+                    const response = await fetch('http://localhost:8080/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: 'test', password: 'test' })
+                    });
+                    
+                    if (response.ok) {
+                        console.log('✅ 后端服务正常运行');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ 后端服务可能未启动，请确保服务正在运行');
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

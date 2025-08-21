@@ -10,8 +10,6 @@ import java.util.List;
 @Data
 public class DiaryDTO {
 
-    private Long id;
-
     @NotBlank(message = "标题不能为空")
     private String title;
 

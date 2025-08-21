@@ -94,7 +94,7 @@ const deleteDiaryHandler = async (diary) => {
     currentPage.value = 1
     hasMore.value = true
     finished.value = false
-    await loadDiaries()
+    await loadDiaries(true)
   } catch (error) {
     if (error) {
       console.error('删除失败:', error)
@@ -103,11 +103,11 @@ const deleteDiaryHandler = async (diary) => {
   }
 }
 
-const loadDiaries = async () => {
+const loadDiaries = async (isInitial = false) => {
   try {
     const result = await getDiariesWithPagination(currentPage.value, pageSize.value)
     
-    if (currentPage.value === 1) {
+    if (isInitial || currentPage.value === 1) {
       diaries.value = result.content
     } else {
       diaries.value.push(...result.content)
@@ -126,18 +126,18 @@ const loadDiaries = async () => {
 }
 
 const onLoad = async () => {
-  if (!hasMore.value) {
+  if (!hasMore.value || loading.value) {
     finished.value = true
     return
   }
   
   loading.value = true
-  await loadDiaries()
+  await loadDiaries(false)
   loading.value = false
 }
 
 onMounted(() => {
-  loadDiaries()
+  loadDiaries(true)
 })
 </script>
 

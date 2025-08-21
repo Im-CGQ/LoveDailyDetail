@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -43,9 +44,8 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
-    public Diary getDiaryByDateAndUserId(LocalDate date, Long userId) {
-        return diaryRepository.findByDateAndUserId(date, userId)
-                .orElseThrow(() -> new RuntimeException("该日期没有日记"));
+    public Optional<Diary> getDiaryByDateAndUserId(LocalDate date, Long userId) {
+        return diaryRepository.findByDateAndUserId(date, userId);
     }
 
     @Override
@@ -66,7 +66,15 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public Diary updateDiary(Long id, DiaryDTO diaryDTO) {
         Diary diary = getDiaryById(id);
-        BeanUtils.copyProperties(diaryDTO, diary);
+        
+        // 更新字段，保持ID和用户信息不变
+        diary.setTitle(diaryDTO.getTitle());
+        diary.setDescription(diaryDTO.getDescription());
+        diary.setDate(diaryDTO.getDate());
+        diary.setImages(diaryDTO.getImages());
+        diary.setVideos(diaryDTO.getVideos());
+        diary.setBackgroundMusic(diaryDTO.getBackgroundMusic());
+        
         return diaryRepository.save(diary);
     }
 

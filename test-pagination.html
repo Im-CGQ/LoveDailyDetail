@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分页测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .diary-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .diary-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .diary-date {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .diary-desc {
+            color: #555;
+            font-size: 14px;
+        }
+        .pagination-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>分页测试</h1>
+        
+        <div class="controls">
+            <button id="loadBtn" onclick="loadDiaries()">加载第一页</button>
+            <button id="nextBtn" onclick="loadNextPage()" disabled>下一页</button>
+            <button id="prevBtn" onclick="loadPrevPage()" disabled>上一页</button>
+            <button id="resetBtn" onclick="resetPagination()">重置</button>
+            <span>页码: <input type="number" id="pageInput" value="1" min="1" style="width: 60px;"></span>
+            <span>每页: <input type="number" id="sizeInput" value="5" min="1" max="20" style="width: 60px;"></span>
+            <button onclick="loadSpecificPage()">跳转</button>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">加载中...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="diaries"></div>
+        
+        <div id="paginationInfo" class="pagination-info" style="display: none;"></div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let pageSize = 5;
+        let totalPages = 0;
+        let totalElements = 0;
+        let isLoading = false;
+        
+        // 模拟API调用
+        async function fetchDiaries(page, size) {
+            // 模拟网络延迟
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 模拟数据
+            const mockData = [];
+            const startId = (page - 1) * size + 1;
+            
+            for (let i = 0; i < size; i++) {
+                const id = startId + i;
+                if (id <= 25) { // 总共25条数据
+                    mockData.push({
+                        id: id,
+                        title: `日记 ${id}`,
+                        date: `2024-${String(Math.floor((id-1)/5) + 1).padStart(2, '0')}-${String((id-1)%5 + 1).padStart(2, '0')}`,
+                        description: `这是第 ${id} 篇日记的描述内容...`
+                    });
+                }
+            }
+            
+            return {
+                content: mockData,
+                totalPages: Math.ceil(25 / size),
+                totalElements: 25,
+                currentPage: page,
+                size: size
+            };
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            isLoading = true;
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            isLoading = false;
+        }
+        
+        function showError(message) {
+            document.getElementById('error').textContent = message;
+            document.getElementById('error').style.display = 'block';
+        }
+        
+        function updatePaginationInfo(data) {
+            const info = document.getElementById('paginationInfo');
+            info.innerHTML = `
+                当前页: ${data.currentPage} / ${data.totalPages} | 
+                每页: ${data.size} 条 | 
+                总计: ${data.totalElements} 条
+            `;
+            info.style.display = 'block';
+        }
+        
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+        
+        function renderDiaries(diaries) {
+            const container = document.getElementById('diaries');
+            container.innerHTML = '';
+            
+            if (diaries.length === 0) {
+                container.innerHTML = '<div class="diary-item">暂无数据</div>';
+                return;
+            }
+            
+            diaries.forEach(diary => {
+                const item = document.createElement('div');
+                item.className = 'diary-item';
+                item.innerHTML = `
+                    <div class="diary-title">${diary.title}</div>
+                    <div class="diary-date">${diary.date}</div>
+                    <div class="diary-desc">${diary.description}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        async function loadDiaries() {
+            if (isLoading) return;
+            
+            showLoading();
+            try {
+                const data = await fetchDiaries(currentPage, pageSize);
+                
+                totalPages = data.totalPages;
+                totalElements = data.totalElements;
+                
+                renderDiaries(data.content);
+                updatePaginationInfo(data);
+                updateButtons();
+                
+                console.log(`加载第 ${currentPage} 页，数据:`, data.content);
+            } catch (error) {
+                showError('加载失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function loadNextPage() {
+            if (currentPage < totalPages && !isLoading) {
+                currentPage++;
+                document.getElementById('pageInput').value = currentPage;
+                await loadDiaries();
+            }
+        }
+        
+        async function loadPrevPage() {
+            if (currentPage > 1 && !isLoading) {
+                currentPage--;
+                document.getElementById('pageInput').value = currentPage;
+                await loadDiaries();
+            }
+        }
+        
+        async function loadSpecificPage() {
+            const page = parseInt(document.getElementById('pageInput').value);
+            const size = parseInt(document.getElementById('sizeInput').value);
+            
+            if (page < 1) {
+                showError('页码必须大于0');
+                return;
+            }
+            
+            if (size < 1 || size > 20) {
+                showError('每页数量必须在1-20之间');
+                return;
+            }
+            
+            currentPage = page;
+            pageSize = size;
+            await loadDiaries();
+        }
+        
+        function resetPagination() {
+            currentPage = 1;
+            pageSize = 5;
+            totalPages = 0;
+            totalElements = 0;
+            
+            document.getElementById('pageInput').value = currentPage;
+            document.getElementById('sizeInput').value = pageSize;
+            document.getElementById('diaries').innerHTML = '';
+            document.getElementById('paginationInfo').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            
+            updateButtons();
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateButtons();
+        });
+    </script>
+</body>
+</html>

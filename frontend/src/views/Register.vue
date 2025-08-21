@@ -43,10 +43,10 @@
             type="password"
             name="password"
             label="密码"
-            placeholder="请输入密码（6-20个字符）"
+            placeholder="请输入密码（至少6位）"
             :rules="[
               { required: true, message: '请输入密码' },
-              { min: 6, max: 20, message: '密码长度必须在6-20个字符之间' }
+              { validator: validatePassword, message: '密码长度至少6位' }
             ]"
             class="form-field"
           />
@@ -113,6 +113,12 @@ const form = ref({
   confirmPassword: ''
 })
 
+// 验证密码长度
+const validatePassword = (value) => {
+  if (!value) return true
+  return value.length >= 6
+}
+
 // 验证确认密码
 const validateConfirmPassword = (value) => {
   return value === form.value.password
@@ -120,6 +126,17 @@ const validateConfirmPassword = (value) => {
 
 // 注册提交
 const onSubmit = async (values) => {
+  console.log('表单提交数据:', values)
+  
+  // 手动验证密码长度
+  if (values.password && values.password.length < 6) {
+    showToast({
+      message: '密码长度至少6位',
+      icon: 'fail'
+    })
+    return
+  }
+  
   loading.value = true
   
   try {

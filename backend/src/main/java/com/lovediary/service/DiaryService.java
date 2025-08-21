@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface DiaryService {
 
@@ -17,7 +18,7 @@ public interface DiaryService {
 
     Diary getDiaryById(Long id);
 
-    Diary getDiaryByDateAndUserId(LocalDate date, Long userId);
+    Optional<Diary> getDiaryByDateAndUserId(LocalDate date, Long userId);
 
     Diary createDiary(DiaryDTO diaryDTO, Long userId);
 

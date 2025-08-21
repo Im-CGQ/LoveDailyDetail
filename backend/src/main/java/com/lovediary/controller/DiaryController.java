@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/diaries")
@@ -85,8 +86,12 @@ public class DiaryController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            Diary diary = diaryService.getDiaryByDateAndUserId(date, userId);
-            return ResponseEntity.ok(ApiResponse.success("获取日记成功", diary));
+            Optional<Diary> diaryOpt = diaryService.getDiaryByDateAndUserId(date, userId);
+            if (diaryOpt.isPresent()) {
+                return ResponseEntity.ok(ApiResponse.success("获取日记成功", diaryOpt.get()));
+            } else {
+                return ResponseEntity.ok(ApiResponse.success("该日期暂无日记", null));
+            }
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记失败：" + e.getMessage()));
         }
@@ -103,7 +108,7 @@ public class DiaryController {
             if (!diaries.isEmpty()) {
                 return ResponseEntity.ok(ApiResponse.success("获取最新日记成功", diaries.get(0)));
             } else {
-                return ResponseEntity.ok(ApiResponse.error("没有日记数据"));
+                return ResponseEntity.ok(ApiResponse.success("暂无日记数据", null));
             }
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取最新日记失败：" + e.getMessage()));

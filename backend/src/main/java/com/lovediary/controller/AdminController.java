@@ -26,9 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// @RestController
-// @RequestMapping("/admin")
-// @CrossOrigin(origins = "*")
+@RestController
+@RequestMapping("/admin")
+@CrossOrigin(origins = "*")
 public class AdminController {
 
     @Autowired
