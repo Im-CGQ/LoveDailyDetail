@@ -157,9 +157,21 @@ const onSubmit = async (values) => {
       router.push('/login')
     }
   } catch (error) {
+    console.error('注册错误详情:', error)
+    
+    // 显示具体的错误信息
+    let errorMessage = '注册失败，请重试'
+    
+    if (error.message) {
+      errorMessage = error.message
+    } else if (error.response && error.response.data && error.response.data.message) {
+      errorMessage = error.response.data.message
+    }
+    
     showToast({
-      message: error.message || '注册失败，请重试',
-      icon: 'fail'
+      message: errorMessage,
+      icon: 'fail',
+      duration: 3000
     })
   } finally {
     loading.value = false

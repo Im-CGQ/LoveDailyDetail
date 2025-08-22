@@ -42,9 +42,9 @@ public class AuthController {
                     return ResponseEntity.ok(ApiResponse.success("登录成功", response));
                 }
             }
-            return ResponseEntity.ok(ApiResponse.error("用户名或密码错误"));
+            return ResponseEntity.status(401).body(ApiResponse.error("用户名或密码错误"));
         } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponse.error("登录失败：" + e.getMessage()));
+            return ResponseEntity.status(500).body(ApiResponse.error("登录失败：" + e.getMessage()));
         }
     }
 
@@ -67,12 +67,12 @@ public class AuthController {
         try {
             // 验证密码确认
             if (!request.getPassword().equals(request.getConfirmPassword())) {
-                return ResponseEntity.ok(ApiResponse.error("两次输入的密码不一致"));
+                return ResponseEntity.status(400).body(ApiResponse.error("两次输入的密码不一致"));
             }
             
             // 检查用户名是否已存在
             if (userService.existsByUsername(request.getUsername())) {
-                return ResponseEntity.ok(ApiResponse.error("用户名已存在"));
+                return ResponseEntity.status(409).body(ApiResponse.error("用户名已存在"));
             }
             
             // 注册用户
@@ -85,10 +85,10 @@ public class AuthController {
             if (success) {
                 return ResponseEntity.ok(ApiResponse.success("注册成功，请登录"));
             } else {
-                return ResponseEntity.ok(ApiResponse.error("注册失败"));
+                return ResponseEntity.status(500).body(ApiResponse.error("注册失败"));
             }
         } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponse.error("注册失败：" + e.getMessage()));
+            return ResponseEntity.status(500).body(ApiResponse.error("注册失败：" + e.getMessage()));
         }
     }
 

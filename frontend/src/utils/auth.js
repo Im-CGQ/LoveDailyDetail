@@ -19,10 +19,10 @@ export const saveLoginState = (token, role, username, remember = true) => {
   
   if (remember) {
     localStorage.setItem('auth_remember', 'true')
-    localStorage.setItem('auth_expires', dayjs().add(1, 'month').toISOString())
+    localStorage.setItem('auth_expires', dayjs().add(1, 'month').valueOf().toString())
   } else {
     localStorage.setItem('auth_remember', 'false')
-    localStorage.setItem('auth_expires', dayjs().add(1, 'day').toISOString())
+    localStorage.setItem('auth_expires', dayjs().add(1, 'day').valueOf().toString())
   }
 }
 
@@ -34,7 +34,11 @@ export const checkLoginState = () => {
   
   if (!token || !role || !expires) return false
   
-  if (dayjs().isAfter(dayjs(expires))) {
+  // 检查token是否过期
+  const now = Date.now()
+  const expirationTime = parseInt(expires)
+  
+  if (now >= expirationTime) {
     clearLoginState()
     return false
   }

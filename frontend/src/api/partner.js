@@ -33,7 +33,7 @@ export const invitePartner = async (targetUsername) => {
 // 接受邀请
 export const acceptInvitation = async (invitationId) => {
   try {
-    const response = await api.post(`/partner/invitations/${invitationId}/accept`)
+    const response = await api.post(`/partner/accept/${invitationId}`)
     if (response.data.success) {
       return response.data
     } else {
@@ -48,7 +48,7 @@ export const acceptInvitation = async (invitationId) => {
 // 拒绝邀请
 export const rejectInvitation = async (invitationId) => {
   try {
-    const response = await api.post(`/partner/invitations/${invitationId}/reject`)
+    const response = await api.post(`/partner/reject/${invitationId}`)
     if (response.data.success) {
       return response.data
     } else {
@@ -63,7 +63,7 @@ export const rejectInvitation = async (invitationId) => {
 // 解除伴侣关系
 export const unbindPartner = async () => {
   try {
-    const response = await api.delete('/partner/unbind')
+    const response = await api.post('/partner/unbind')
     if (response.data.success) {
       return response.data
     } else {
@@ -78,7 +78,7 @@ export const unbindPartner = async () => {
 // 取消邀请
 export const cancelInvitation = async (invitationId) => {
   try {
-    const response = await api.delete(`/partner/invitations/${invitationId}`)
+    const response = await api.post(`/partner/cancel/${invitationId}`)
     if (response.data.success) {
       return response.data
     } else {

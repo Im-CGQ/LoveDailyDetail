@@ -127,12 +127,31 @@ const onSubmit = async (values) => {
       icon: 'success'
     })
     
-    // 登录后统一进入欢迎页
-    router.push('/')
+    // 检查是否有保存的重定向路径
+    const redirectPath = localStorage.getItem('redirect_after_login')
+    if (redirectPath && redirectPath !== '/login') {
+      localStorage.removeItem('redirect_after_login')
+      router.push(redirectPath)
+    } else {
+      // 登录后统一进入欢迎页
+      router.push('/')
+    }
   } catch (error) {
+    console.error('登录错误详情:', error)
+    
+    // 显示具体的错误信息
+    let errorMessage = '登录失败，请重试'
+    
+    if (error.message) {
+      errorMessage = error.message
+    } else if (error.response && error.response.data && error.response.data.message) {
+      errorMessage = error.response.data.message
+    }
+    
     showToast({
-      message: error.message || '登录失败，请重试',
-      icon: 'fail'
+      message: errorMessage,
+      icon: 'fail',
+      duration: 3000
     })
   } finally {
     loading.value = false

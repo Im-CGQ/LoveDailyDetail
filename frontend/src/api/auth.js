@@ -16,8 +16,44 @@ export const register = async (username, password, confirmPassword, displayName)
       throw new Error(response.data.message || '注册失败')
     }
   } catch (error) {
-    console.error('注册失败:', error.message)
-    throw new Error(error.response?.data?.message || '注册失败，请检查网络连接')
+    console.error('注册失败:', error)
+    
+    // 优先显示后端返回的错误信息
+    if (error.response && error.response.data) {
+      const errorData = error.response.data
+      if (errorData.message) {
+        throw new Error(errorData.message)
+      } else if (errorData.error) {
+        throw new Error(errorData.error)
+      }
+    }
+    
+    // 根据HTTP状态码提供更具体的错误信息
+    if (error.response) {
+      const status = error.response.status
+      switch (status) {
+        case 400:
+          throw new Error('请求参数错误，请检查输入信息')
+        case 409:
+          throw new Error('用户名已存在，请选择其他用户名')
+        case 500:
+          throw new Error('服务器内部错误，请稍后重试')
+        default:
+          throw new Error(`注册失败 (${status})`)
+      }
+    }
+    
+    // 如果是网络错误或其他错误
+    if (error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK') {
+      throw new Error('网络连接失败，请检查网络设置')
+    }
+    
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      throw new Error('请求超时，请稍后重试')
+    }
+    
+    // 默认错误信息
+    throw new Error(error.message || '注册失败，请重试')
   }
 }
 
@@ -35,8 +71,44 @@ export const login = async (username, password, role = 'user') => {
       throw new Error(response.data.message || '登录失败')
     }
   } catch (error) {
-    console.error('登录失败:', error.message)
-    throw new Error(error.response?.data?.message || '登录失败，请检查网络连接')
+    console.error('登录失败:', error)
+    
+    // 优先显示后端返回的错误信息
+    if (error.response && error.response.data) {
+      const errorData = error.response.data
+      if (errorData.message) {
+        throw new Error(errorData.message)
+      } else if (errorData.error) {
+        throw new Error(errorData.error)
+      }
+    }
+    
+    // 根据HTTP状态码提供更具体的错误信息
+    if (error.response) {
+      const status = error.response.status
+      switch (status) {
+        case 401:
+          throw new Error('用户名或密码错误')
+        case 400:
+          throw new Error('请求参数错误')
+        case 500:
+          throw new Error('服务器内部错误，请稍后重试')
+        default:
+          throw new Error(`请求失败 (${status})`)
+      }
+    }
+    
+    // 如果是网络错误或其他错误
+    if (error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK') {
+      throw new Error('网络连接失败，请检查网络设置')
+    }
+    
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      throw new Error('请求超时，请稍后重试')
+    }
+    
+    // 默认错误信息
+    throw new Error(error.message || '登录失败，请重试')
   }
 }
 

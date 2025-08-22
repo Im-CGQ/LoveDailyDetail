@@ -113,7 +113,7 @@ INSERT INTO users (username, password, display_name, role) VALUES
 
 -- 插入默认系统配置
 INSERT INTO system_configs (config_key, config_value, config_type, description, user_id) VALUES 
-('together_date', '2024-01-01', 'STRING', '在一起的时间', NULL),
+('together_date', '2025-05-30', 'STRING', '在一起的时间', NULL),
 ('background_music_autoplay', 'true', 'BOOLEAN', '背景音乐是否自动播放', NULL);
 
 -- 插入示例数据
