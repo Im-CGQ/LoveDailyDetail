@@ -113,3 +113,4 @@ const chatTypeOptions = [
 2. 验证选择器返回的值与后端API期望的格式一致
 3. 检查自定义类型的处理逻辑是否仍然正确
 4. 确认图标映射函数 `getChatTypeIcon` 仍然正常工作
+

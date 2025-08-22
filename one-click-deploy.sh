@@ -159,7 +159,7 @@ fi
 echo -e "${BLUE}📥 获取项目代码...${NC}"
 if [ ! -d "$REPO_NAME" ]; then
     echo "克隆项目..."
-    git clone git@github.com:$GITHUB_USER/$REPO_NAME.git
+    git clone git@github.com:Im-CGQ/LoveDailyDetail.git
 else
     echo "更新项目..."
     cd "$REPO_NAME"

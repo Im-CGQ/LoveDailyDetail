@@ -14,3 +14,4 @@ done
 
 echo "✅ 修复完成！现在可以运行脚本了"
 echo "运行命令: ./one-click-deploy.sh"
+

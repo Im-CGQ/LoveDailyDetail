@@ -150,7 +150,7 @@ if [ -d "$REPO_NAME" ]; then
     git pull origin main || git pull origin master
 else
     echo "克隆项目..."
-    git clone "git@github.com:$GITHUB_USER/$REPO_NAME.git"
+    git clone "git@github.com:Im-CGQ/LoveDailyDetail.git"
     cd "$REPO_NAME"
 fi
 
@@ -181,3 +181,4 @@ echo "查看状态: cd $REPO_NAME/docker && docker-compose ps"
 echo "查看日志: cd $REPO_NAME/docker && docker-compose logs -f"
 echo "重启服务: cd $REPO_NAME/docker && docker-compose restart"
 echo "停止服务: cd $REPO_NAME/docker && docker-compose down"
+
