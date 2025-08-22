@@ -100,7 +100,12 @@ const router = useRouter()
 
 const loading = ref(false)
 const showDatePicker = ref(false)
-const currentDate = ref(new Date())
+// 初始化当前日期为数组格式，用于日期选择器
+const currentDate = ref([
+  new Date().getFullYear().toString(),
+  (new Date().getMonth() + 1).toString().padStart(2, '0'),
+  new Date().getDate().toString().padStart(2, '0')
+])
 
 const form = ref({
   title: '',
@@ -111,18 +116,24 @@ const form = ref({
   backgroundMusic: []
 })
 
-const onDateConfirm = (value) => {
+const onDateConfirm = (val) => {
   try {
-    console.log('日期确认值:', value, '类型:', typeof value, '是否为数组:', Array.isArray(value))
+    console.log('日期确认值:', val, '类型:', typeof val, '是否为数组:', Array.isArray(val))
     
-    // 确保日期值有效
+    // 处理日期选择器返回的数组格式 ['2021', '02', '01']
     let selectedDate
-    if (Array.isArray(value)) {
-      selectedDate = value[0]
-    } else if (value instanceof Date) {
-      selectedDate = value
+    if (Array.isArray(val)) {
+      // 如果是数组格式，将其转换为日期字符串
+      const [year, month, day] = val
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (val && val.selectedValues && Array.isArray(val.selectedValues)) {
+      // 如果是对象格式，获取selectedValues数组
+      const [year, month, day] = val.selectedValues
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (val instanceof Date) {
+      selectedDate = val
     } else {
-      selectedDate = new Date(value)
+      selectedDate = new Date(val)
     }
     
     // 验证日期是否有效
@@ -130,14 +141,15 @@ const onDateConfirm = (value) => {
       throw new Error('无效的日期值')
     }
     
-    currentDate.value = selectedDate
+    // 更新表单日期
     form.value.date = dayjs(selectedDate).format('YYYY-MM-DD')
     showDatePicker.value = false
+    
+    console.log('处理后的日期:', form.value.date)
   } catch (error) {
     console.error('日期处理错误:', error)
     // 使用当前日期作为默认值
     const now = new Date()
-    currentDate.value = now
     form.value.date = dayjs(now).format('YYYY-MM-DD')
     showDatePicker.value = false
   }

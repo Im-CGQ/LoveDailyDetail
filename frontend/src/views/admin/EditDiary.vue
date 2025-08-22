@@ -113,11 +113,33 @@ const form = ref({
 const onDateConfirm = (value) => {
   try {
     console.log('日期确认值:', value, '类型:', typeof value, '是否为数组:', Array.isArray(value))
-    // 处理数组格式的日期值
-    const selectedDate = Array.isArray(value) ? value[0] : value
-    currentDate.value = [selectedDate]
+    
+    // 处理日期选择器返回的数组格式 ['2021', '02', '01']
+    let selectedDate
+    if (Array.isArray(value)) {
+      // 如果是数组格式，将其转换为日期字符串
+      const [year, month, day] = value
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (value && value.selectedValues && Array.isArray(value.selectedValues)) {
+      // 如果是对象格式，获取selectedValues数组
+      const [year, month, day] = value.selectedValues
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (value instanceof Date) {
+      selectedDate = value
+    } else {
+      selectedDate = new Date(value)
+    }
+    
+    // 验证日期是否有效
+    if (isNaN(selectedDate.getTime())) {
+      throw new Error('无效的日期值')
+    }
+    
+    // 更新表单日期
     form.value.date = dayjs(selectedDate).format('YYYY-MM-DD')
     showDatePicker.value = false
+    
+    console.log('处理后的日期:', form.value.date)
   } catch (error) {
     console.error('日期处理错误:', error)
     form.value.date = dayjs().format('YYYY-MM-DD')
@@ -211,9 +233,18 @@ const loadDiary = async () => {
         videos: diary.videos ? diary.videos.map(url => ({ url })) : [],
         backgroundMusic: diary.backgroundMusic ? [{ url: diary.backgroundMusic }] : []
       }
-      
-      // 将日期字符串转换为Date对象数组
-      currentDate.value = [new Date(diary.date)]
+      // 将日期字符串（如"2024-06-08"）转换为['2024', '06', '08']格式
+      if (diary.date) {
+        const parts = diary.date.split('-')
+        if (parts.length === 3) {
+          currentDate.value = [
+            parts[0],
+            parts[1].padStart(2, '0'),
+            parts[2].padStart(2, '0')
+          ]
+        }
+      }
+
     } else {
       showToast('日记不存在')
       router.push('/admin/diary/list')

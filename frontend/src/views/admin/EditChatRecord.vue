@@ -71,9 +71,11 @@
 
     <!-- 日期选择器 -->
     <van-popup v-model:show="showDatePicker" position="bottom">
-      <van-datetime-picker
+      <van-date-picker
         v-model="selectedDate"
-        type="date"
+        title="选择日期"
+        :min-date="new Date(2020, 0, 1)"
+        :max-date="new Date(2030, 11, 31)"
         @confirm="onDateConfirm"
         @cancel="showDatePicker = false"
       />
@@ -93,7 +95,12 @@ const loading = ref(true)
 const submitting = ref(false)
 const showTypePicker = ref(false)
 const showDatePicker = ref(false)
-const selectedDate = ref(new Date())
+// 初始化当前日期为数组格式，用于日期选择器
+const selectedDate = ref([
+  new Date().getFullYear().toString(),
+  (new Date().getMonth() + 1).toString().padStart(2, '0'),
+  new Date().getDate().toString().padStart(2, '0')
+])
 
 const form = ref({
   chatType: '',
@@ -104,10 +111,10 @@ const form = ref({
 })
 
 const chatTypeOptions = [
-  '微信语音',
-  '微信聊天', 
-  '小红书聊天',
-  '自定义'
+  { text: '微信语音', value: '微信语音' },
+  { text: '微信聊天', value: '微信聊天' },
+  { text: '小红书聊天', value: '小红书聊天' },
+  { text: '自定义', value: '自定义' }
 ]
 
 // 加载聊天记录详情
@@ -129,7 +136,17 @@ const loadChatRecord = async () => {
         description: record.description || '',
         customType: record.customType || ''
       }
-      selectedDate.value = new Date(record.date)
+      // 将日期字符串（如"2024-06-08"）转换为['2024', '06', '08']格式
+      if (record.date) {
+        const parts = record.date.split('-')
+        if (parts.length === 3) {
+          selectedDate.value = [
+            parts[0],
+            parts[1].padStart(2, '0'),
+            parts[2].padStart(2, '0')
+          ]
+        }
+      }
     }
   } catch (error) {
     console.error('加载聊天记录失败:', error)
@@ -142,14 +159,48 @@ const loadChatRecord = async () => {
 
 // 聊天类型确认
 const onTypeConfirm = (value) => {
-  form.value.chatType = value
+  form.value.chatType = value.selectedValues[0]
   showTypePicker.value = false
 }
 
 // 日期确认
-const onDateConfirm = (value) => {
-  form.value.date = value.toISOString().split('T')[0]
-  showDatePicker.value = false
+const onDateConfirm = (val) => {
+  try {
+    console.log('日期确认值:', val, '类型:', typeof val, '是否为数组:', Array.isArray(val))
+    
+    // 处理日期选择器返回的数组格式 ['2021', '02', '01']
+    let selectedDate
+    if (Array.isArray(val)) {
+      // 如果是数组格式，将其转换为日期字符串
+      const [year, month, day] = val
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (val && val.selectedValues && Array.isArray(val.selectedValues)) {
+      // 如果是对象格式，获取selectedValues数组
+      const [year, month, day] = val.selectedValues
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (val instanceof Date) {
+      selectedDate = val
+    } else {
+      selectedDate = new Date(val)
+    }
+    
+    // 验证日期是否有效
+    if (isNaN(selectedDate.getTime())) {
+      throw new Error('无效的日期值')
+    }
+    
+    // 更新表单日期
+    form.value.date = selectedDate.toISOString().split('T')[0]
+    showDatePicker.value = false
+    
+    console.log('处理后的日期:', form.value.date)
+  } catch (error) {
+    console.error('日期处理错误:', error)
+    // 使用当前日期作为默认值
+    const now = new Date()
+    form.value.date = now.toISOString().split('T')[0]
+    showDatePicker.value = false
+  }
 }
 
 // 提交表单

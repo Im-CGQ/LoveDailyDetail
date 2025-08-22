@@ -30,6 +30,21 @@ export const getChatRecordByDate = async (date) => {
   }
 }
 
+// 根据ID获取聊天记录
+export const getChatRecordById = async (id) => {
+  try {
+    const response = await api.get(`/chat-records/${id}`)
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '获取聊天记录失败')
+    }
+  } catch (error) {
+    console.error('获取聊天记录失败:', error.message)
+    throw new Error(error.response?.data?.message || '获取聊天记录失败，请检查网络连接')
+  }
+}
+
 // 获取总聊天时长
 export const getTotalDuration = async () => {
   try {
