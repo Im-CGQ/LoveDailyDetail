@@ -30,9 +30,13 @@ export const useUserStore = defineStore('user', () => {
         try {
           // 从API获取完整的用户信息
           const response = await getCurrentUserInfo()
+          console.log('API返回的用户信息:', response)
+          
           if (response.success && response.data) {
             userInfo.value = response.data
+            console.log('设置用户信息成功:', userInfo.value)
           } else {
+            console.warn('API返回的用户信息格式不正确:', response)
             // 如果API调用失败，从localStorage获取基本信息
             const currentUser = getCurrentUser()
             if (currentUser) {
@@ -44,6 +48,7 @@ export const useUserStore = defineStore('user', () => {
                 partnerId: localStorage.getItem('auth_partner_id'),
                 email: localStorage.getItem('auth_email')
               }
+              console.log('从localStorage获取用户信息:', userInfo.value)
             }
           }
         } catch (error) {
@@ -59,6 +64,7 @@ export const useUserStore = defineStore('user', () => {
               partnerId: localStorage.getItem('auth_partner_id'),
               email: localStorage.getItem('auth_email')
             }
+            console.log('从localStorage获取用户信息:', userInfo.value)
           }
         }
       }

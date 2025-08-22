@@ -89,9 +89,8 @@
 
     <!-- 时间选择器 -->
     <van-popup v-model:show="showTimePicker" position="bottom">
-      <van-datetime-picker
+      <van-date-picker
         v-model="currentDate"
-        type="datetime"
         title="选择解锁时间"
         :min-date="minDate"
         @confirm="onTimeConfirm"
@@ -125,6 +124,7 @@ import { useRouter } from 'vue-router'
 import { createLetter } from '@/api/letter'
 import { showToast } from 'vant'
 import { useUserStore } from '@/stores/user'
+import dayjs from 'dayjs'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -151,7 +151,13 @@ const form = reactive({
 const loading = ref(false)
 const previewVisible = ref(false)
 const showTimePicker = ref(false)
-const currentDate = ref(getDefaultTime())
+// 初始化当前日期为数组格式，用于日期选择器
+const currentDate = ref([
+  new Date().getFullYear().toString(),
+  (new Date().getMonth() + 1).toString().padStart(2, '0'),
+  new Date().getDate().toString().padStart(2, '0')
+])
+
 const minDate = ref(new Date())
 
 // 格式化时间显示
@@ -191,10 +197,44 @@ const insertText = (text) => {
 }
 
 // 时间选择确认
-const onTimeConfirm = (value) => {
-  currentDate.value = value
-  form.unlockTime = formatDateTimeForAPI(value)
-  showTimePicker.value = false
+const onTimeConfirm = (val) => {
+  try {
+    console.log('日期确认值:', val, '类型:', typeof val, '是否为数组:', Array.isArray(val))
+    
+    // 处理日期选择器返回的数组格式 ['2021', '02', '01']
+    let selectedDate
+    if (Array.isArray(val)) {
+      // 如果是数组格式，将其转换为日期字符串
+      const [year, month, day] = val
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (val && val.selectedValues && Array.isArray(val.selectedValues)) {
+      // 如果是对象格式，获取selectedValues数组
+      const [year, month, day] = val.selectedValues
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (val instanceof Date) {
+      selectedDate = val
+    } else {
+      selectedDate = new Date(val)
+    }
+    
+    // 验证日期是否有效
+    if (isNaN(selectedDate.getTime())) {
+      throw new Error('无效的日期值')
+    }
+    
+    // 将选择的日期设置为当天的中午12点
+    selectedDate.setHours(12, 0, 0, 0)
+    form.unlockTime = formatDateTimeForAPI(selectedDate)
+    showTimePicker.value = false
+    
+    console.log('处理后的日期:', form.unlockTime)
+  } catch (error) {
+    console.error('日期处理错误:', error)
+    // 使用明天中午12点作为默认值
+    const tomorrow = getDefaultTime()
+    form.unlockTime = formatDateTimeForAPI(tomorrow)
+    showTimePicker.value = false
+  }
 }
 
 // 提交表单
@@ -217,12 +257,32 @@ const submitForm = async () => {
   previewVisible.value = true
 }
 
+// 重置表单
+const resetForm = () => {
+  form.title = ''
+  form.content = ''
+  form.receiverId = null
+  
+  // 重置为明天中午12点
+  const tomorrow = getDefaultTime()
+  form.unlockTime = formatDateTimeForAPI(tomorrow)
+  
+  // 更新日期选择器的初始值
+  currentDate.value = [
+    tomorrow.getFullYear().toString(),
+    (tomorrow.getMonth() + 1).toString().padStart(2, '0'),
+    tomorrow.getDate().toString().padStart(2, '0')
+  ]
+}
+
 // 确认发送
 const confirmSend = async () => {
   loading.value = true
   try {
-    // 从store获取用户信息
-    const userStore = useUserStore()
+    console.log('用户信息:', userStore.userInfo)
+    console.log('是否有伴侣:', userStore.hasPartner)
+    console.log('用户ID:', userStore.userId)
+    console.log('伴侣ID:', userStore.partnerId)
     
     if (userStore.hasPartner) {
       // 有伴侣关系，发送给伴侣
@@ -232,12 +292,15 @@ const confirmSend = async () => {
       form.receiverId = userStore.userId
     }
     
+    console.log('发送信件数据:', form)
+    
     await createLetter(form)
     showToast(hasPartner.value ? '信件发送给伴侣成功！' : '信件发送给自己成功！')
     previewVisible.value = false
     resetForm()
     router.push('/admin/letters')
   } catch (error) {
+    console.error('发送信件失败:', error)
     showToast(error.message || '发送失败')
   } finally {
     loading.value = false
@@ -247,9 +310,24 @@ const confirmSend = async () => {
 
 
 // 组件挂载时设置默认时间
-onMounted(() => {
+onMounted(async () => {
+  // 确保用户状态已初始化
+  if (!userStore.userInfo) {
+    await userStore.initUserState()
+  }
+  
+  console.log('组件挂载时的用户信息:', userStore.userInfo)
+  console.log('是否有伴侣:', userStore.hasPartner)
+  
   const tomorrow = getDefaultTime()
   form.unlockTime = formatDateTimeForAPI(tomorrow)
+  
+  // 更新日期选择器的初始值
+  currentDate.value = [
+    tomorrow.getFullYear().toString(),
+    (tomorrow.getMonth() + 1).toString().padStart(2, '0'),
+    tomorrow.getDate().toString().padStart(2, '0')
+  ]
 })
 </script>
 

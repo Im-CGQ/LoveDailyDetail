@@ -6,8 +6,14 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useUserStore } from '@/stores/user'
 
-onMounted(() => {
+const userStore = useUserStore()
+
+onMounted(async () => {
+  // 初始化用户状态
+  await userStore.initUserState()
+  
   // 设置移动端视口
   try {
     const meta = document.createElement('meta')
