@@ -147,7 +147,7 @@ echo -e "${BLUE}📥 克隆项目...${NC}"
 if [ -d "$REPO_NAME" ]; then
     echo "项目已存在，更新代码..."
     cd "$REPO_NAME"
-    git pull origin main || git pull origin master
+    git pull origin main
 else
     echo "克隆项目..."
     git clone "git@github.com:Im-CGQ/LoveDailyDetail.git"
