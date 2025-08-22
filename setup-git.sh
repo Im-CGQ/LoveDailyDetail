@@ -20,7 +20,7 @@ echo -e "${GREEN}✅ Git用户信息配置完成${NC}"
 # 生成SSH密钥
 echo -e "${BLUE}🔑 生成SSH密钥...${NC}"
 echo "正在生成SSH密钥..."
-ssh-keygen -t rsa -b 4096 -C "$github_email" -f ~/.ssh/id_rsa -N ""
+ssh-keygen -t rsa -b 4096 -C "$github_email" -f ~/.ssh/id_rsa -N 
 eval "$(ssh-agent -s)" > /dev/null 2>&1
 ssh-add ~/.ssh/id_rsa > /dev/null 2>&1
 echo -e "${GREEN}✅ SSH密钥生成完成${NC}"

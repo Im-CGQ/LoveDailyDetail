@@ -55,7 +55,6 @@
       </div>
 
       <div class="login-footer">
-        <p class="tip">默认账号：admin / admin</p>
         <div class="mode-switch">
           <van-button 
             size="small" 

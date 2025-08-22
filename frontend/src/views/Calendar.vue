@@ -5,7 +5,7 @@
     <div class="heart-decoration heart-2">💖</div>
     <div class="heart-decoration heart-3">💝</div>
     
-    <van-nav-bar title="时光日历" left-arrow @click-left="$router.back()" class="nav-bar" />
+
 
     <div class="content">
       <div class="header float">
@@ -357,36 +357,7 @@ onMounted(() => {
   position: relative;
 }
 
-.nav-bar {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(15px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  
-  :deep(.van-nav-bar__title) {
-    color: white !important;
-    font-weight: bold;
-    font-size: 18px;
-  }
-  
-  :deep(.van-icon) {
-    color: white !important;
-    font-size: 20px;
-  }
-  
-  :deep(.van-nav-bar__text) {
-    color: white !important;
-  }
-  
-  :deep(.van-nav-bar__content) {
-    padding: 12px 16px;
-  }
-  
-  :deep(.van-nav-bar__left) {
-    .van-icon {
-      color: white !important;
-    }
-  }
-}
+
 
 .content {
   padding: 20px;

@@ -19,6 +19,16 @@
         />
 
         <van-field
+          v-model="form.unlockDate"
+          name="unlockDate"
+          label="解锁日期"
+          placeholder="选择信件解锁的日期"
+          readonly
+          :rules="[{ required: true, message: '请选择解锁日期' }]"
+          @click="showDatePicker = true"
+        />
+
+        <van-field
           v-model="form.unlockTime"
           name="unlockTime"
           label="解锁时间"
@@ -26,6 +36,15 @@
           readonly
           :rules="[{ required: true, message: '请选择解锁时间' }]"
           @click="showTimePicker = true"
+        />
+
+        <van-field
+          v-model="form.unlockDateTime"
+          name="unlockDateTime"
+          label="完整时间"
+          placeholder="自动生成的完整日期时间"
+          readonly
+          :rules="[{ required: true, message: '请先选择日期和时间' }]"
         />
 
         <van-field
@@ -87,13 +106,24 @@
       </van-form>
     </div>
 
-    <!-- 时间选择器 -->
-    <van-popup v-model:show="showTimePicker" position="bottom">
+    <!-- 日期选择器 -->
+    <van-popup v-model:show="showDatePicker" position="bottom">
       <van-date-picker
         v-model="currentDate"
-        title="选择解锁时间"
+        title="选择日期"
         :min-date="minDate"
+        @confirm="onDateConfirm"
+        @cancel="showDatePicker = false"
+      />
+    </van-popup>
+
+    <!-- 时间选择器 -->
+    <van-popup v-model:show="showTimePicker" position="bottom">
+      <van-time-picker
+        v-model="currentTime"
+        title="选择时间"
         @confirm="onTimeConfirm"
+        :columns-type="['hour', 'minute', 'second']"
         @cancel="showTimePicker = false"
       />
     </van-popup>
@@ -103,7 +133,7 @@
       <div class="preview-content">
         <div class="preview-header">
           <h3>{{ form.title }}</h3>
-          <p class="unlock-time">解锁时间：{{ formatDateTime(form.unlockTime) }}</p>
+          <p class="unlock-time">解锁时间：{{ form.unlockDateTime }}</p>
           <p class="receiver-info">{{ hasPartner ? '收件人：伴侣' : '收件人：自己' }}</p>
         </div>
         <div class="content" v-html="form.content"></div>
@@ -144,18 +174,29 @@ const getDefaultTime = () => {
 const form = reactive({
   title: '',
   content: '',
+  unlockDate: '',
   unlockTime: '',
+  unlockDateTime: '', // 组合后的完整日期时间
   receiverId: null
 })
 
 const loading = ref(false)
 const previewVisible = ref(false)
+const showDatePicker = ref(false)
 const showTimePicker = ref(false)
+
 // 初始化当前日期为数组格式，用于日期选择器
 const currentDate = ref([
   new Date().getFullYear().toString(),
   (new Date().getMonth() + 1).toString().padStart(2, '0'),
   new Date().getDate().toString().padStart(2, '0')
+])
+
+// 初始化当前时间为数组格式，用于时间选择器 [小时, 分钟, 秒]
+const currentTime = ref([
+  '12',
+  '00',
+  '00'
 ])
 
 const minDate = ref(new Date())
@@ -196,8 +237,8 @@ const insertText = (text) => {
   }
 }
 
-// 时间选择确认
-const onTimeConfirm = (val) => {
+// 日期选择确认
+const onDateConfirm = (val) => {
   try {
     console.log('日期确认值:', val, '类型:', typeof val, '是否为数组:', Array.isArray(val))
     
@@ -222,18 +263,58 @@ const onTimeConfirm = (val) => {
       throw new Error('无效的日期值')
     }
     
-    // 将选择的日期设置为当天的中午12点
-    selectedDate.setHours(12, 0, 0, 0)
-    form.unlockTime = formatDateTimeForAPI(selectedDate)
-    showTimePicker.value = false
+    // 格式化日期显示
+    form.unlockDate = dayjs(selectedDate).format('YYYY-MM-DD')
+    showDatePicker.value = false
     
-    console.log('处理后的日期:', form.unlockTime)
+    // 组合日期和时间
+    combineDateTime()
+    
+    console.log('选择的日期:', form.unlockDate)
   } catch (error) {
     console.error('日期处理错误:', error)
-    // 使用明天中午12点作为默认值
-    const tomorrow = getDefaultTime()
-    form.unlockTime = formatDateTimeForAPI(tomorrow)
+    showDatePicker.value = false
+  }
+}
+
+// 时间选择确认
+const onTimeConfirm = (val) => {
+  try {
+    console.log('时间确认值:', val, '类型:', typeof val, '是否为数组:', Array.isArray(val))
+    
+    // 处理时间选择器返回的数组格式 ['12', '30', '00']
+    let hours, minutes, seconds
+    if (Array.isArray(val)) {
+      [hours, minutes, seconds] = val
+    } else if (val && val.selectedValues && Array.isArray(val.selectedValues)) {
+      [hours, minutes, seconds] = val.selectedValues
+    } else {
+      throw new Error('无效的时间格式')
+    }
+    
+    // 格式化时间显示
+    form.unlockTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`
     showTimePicker.value = false
+    
+    // 组合日期和时间
+    combineDateTime()
+    
+    console.log('选择的时间:', form.unlockTime)
+  } catch (error) {
+    console.error('时间处理错误:', error)
+    showTimePicker.value = false
+  }
+}
+
+// 组合日期和时间
+const combineDateTime = () => {
+  if (form.unlockDate && form.unlockTime) {
+    const combinedDateTime = `${form.unlockDate} ${form.unlockTime}`
+    form.unlockDateTime = combinedDateTime
+    console.log('组合后的日期时间:', form.unlockDateTime)
+  } else {
+    // 如果日期或时间未选择，清空完整时间
+    form.unlockDateTime = ''
   }
 }
 
@@ -244,8 +325,8 @@ const submitForm = async () => {
     return
   }
   
-  if (!form.unlockTime) {
-    showToast('请选择解锁时间')
+  if (!form.unlockDateTime) {
+    showToast('请选择完整的解锁时间')
     return
   }
   
@@ -265,7 +346,9 @@ const resetForm = () => {
   
   // 重置为明天中午12点
   const tomorrow = getDefaultTime()
-  form.unlockTime = formatDateTimeForAPI(tomorrow)
+  form.unlockDate = dayjs(tomorrow).format('YYYY-MM-DD')
+  form.unlockTime = '12:00:00'
+  form.unlockDateTime = `${form.unlockDate} ${form.unlockTime}`
   
   // 更新日期选择器的初始值
   currentDate.value = [
@@ -273,6 +356,11 @@ const resetForm = () => {
     (tomorrow.getMonth() + 1).toString().padStart(2, '0'),
     tomorrow.getDate().toString().padStart(2, '0')
   ]
+  
+  // 更新时间选择器的初始值
+  currentTime.value = ['12', '00', '00']
+  
+  console.log('表单重置完成，完整时间:', form.unlockDateTime)
 }
 
 // 确认发送
@@ -294,7 +382,15 @@ const confirmSend = async () => {
     
     console.log('发送信件数据:', form)
     
-    await createLetter(form)
+    // 只提交必要的字段，使用组合后的完整日期时间
+    const letterData = {
+      title: form.title,
+      content: form.content,
+      unlockTime: form.unlockDateTime, // 完整的日期时间
+      receiverId: form.receiverId
+    }
+    
+    await createLetter(letterData)
     showToast(hasPartner.value ? '信件发送给伴侣成功！' : '信件发送给自己成功！')
     previewVisible.value = false
     resetForm()
@@ -320,7 +416,9 @@ onMounted(async () => {
   console.log('是否有伴侣:', userStore.hasPartner)
   
   const tomorrow = getDefaultTime()
-  form.unlockTime = formatDateTimeForAPI(tomorrow)
+  form.unlockDate = dayjs(tomorrow).format('YYYY-MM-DD')
+  form.unlockTime = '12:00:00'
+  form.unlockDateTime = `${form.unlockDate} ${form.unlockTime}`
   
   // 更新日期选择器的初始值
   currentDate.value = [
@@ -328,6 +426,9 @@ onMounted(async () => {
     (tomorrow.getMonth() + 1).toString().padStart(2, '0'),
     tomorrow.getDate().toString().padStart(2, '0')
   ]
+  
+  // 更新时间选择器的初始值
+  currentTime.value = ['12', '00', '00']
 })
 </script>
 

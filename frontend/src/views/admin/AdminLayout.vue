@@ -114,46 +114,7 @@ const logout = () => {
   background: #f5f5f5;
 }
 
-.nav-bar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  
-  :deep(.van-nav-bar__title) {
-    color: white !important;
-    font-weight: bold;
-    font-size: 18px;
-  }
-  
-  @media (max-width: 480px) {
-    :deep(.van-nav-bar__title) {
-      font-size: 16px;
-    }
-    
-    :deep(.van-nav-bar__text) {
-      font-size: 12px;
-    }
-  }
-  
-  :deep(.van-nav-bar__text) {
-    color: white !important;
-    font-weight: 500;
-  }
-  
-  :deep(.van-icon) {
-    color: white !important;
-    font-size: 20px;
-  }
-  
-  :deep(.van-nav-bar__content) {
-    padding: 12px 16px;
-  }
-  
-  :deep(.van-nav-bar__left) {
-    .van-icon {
-      color: white !important;
-    }
-  }
-}
+
 
 .content {
   padding: 20px;

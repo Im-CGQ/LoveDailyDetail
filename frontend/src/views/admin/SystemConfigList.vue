@@ -1,16 +1,5 @@
 <template>
   <div class="system-config-list">
-    <van-nav-bar
-      title="回忆配置"
-      left-text="返回"
-      left-arrow
-      @click-left="goBack"
-    >
-      <template #title>
-        <van-icon name="star-o" style="margin-right: 4px;" />
-        回忆配置
-      </template>
-    </van-nav-bar>
     
     <div class="content">
       <!-- 在一起时间 -->
