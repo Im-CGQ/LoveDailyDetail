@@ -72,6 +72,22 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     docker system prune -f
 fi
 
+# 预拉取依赖镜像（优先国内镜像，避免 Docker Hub 超时）
+echo "🐳 预拉取依赖镜像..."
+set +e
+docker pull mysql:8.0.35
+if [ $? -ne 0 ]; then
+    echo "⚠️  直接从 Docker Hub 拉取失败，尝试使用国内镜像 m.daocloud.io..."
+    docker pull m.daocloud.io/library/mysql:8.0.35
+    if [ $? -eq 0 ]; then
+        docker tag m.daocloud.io/library/mysql:8.0.35 mysql:8.0.35
+        echo "✅ 已通过国内镜像获取 mysql:8.0.35"
+    else
+        echo "❌ 国内镜像拉取失败，请检查服务器网络/代理设置"
+    fi
+fi
+set -e
+
 # 构建和启动服务
 echo "🔨 构建和启动服务..."
 docker-compose up -d --build
