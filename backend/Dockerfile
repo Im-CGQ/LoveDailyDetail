@@ -13,8 +13,8 @@ COPY pom.xml ./
 # 复制源代码
 COPY src ./src
 
-# 复制生产环境配置
-COPY ../docker/application-prod.yml ./src/main/resources/application-prod.yml
+# 复制生产环境配置（使用现有的application.yml）
+# COPY ../docker/application-prod.yml ./src/main/resources/application-prod.yml
 
 # 安装Maven（如果需要本地构建）
 RUN apk add --no-cache maven
