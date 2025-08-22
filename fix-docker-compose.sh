@@ -52,7 +52,7 @@ cat > docker-compose.yml << 'EOF'
 services:
   # MySQL数据库
   mysql:
-    image: mysql:8.0
+    image: mysql:latest
     container_name: lovediary_mysql
     restart: unless-stopped
     environment:
