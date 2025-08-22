@@ -7,7 +7,7 @@ echo 正在执行数据库初始化脚本...
 echo 请确保MySQL服务已启动，并且已安装MySQL客户端
 echo.
 
-mysql -uroot -p123456 < backend/database/init.sql
+mysql -uroot -p123456 < database/init.sql
 
 if %ERRORLEVEL% EQU 0 (
     echo.
