@@ -82,7 +82,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { createChatRecord } from '@/api/chatRecord'
+import { createChatRecord } from '@/api/admin'
 import { showToast } from 'vant'
 
 const router = useRouter()

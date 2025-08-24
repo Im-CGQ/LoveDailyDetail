@@ -136,7 +136,7 @@ export const getUserInfo = async () => {
     }
   } catch (error) {
     console.error('获取用户信息失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取用户信息失败')
+    throw new Error(error.message || '获取用户信息失败')
   }
 }
 
@@ -152,6 +152,6 @@ export const refreshToken = async () => {
     }
   } catch (error) {
     console.error('刷新token失败:', error.message)
-    throw new Error(error.response?.data?.message || '刷新token失败')
+    throw new Error(error.message || '刷新token失败')
   }
 } 

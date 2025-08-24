@@ -72,7 +72,7 @@ public class AdminController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             
-            List<Diary> allDiaries = diaryService.getDiariesByUserId(userId);
+            List<Diary> allDiaries = diaryService.getOwnDiariesByUserId(userId);
             
             // 计算本月日记数量
             LocalDate now = LocalDate.now();
@@ -126,7 +126,7 @@ public class AdminController {
             }
             
             Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "date"));
-            Page<Diary> diaries = diaryService.getDiariesWithPaginationByUserId(pageable, userId);
+            Page<Diary> diaries = diaryService.getOwnDiariesWithPaginationByUserId(pageable, userId);
             return ResponseEntity.ok(ApiResponse.success("获取日记列表成功", diaries));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记列表失败：" + e.getMessage()));
@@ -146,7 +146,7 @@ public class AdminController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             
-            List<Diary> diaries = diaryService.getRecentDiariesByUserId(limit, userId);
+            List<Diary> diaries = diaryService.getOwnRecentDiariesByUserId(limit, userId);
             return ResponseEntity.ok(ApiResponse.success("获取最近日记成功", diaries));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取最近日记失败：" + e.getMessage()));
@@ -190,9 +190,7 @@ public class AdminController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             
-            if (diaryService.existsByDateAndUserId(diaryDTO.getDate(), userId)) {
-                return ResponseEntity.ok(ApiResponse.error("该日期已存在日记"));
-            }
+            // 移除日期唯一性检查，允许同一天创建多条日记
             Diary createdDiary = diaryService.createDiary(diaryDTO, userId);
             return ResponseEntity.ok(ApiResponse.success("创建日记成功", createdDiary));
         } catch (Exception e) {

@@ -86,7 +86,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getChatRecordById, updateChatRecord } from '@/api/chatRecord'
+import { getChatRecordById, updateChatRecord } from '@/api/admin'
 import { showToast } from 'vant'
 
 const router = useRouter()

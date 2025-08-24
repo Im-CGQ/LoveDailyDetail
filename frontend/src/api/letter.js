@@ -11,7 +11,7 @@ export const createLetter = async (data) => {
     }
   } catch (error) {
     console.error('创建信件失败:', error.message)
-    throw new Error(error.response?.data?.message || '创建信件失败，请检查网络连接')
+    throw new Error(error.message || '创建信件失败，请检查网络连接')
   }
 }
 
@@ -26,7 +26,7 @@ export const getSentLetters = async () => {
     }
   } catch (error) {
     console.error('获取发送信件列表失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取发送信件列表失败，请检查网络连接')
+    throw new Error(error.message || '获取发送信件列表失败，请检查网络连接')
   }
 }
 
@@ -41,7 +41,7 @@ export const getReceivedLetters = async () => {
     }
   } catch (error) {
     console.error('获取接收信件列表失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取接收信件列表失败，请检查网络连接')
+    throw new Error(error.message || '获取接收信件列表失败，请检查网络连接')
   }
 }
 
@@ -56,7 +56,7 @@ export const getUnlockedLetters = async () => {
     }
   } catch (error) {
     console.error('获取已解锁信件列表失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取已解锁信件列表失败，请检查网络连接')
+    throw new Error(error.message || '获取已解锁信件列表失败，请检查网络连接')
   }
 }
 
@@ -71,7 +71,7 @@ export const getLockedLetters = async () => {
     }
   } catch (error) {
     console.error('获取未解锁信件列表失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取未解锁信件列表失败，请检查网络连接')
+    throw new Error(error.message || '获取未解锁信件列表失败，请检查网络连接')
   }
 }
 
@@ -86,7 +86,7 @@ export const getLetterById = async (letterId) => {
     }
   } catch (error) {
     console.error('获取信件详情失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取信件详情失败，请检查网络连接')
+    throw new Error(error.message || '获取信件详情失败，请检查网络连接')
   }
 }
 
@@ -101,7 +101,7 @@ export const markAsRead = async (letterId) => {
     }
   } catch (error) {
     console.error('标记信件为已读失败:', error.message)
-    throw new Error(error.response?.data?.message || '标记信件为已读失败，请检查网络连接')
+    throw new Error(error.message || '标记信件为已读失败，请检查网络连接')
   }
 }
 
@@ -116,6 +116,6 @@ export const deleteLetter = async (letterId) => {
     }
   } catch (error) {
     console.error('删除信件失败:', error.message)
-    throw new Error(error.response?.data?.message || '删除信件失败，请检查网络连接')
+    throw new Error(error.message || '删除信件失败，请检查网络连接')
   }
 }

@@ -18,10 +18,10 @@
             v-model="form.username"
             name="username"
             label="用户名"
-            placeholder="请输入用户名（3-20个字符）"
+            placeholder="请输入用户名（1-20个字符）"
             :rules="[
               { required: true, message: '请输入用户名' },
-              { min: 3, max: 20, message: '用户名长度必须在3-20个字符之间' }
+              { min: 1, max: 20, message: '用户名长度必须在1-20个字符之间' }
             ]"
             class="form-field"
           />

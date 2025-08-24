@@ -52,6 +52,18 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
+    public List<Diary> getViewableDiariesByUserId(Long userId) {
+        // 直接使用新的查询方法，基于partner_id字段
+        return diaryRepository.findViewableDiariesByUserId(userId);
+    }
+
+    @Override
+    public List<Diary> getOwnDiariesByUserId(Long userId) {
+        // 只返回用户自己创建的日记
+        return diaryRepository.findOwnDiariesByUserId(userId);
+    }
+
+    @Override
     public Diary getDiaryById(Long id) {
         return diaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("日记不存在"));
@@ -63,17 +75,33 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
+    public Optional<Diary> getViewableDiaryByDateAndUserId(LocalDate date, Long userId) {
+        return diaryRepository.findViewableDiaryByDateAndUserId(date, userId);
+    }
+
+    @Override
+    public List<Diary> getViewableDiariesByDateAndUserId(LocalDate date, Long userId) {
+        return diaryRepository.findViewableDiariesByDateAndUserId(date, userId);
+    }
+
+    @Override
     public Diary createDiary(DiaryDTO diaryDTO, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
                 
-        if (diaryRepository.existsByDateAndUserId(diaryDTO.getDate(), userId)) {
-            throw new RuntimeException("该日期已存在日记");
-        }
+        // 移除日期唯一性检查，允许同一天创建多条日记
 
         Diary diary = new Diary();
         BeanUtils.copyProperties(diaryDTO, diary);
         diary.setUser(user);
+        
+        // 如果用户有伴侣，设置partner_id字段
+        if (user.getPartnerId() != null) {
+            User partner = userRepository.findById(user.getPartnerId())
+                    .orElseThrow(() -> new RuntimeException("伴侣信息不存在"));
+            diary.setPartner(partner);
+        }
+        
         return diaryRepository.save(diary);
     }
 
@@ -114,6 +142,11 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
+    public List<Diary> getViewableDiariesByDateRange(LocalDate startDate, LocalDate endDate, Long userId) {
+        return diaryRepository.findViewableDiariesByDateRange(startDate, endDate, userId);
+    }
+
+    @Override
     public boolean existsByDateAndUserId(LocalDate date, Long userId) {
         return diaryRepository.existsByDateAndUserId(date, userId);
     }
@@ -146,6 +179,18 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public List<Diary> getRecentDiariesByUserId(int limit, Long userId) {
         return diaryRepository.findByUserIdOrderByDateDesc(userId).stream()
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public Page<Diary> getOwnDiariesWithPaginationByUserId(Pageable pageable, Long userId) {
+        return diaryRepository.findOwnDiariesByUserIdOrderByDateDesc(userId, pageable);
+    }
+    
+    @Override
+    public List<Diary> getOwnRecentDiariesByUserId(int limit, Long userId) {
+        return diaryRepository.findOwnDiariesByUserId(userId).stream()
                 .limit(limit)
                 .collect(java.util.stream.Collectors.toList());
     }

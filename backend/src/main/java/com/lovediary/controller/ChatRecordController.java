@@ -50,7 +50,7 @@ public class ChatRecordController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            List<ChatRecord> chatRecords = chatRecordService.getChatRecordsByUserId(userId);
+            List<ChatRecord> chatRecords = chatRecordService.getChatRecordsByUserIdAndPartner(userId);
             return ResponseEntity.ok(ApiResponse.success("获取聊天记录列表成功", chatRecords));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取聊天记录列表失败：" + e.getMessage()));
@@ -68,8 +68,18 @@ public class ChatRecordController {
             }
             
             ChatRecord chatRecord = chatRecordService.getChatRecordById(id);
-            if (chatRecord.getUser().getId() != userId) {
-                return ResponseEntity.ok(ApiResponse.error("无权查看此聊天记录"));
+            if (chatRecord == null) {
+                return ResponseEntity.ok(ApiResponse.error("聊天记录不存在"));
+            }
+            
+            // 检查权限：用户只能查看自己的聊天记录或伴侣的聊天记录
+            Long chatRecordUserId = chatRecord.getUser().getId();
+            if (!chatRecordUserId.equals(userId)) {
+                // 检查是否是伴侣关系
+                User currentUser = userService.findById(userId).orElse(null);
+                if (currentUser == null || !chatRecordUserId.equals(currentUser.getPartnerId())) {
+                    return ResponseEntity.ok(ApiResponse.error("无权查看此聊天记录"));
+                }
             }
             
             return ResponseEntity.ok(ApiResponse.success("获取聊天记录成功", chatRecord));
@@ -79,7 +89,7 @@ public class ChatRecordController {
     }
 
     @GetMapping("/date/{date}")
-    public ResponseEntity<ApiResponse<ChatRecord>> getChatRecordByDate(
+    public ResponseEntity<ApiResponse<List<ChatRecord>>> getChatRecordsByDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestHeader(value = "Authorization", required = false) String token) {
         try {
@@ -87,12 +97,8 @@ public class ChatRecordController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            Optional<ChatRecord> chatRecordOpt = chatRecordService.getChatRecordByDateAndUserId(date, userId);
-            if (chatRecordOpt.isPresent()) {
-                return ResponseEntity.ok(ApiResponse.success("获取聊天记录成功", chatRecordOpt.get()));
-            } else {
-                return ResponseEntity.ok(ApiResponse.success("该日期暂无聊天记录", null));
-            }
+            List<ChatRecord> chatRecords = chatRecordService.getChatRecordsByDateAndUserIdAndPartner(date, userId);
+            return ResponseEntity.ok(ApiResponse.success("获取聊天记录成功", chatRecords));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取聊天记录失败：" + e.getMessage()));
         }
@@ -105,7 +111,7 @@ public class ChatRecordController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            Integer totalDuration = chatRecordService.getTotalDurationByUserId(userId);
+            Integer totalDuration = chatRecordService.getTotalDurationByUserIdAndPartner(userId);
             return ResponseEntity.ok(ApiResponse.success("获取总聊天时长成功", totalDuration));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取总聊天时长失败：" + e.getMessage()));
@@ -119,7 +125,7 @@ public class ChatRecordController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            Map<String, Integer> durationByType = chatRecordService.getDurationByChatType(userId);
+            Map<String, Integer> durationByType = chatRecordService.getDurationByChatTypeAndPartner(userId);
             return ResponseEntity.ok(ApiResponse.success("获取聊天类型时长统计成功", durationByType));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取聊天类型时长统计失败：" + e.getMessage()));
@@ -196,7 +202,7 @@ public class ChatRecordController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            List<ChatRecord> chatRecords = chatRecordService.getChatRecordsByDateRange(startDate, endDate, userId);
+            List<ChatRecord> chatRecords = chatRecordService.getChatRecordsByDateRangeAndPartner(startDate, endDate, userId);
             return ResponseEntity.ok(ApiResponse.success("获取日期范围聊天记录成功", chatRecords));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日期范围聊天记录失败：" + e.getMessage()));

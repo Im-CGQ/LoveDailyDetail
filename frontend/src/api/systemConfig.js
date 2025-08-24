@@ -11,7 +11,7 @@ export const getAllConfigs = async () => {
     }
   } catch (error) {
     console.error('获取配置失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取配置失败，请检查网络连接')
+    throw new Error(error.message || '获取配置失败，请检查网络连接')
   }
 }
 
@@ -26,7 +26,7 @@ export const getUserConfigs = async (userId) => {
     }
   } catch (error) {
     console.error('获取用户配置失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取用户配置失败，请检查网络连接')
+    throw new Error(error.message || '获取用户配置失败，请检查网络连接')
   }
 }
 
@@ -41,7 +41,7 @@ export const getGlobalConfigs = async () => {
     }
   } catch (error) {
     console.error('获取全局配置失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取全局配置失败，请检查网络连接')
+    throw new Error(error.message || '获取全局配置失败，请检查网络连接')
   }
 }
 
@@ -56,7 +56,7 @@ export const getConfigByKey = async (configKey) => {
     }
   } catch (error) {
     console.error('获取配置失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取配置失败，请检查网络连接')
+    throw new Error(error.message || '获取配置失败，请检查网络连接')
   }
 }
 
@@ -71,7 +71,7 @@ export const saveConfig = async (configDTO) => {
     }
   } catch (error) {
     console.error('保存配置失败:', error.message)
-    throw new Error(error.response?.data?.message || '保存配置失败，请检查网络连接')
+    throw new Error(error.message || '保存配置失败，请检查网络连接')
   }
 }
 
@@ -86,7 +86,7 @@ export const deleteConfig = async (configKey, userId) => {
     }
   } catch (error) {
     console.error('删除配置失败:', error.message)
-    throw new Error(error.response?.data?.message || '删除配置失败，请检查网络连接')
+    throw new Error(error.message || '删除配置失败，请检查网络连接')
   }
 }
 
@@ -101,7 +101,7 @@ export const getTogetherDate = async () => {
     }
   } catch (error) {
     console.error('获取在一起时间失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取在一起时间失败，请检查网络连接')
+    throw new Error(error.message || '获取在一起时间失败，请检查网络连接')
   }
 }
 
@@ -116,7 +116,7 @@ export const setTogetherDate = async (togetherDate) => {
     }
   } catch (error) {
     console.error('设置在一起时间失败:', error.message)
-    throw new Error(error.response?.data?.message || '设置在一起时间失败，请检查网络连接')
+    throw new Error(error.message || '设置在一起时间失败，请检查网络连接')
   }
 }
 
@@ -131,7 +131,7 @@ export const getBackgroundMusicAutoplay = async () => {
     }
   } catch (error) {
     console.error('获取背景音乐自动播放配置失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取背景音乐自动播放配置失败，请检查网络连接')
+    throw new Error(error.message || '获取背景音乐自动播放配置失败，请检查网络连接')
   }
 }
 
@@ -146,7 +146,7 @@ export const setBackgroundMusicAutoplay = async (autoplay) => {
     }
   } catch (error) {
     console.error('设置背景音乐自动播放配置失败:', error.message)
-    throw new Error(error.response?.data?.message || '设置背景音乐自动播放配置失败，请检查网络连接')
+    throw new Error(error.message || '设置背景音乐自动播放配置失败，请检查网络连接')
   }
 }
 
@@ -161,6 +161,6 @@ export const getConfigMap = async (userId) => {
     }
   } catch (error) {
     console.error('获取配置映射失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取配置映射失败，请检查网络连接')
+    throw new Error(error.message || '获取配置映射失败，请检查网络连接')
   }
 }

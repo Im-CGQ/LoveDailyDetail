@@ -11,7 +11,7 @@ export const getAllChatRecords = async () => {
     }
   } catch (error) {
     console.error('获取聊天记录列表失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取聊天记录列表失败，请检查网络连接')
+    throw new Error(error.message || '获取聊天记录列表失败，请检查网络连接')
   }
 }
 
@@ -26,7 +26,7 @@ export const getChatRecordByDate = async (date) => {
     }
   } catch (error) {
     console.error('获取聊天记录失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取聊天记录失败，请检查网络连接')
+    throw new Error(error.message || '获取聊天记录失败，请检查网络连接')
   }
 }
 
@@ -41,7 +41,7 @@ export const getChatRecordById = async (id) => {
     }
   } catch (error) {
     console.error('获取聊天记录失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取聊天记录失败，请检查网络连接')
+    throw new Error(error.message || '获取聊天记录失败，请检查网络连接')
   }
 }
 
@@ -56,7 +56,7 @@ export const getTotalDuration = async () => {
     }
   } catch (error) {
     console.error('获取总聊天时长失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取总聊天时长失败，请检查网络连接')
+    throw new Error(error.message || '获取总聊天时长失败，请检查网络连接')
   }
 }
 
@@ -71,7 +71,7 @@ export const getDurationByChatType = async () => {
     }
   } catch (error) {
     console.error('获取聊天类型时长统计失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取聊天类型时长统计失败，请检查网络连接')
+    throw new Error(error.message || '获取聊天类型时长统计失败，请检查网络连接')
   }
 }
 
@@ -86,7 +86,7 @@ export const createChatRecord = async (chatRecordData) => {
     }
   } catch (error) {
     console.error('创建聊天记录失败:', error.message)
-    throw new Error(error.response?.data?.message || '创建聊天记录失败，请检查网络连接')
+    throw new Error(error.message || '创建聊天记录失败，请检查网络连接')
   }
 }
 
@@ -101,7 +101,7 @@ export const updateChatRecord = async (id, chatRecordData) => {
     }
   } catch (error) {
     console.error('更新聊天记录失败:', error.message)
-    throw new Error(error.response?.data?.message || '更新聊天记录失败，请检查网络连接')
+    throw new Error(error.message || '更新聊天记录失败，请检查网络连接')
   }
 }
 
@@ -116,6 +116,6 @@ export const deleteChatRecord = async (id) => {
     }
   } catch (error) {
     console.error('删除聊天记录失败:', error.message)
-    throw new Error(error.response?.data?.message || '删除聊天记录失败，请检查网络连接')
+    throw new Error(error.message || '删除聊天记录失败，请检查网络连接')
   }
 }

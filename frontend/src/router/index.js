@@ -22,10 +22,16 @@ const routes = [
     meta: { title: '时光日历', requiresAuth: true }
   },
   {
-    path: '/detail/:date',
+    path: '/diary/:id',
     name: 'Detail',
     component: () => import('@/views/Detail.vue'),
     meta: { title: '美好回忆', requiresAuth: true }
+  },
+  {
+    path: '/diaries/date/:date',
+    name: 'UserDiaryList',
+    component: () => import('@/views/DiaryList.vue'),
+    meta: { title: '日记列表', requiresAuth: true }
   },
   {
     path: '/letters',
@@ -121,8 +127,8 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
   // 设置页面标题
-  document.title = to.meta.title || '记录和女朋友的每一天'
-  
+  document.title = to.meta.title || '记录美好回忆'
+
   // 检查是否需要登录
   if (to.meta.requiresAuth) {
     if (!checkLoginState()) {

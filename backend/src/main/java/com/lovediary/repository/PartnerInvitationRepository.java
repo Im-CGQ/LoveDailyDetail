@@ -26,4 +26,7 @@ public interface PartnerInvitationRepository extends JpaRepository<PartnerInvita
 
     @Query("SELECT pi FROM PartnerInvitation pi WHERE pi.fromUserId = :userId AND pi.status = 'PENDING'")
     List<PartnerInvitation> findPendingInvitationsByFromUserId(@Param("userId") Long userId);
+
+    @Query("SELECT pi FROM PartnerInvitation pi WHERE pi.fromUserId = :userId1 OR pi.fromUserId = :userId2 OR pi.toUserId = :userId1 OR pi.toUserId = :userId2")
+    List<PartnerInvitation> findByFromUserIdOrToUserId(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
 }

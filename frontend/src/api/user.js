@@ -11,7 +11,7 @@ export const getCurrentUserInfo = async () => {
     }
   } catch (error) {
     console.error('获取用户信息失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取用户信息失败，请检查网络连接')
+    throw new Error(error.message || '获取用户信息失败，请检查网络连接')
   }
 }
 
@@ -26,7 +26,7 @@ export const updateUserInfo = async (data) => {
     }
   } catch (error) {
     console.error('更新用户信息失败:', error.message)
-    throw new Error(error.response?.data?.message || '更新用户信息失败，请检查网络连接')
+    throw new Error(error.message || '更新用户信息失败，请检查网络连接')
   }
 }
 
@@ -41,6 +41,6 @@ export const getUserStats = async () => {
     }
   } catch (error) {
     console.error('获取用户统计信息失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取用户统计信息失败，请检查网络连接')
+    throw new Error(error.message || '获取用户统计信息失败，请检查网络连接')
   }
 }

@@ -59,9 +59,11 @@ CREATE TABLE diaries (
     description TEXT,
     background_music_url VARCHAR(500),
     user_id BIGINT NOT NULL,
+    partner_id BIGINT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (partner_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 创建日记图片表
@@ -102,9 +104,11 @@ CREATE TABLE chat_records (
     description TEXT COMMENT '聊天描述或备注',
     custom_type VARCHAR(100) COMMENT '自定义聊天类型',
     user_id BIGINT NOT NULL,
+    partner_id BIGINT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (partner_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 插入默认管理员用户 (用户名: admin, 密码: admin)
@@ -116,44 +120,10 @@ INSERT INTO system_configs (config_key, config_value, config_type, description, 
 ('together_date', '2025-05-30', 'STRING', '在一起的时间', NULL),
 ('background_music_autoplay', 'true', 'BOOLEAN', '背景音乐是否自动播放', NULL);
 
--- 插入示例数据
-INSERT INTO diaries (title, date, description, user_id) VALUES 
-('我们的第一次约会', '2024-01-15', '今天是我们第一次约会，一起去看了电影，吃了火锅，度过了美好的一天。我们聊了很多，发现彼此有很多共同话题，感觉时间过得特别快。', 1),
-('春天的野餐', '2024-03-20', '今天天气很好，我们一起去公园野餐。准备了水果、三明治和饮料，在草地上铺了毯子，一边吃东西一边聊天，非常惬意。', 1),
-('夏日海滩之旅', '2024-06-15', '今天去了海边，阳光明媚，海风轻拂。我们一起在沙滩上散步，捡贝壳，拍照留念。海水很蓝，天空也很蓝，一切都那么美好。', 1),
-('秋日枫叶之旅', '2024-10-20', '秋天到了，枫叶红了。我们一起去山里看枫叶，漫山遍野的红叶美不胜收。拍了很多照片，留下了美好的回忆。', 1);
-
--- 插入示例图片
-INSERT INTO diary_images (diary_id, image_url) VALUES 
-(1, 'https://picsum.photos/400/300?random=1'),
-(1, 'https://picsum.photos/400/300?random=2'),
-(2, 'https://picsum.photos/400/300?random=3'),
-(2, 'https://picsum.photos/400/300?random=4'),
-(3, 'https://picsum.photos/400/300?random=5'),
-(3, 'https://picsum.photos/400/300?random=6'),
-(4, 'https://picsum.photos/400/300?random=7'),
-(4, 'https://picsum.photos/400/300?random=8');
-
--- 插入示例视频
-INSERT INTO diary_videos (diary_id, video_url) VALUES 
-(1, 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'),
-(2, 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4');
-
--- 插入示例信件数据
-INSERT INTO letters (title, content, unlock_time, sender_id, receiver_id, is_read) VALUES 
-('给未来的自己', '亲爱的自己，希望未来的你能看到这封信时，已经实现了所有的梦想。记住要永远保持初心，勇敢前行！', '2025-01-01 00:00:00', 1, 1, false),
-('给伴侣的信', '亲爱的，感谢你一直以来的陪伴和支持。我们的爱情故事还在继续，期待与你一起创造更多美好的回忆。', '2024-12-25 00:00:00', 1, 1, false);
-
--- 插入示例聊天记录数据
-INSERT INTO chat_records (chat_type, duration_minutes, date, description, custom_type, user_id) VALUES 
-('微信语音', 45, '2024-01-15', '今天和女朋友聊了很久，聊了很多有趣的话题', NULL, 1),
-('微信聊天', 30, '2024-01-14', '日常聊天，分享今天发生的事情', NULL, 1),
-('小红书聊天', 20, '2024-01-13', '分享美食和旅行攻略', NULL, 1),
-('自定义', 60, '2024-01-12', '视频通话聊天', '视频通话', 1),
-('微信语音', 25, '2024-01-11', '睡前语音聊天', NULL, 1);
-
 -- 创建索引
 CREATE INDEX idx_diaries_date ON diaries(date);
+CREATE INDEX idx_diaries_partner_id ON diaries(partner_id);
+CREATE INDEX idx_diaries_user_partner ON diaries(user_id, partner_id);
 CREATE INDEX idx_diary_images_diary_id ON diary_images(diary_id);
 CREATE INDEX idx_diary_videos_diary_id ON diary_videos(diary_id);
 CREATE INDEX idx_partner_invitations_from_user ON partner_invitations(from_user_id);
@@ -164,6 +134,8 @@ CREATE INDEX idx_letters_receiver_id ON letters(receiver_id);
 CREATE INDEX idx_letters_unlock_time ON letters(unlock_time);
 CREATE INDEX idx_letters_is_read ON letters(is_read);
 CREATE INDEX idx_chat_records_user_id ON chat_records(user_id);
+CREATE INDEX idx_chat_records_partner_id ON chat_records(partner_id);
+CREATE INDEX idx_chat_records_user_partner ON chat_records(user_id, partner_id);
 CREATE INDEX idx_chat_records_date ON chat_records(date);
 CREATE INDEX idx_chat_records_chat_type ON chat_records(chat_type);
 CREATE INDEX idx_system_configs_key ON system_configs(config_key);

@@ -65,7 +65,7 @@
             {{ isAdmin ? '切换到前台' : '切换到后台' }}
           </van-button>
         </div>
-        <div class="register-link" v-if="!isAdmin">
+        <!-- <div class="register-link" v-if="!isAdmin">
           <p class="register-tip">还没有账号？</p>
           <van-button 
             size="small" 
@@ -75,7 +75,7 @@
           >
             立即注册
           </van-button>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>

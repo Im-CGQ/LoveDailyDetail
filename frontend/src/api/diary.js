@@ -11,7 +11,7 @@ export const getAllDiaries = async () => {
     }
   } catch (error) {
     console.error('获取日记列表失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取日记列表失败，请检查网络连接')
+    throw new Error(error.message || '获取日记列表失败，请检查网络连接')
   }
 }
 
@@ -26,11 +26,11 @@ export const getLatestDiary = async () => {
     }
   } catch (error) {
     console.error('获取最新日记失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取最新日记失败，请检查网络连接')
+    throw new Error(error.message || '获取最新日记失败，请检查网络连接')
   }
 }
 
-// 根据日期获取日记
+// 根据日期获取日记（单条）
 export const getDiaryByDate = async (date) => {
   try {
     const response = await api.get(`/diaries/date/${date}`)
@@ -41,7 +41,37 @@ export const getDiaryByDate = async (date) => {
     }
   } catch (error) {
     console.error('获取日记失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取日记失败，请检查网络连接')
+    throw new Error(error.message || '获取日记失败，请检查网络连接')
+  }
+}
+
+// 根据日期获取日记列表（多条）
+export const getDiariesByDate = async (date) => {
+  try {
+    const response = await api.get(`/diaries/date/${date}`)
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '获取日记失败')
+    }
+  } catch (error) {
+    console.error('获取日记失败:', error.message)
+    throw new Error(error.message || '获取日记失败，请检查网络连接')
+  }
+}
+
+// 根据ID获取日记
+export const getDiaryById = async (id) => {
+  try {
+    const response = await api.get(`/diaries/${id}`)
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '获取日记失败')
+    }
+  } catch (error) {
+    console.error('获取日记失败:', error.message)
+    throw new Error(error.message || '获取日记失败，请检查网络连接')
   }
 }
 
@@ -56,7 +86,7 @@ export const createDiary = async (diaryData) => {
     }
   } catch (error) {
     console.error('创建日记失败:', error.message)
-    throw new Error(error.response?.data?.message || '创建日记失败，请检查网络连接')
+    throw new Error(error.message || '创建日记失败，请检查网络连接')
   }
 }
 
@@ -71,7 +101,7 @@ export const updateDiary = async (id, diaryData) => {
     }
   } catch (error) {
     console.error('更新日记失败:', error.message)
-    throw new Error(error.response?.data?.message || '更新日记失败，请检查网络连接')
+    throw new Error(error.message || '更新日记失败，请检查网络连接')
   }
 }
 
@@ -86,6 +116,6 @@ export const deleteDiary = async (id) => {
     }
   } catch (error) {
     console.error('删除日记失败:', error.message)
-    throw new Error(error.response?.data?.message || '删除日记失败，请检查网络连接')
+    throw new Error(error.message || '删除日记失败，请检查网络连接')
   }
 } 

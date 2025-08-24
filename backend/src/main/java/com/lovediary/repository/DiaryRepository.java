@@ -45,7 +45,34 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     // 用户分页查询
     Page<Diary> findByUserIdOrderByDateDesc(Long userId, Pageable pageable);
     
+    // 分页查询用户自己创建的日记（用于后台管理）
+    Page<Diary> findOwnDiariesByUserIdOrderByDateDesc(Long userId, Pageable pageable);
+    
     // 查询用户或伴侣的日记
     @Query("SELECT d FROM Diary d WHERE d.user.id = ?1 OR d.user.id = ?2 ORDER BY d.date DESC")
     List<Diary> findByUserIdOrUserIdOrderByDateDesc(Long userId1, Long userId2);
+    
+    // 查询用户可以查看的日记（包括自己的和伴侣的）
+    @Query("SELECT d FROM Diary d WHERE d.user.id = ?1 OR d.partner.id = ?1 ORDER BY d.date DESC")
+    List<Diary> findViewableDiariesByUserId(Long userId);
+    
+    // 查询用户自己创建的日记（用于后台管理）
+    @Query("SELECT d FROM Diary d WHERE d.user.id = ?1 ORDER BY d.date DESC")
+    List<Diary> findOwnDiariesByUserId(Long userId);
+    
+    // 按日期查询用户可以查看的日记
+    @Query("SELECT d FROM Diary d WHERE d.date = ?1 AND (d.user.id = ?2 OR d.partner.id = ?2)")
+    Optional<Diary> findViewableDiaryByDateAndUserId(LocalDate date, Long userId);
+    
+    // 按日期查询用户可以查看的日记列表
+    @Query("SELECT d FROM Diary d WHERE d.date = ?1 AND (d.user.id = ?2 OR d.partner.id = ?2) ORDER BY d.createdAt DESC")
+    List<Diary> findViewableDiariesByDateAndUserId(LocalDate date, Long userId);
+    
+    // 按日期范围查询用户可以查看的日记
+    @Query("SELECT d FROM Diary d WHERE d.date BETWEEN ?1 AND ?2 AND (d.user.id = ?3 OR d.partner.id = ?3) ORDER BY d.date DESC")
+    List<Diary> findViewableDiariesByDateRange(LocalDate startDate, LocalDate endDate, Long userId);
+    
+    // 按年月查询用户可以查看的日记
+    @Query("SELECT d FROM Diary d WHERE YEAR(d.date) = ?1 AND MONTH(d.date) = ?2 AND (d.user.id = ?3 OR d.partner.id = ?3) ORDER BY d.date DESC")
+    List<Diary> findViewableDiariesByYearAndMonth(int year, int month, Long userId);
 } 

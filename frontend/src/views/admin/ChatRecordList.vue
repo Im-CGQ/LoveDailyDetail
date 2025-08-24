@@ -47,7 +47,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getAllChatRecords, deleteChatRecord } from '@/api/chatRecord'
+import { getChatRecordsWithPagination, deleteChatRecord } from '@/api/admin'
 import { showToast, showConfirmDialog } from 'vant'
 
 const router = useRouter()
@@ -86,11 +86,22 @@ const loadChatRecords = async () => {
   
   loading.value = true
   try {
-    const records = await getAllChatRecords()
-    if (records && records.length > 0) {
-      chatRecords.value = records
+    const response = await getChatRecordsWithPagination(page.value, pageSize)
+    if (response && response.content && response.content.length > 0) {
+      if (page.value === 1) {
+        chatRecords.value = response.content
+      } else {
+        chatRecords.value.push(...response.content)
+      }
+      page.value++
+      
+      // 检查是否还有更多数据
+      if (response.content.length < pageSize) {
+        finished.value = true
+      }
+    } else {
+      finished.value = true
     }
-    finished.value = true
   } catch (error) {
     console.error('加载聊天记录失败:', error)
     showToast('加载失败')

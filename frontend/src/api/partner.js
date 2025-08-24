@@ -11,7 +11,7 @@ export const getPartnerInfo = async () => {
     }
   } catch (error) {
     console.error('获取伴侣信息失败:', error.message)
-    throw new Error(error.response?.data?.message || '获取伴侣信息失败，请检查网络连接')
+    throw new Error(error.message || '获取伴侣信息失败，请检查网络连接')
   }
 }
 
@@ -26,7 +26,7 @@ export const invitePartner = async (targetUsername) => {
     }
   } catch (error) {
     console.error('邀请伴侣失败:', error.message)
-    throw new Error(error.response?.data?.message || '邀请伴侣失败，请检查网络连接')
+    throw new Error(error.message || '邀请伴侣失败，请检查网络连接')
   }
 }
 
@@ -41,7 +41,7 @@ export const acceptInvitation = async (invitationId) => {
     }
   } catch (error) {
     console.error('接受邀请失败:', error.message)
-    throw new Error(error.response?.data?.message || '接受邀请失败，请检查网络连接')
+    throw new Error(error.message || '接受邀请失败，请检查网络连接')
   }
 }
 
@@ -56,7 +56,7 @@ export const rejectInvitation = async (invitationId) => {
     }
   } catch (error) {
     console.error('拒绝邀请失败:', error.message)
-    throw new Error(error.response?.data?.message || '拒绝邀请失败，请检查网络连接')
+    throw new Error(error.message || '拒绝邀请失败，请检查网络连接')
   }
 }
 
@@ -71,7 +71,7 @@ export const unbindPartner = async () => {
     }
   } catch (error) {
     console.error('解除伴侣关系失败:', error.message)
-    throw new Error(error.response?.data?.message || '解除伴侣关系失败，请检查网络连接')
+    throw new Error(error.message || '解除伴侣关系失败，请检查网络连接')
   }
 }
 
@@ -86,6 +86,6 @@ export const cancelInvitation = async (invitationId) => {
     }
   } catch (error) {
     console.error('取消邀请失败:', error.message)
-    throw new Error(error.response?.data?.message || '取消邀请失败，请检查网络连接')
+    throw new Error(error.message || '取消邀请失败，请检查网络连接')
   }
 }

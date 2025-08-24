@@ -311,8 +311,10 @@ const selectDate = (date) => {
   const diary = diaries.value.find(d => d.date === dateStr)
   
   if (diary) {
-    viewDetail(diary)
+    // 如果有日记，跳转到日记列表页
+    router.push(`/diaries/date/${dateStr}`)
   } else {
+    // 如果没有日记，显示提示信息
     showToast('这一天还没有回忆记录')
   }
 }
@@ -322,7 +324,8 @@ const formatDate = (date) => {
 }
 
 const viewDetail = (diary) => {
-  router.push(`/detail/${diary.date}`)
+  // 列表视图点击 - 跳转到详情页
+  router.push(`/diary/${diary.id}`)
 }
 
 // 图片预览功能

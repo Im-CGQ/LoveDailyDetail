@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,7 +50,8 @@ public class DiaryController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            List<Diary> diaries = diaryService.getDiariesByUserId(userId);
+            // 使用新的方法获取用户可以查看的日记（包括伴侣的）
+            List<Diary> diaries = diaryService.getViewableDiariesByUserId(userId);
             return ResponseEntity.ok(ApiResponse.success("获取日记列表成功", diaries));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记列表失败：" + e.getMessage()));
@@ -67,8 +69,18 @@ public class DiaryController {
             }
             
             Diary diary = diaryService.getDiaryById(id);
-            if (diary.getUser().getId() != userId) {
-                return ResponseEntity.ok(ApiResponse.error("无权查看此日记"));
+            if (diary == null) {
+                return ResponseEntity.ok(ApiResponse.error("日记不存在"));
+            }
+            
+            // 检查权限：用户只能查看自己的日记或伴侣的日记
+            Long diaryUserId = diary.getUser().getId();
+            if (!diaryUserId.equals(userId)) {
+                // 检查是否是伴侣关系
+                User currentUser = userService.findById(userId).orElse(null);
+                if (currentUser == null || !diaryUserId.equals(currentUser.getPartnerId())) {
+                    return ResponseEntity.ok(ApiResponse.error("无权查看此日记"));
+                }
             }
             
             return ResponseEntity.ok(ApiResponse.success("获取日记成功", diary));
@@ -78,7 +90,7 @@ public class DiaryController {
     }
 
     @GetMapping("/date/{date}")
-    public ResponseEntity<ApiResponse<Diary>> getDiaryByDate(
+    public ResponseEntity<ApiResponse<List<Diary>>> getDiaryByDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestHeader(value = "Authorization", required = false) String token) {
         try {
@@ -86,11 +98,11 @@ public class DiaryController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            Optional<Diary> diaryOpt = diaryService.getDiaryByDateAndUserId(date, userId);
-            if (diaryOpt.isPresent()) {
-                return ResponseEntity.ok(ApiResponse.success("获取日记成功", diaryOpt.get()));
+            List<Diary> diaries = diaryService.getViewableDiariesByDateAndUserId(date, userId);
+            if (!diaries.isEmpty()) {
+                return ResponseEntity.ok(ApiResponse.success("获取日记成功", diaries));
             } else {
-                return ResponseEntity.ok(ApiResponse.success("该日期暂无日记", null));
+                return ResponseEntity.ok(ApiResponse.success("该日期暂无日记", new ArrayList<>()));
             }
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日记失败：" + e.getMessage()));
@@ -104,7 +116,7 @@ public class DiaryController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            List<Diary> diaries = diaryService.getDiariesByUserId(userId);
+            List<Diary> diaries = diaryService.getViewableDiariesByUserId(userId);
             if (!diaries.isEmpty()) {
                 return ResponseEntity.ok(ApiResponse.success("获取最新日记成功", diaries.get(0)));
             } else {
@@ -123,9 +135,7 @@ public class DiaryController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            if (diaryService.existsByDateAndUserId(diaryDTO.getDate(), userId)) {
-                return ResponseEntity.ok(ApiResponse.error("该日期已存在日记"));
-            }
+            // 移除日期唯一性检查，允许同一天创建多条日记
             Diary createdDiary = diaryService.createDiary(diaryDTO, userId);
             return ResponseEntity.ok(ApiResponse.success("创建日记成功", createdDiary));
         } catch (Exception e) {
@@ -188,7 +198,7 @@ public class DiaryController {
             if (userId == null) {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
-            List<Diary> diaries = diaryService.getDiariesByDateRange(startDate, endDate, userId);
+            List<Diary> diaries = diaryService.getViewableDiariesByDateRange(startDate, endDate, userId);
             return ResponseEntity.ok(ApiResponse.success("获取日期范围日记成功", diaries));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取日期范围日记失败：" + e.getMessage()));

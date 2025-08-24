@@ -132,7 +132,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
-import { getDiaryByDate } from '@/api/diary'
+import { getDiaryById } from '@/api/diary'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -306,9 +306,9 @@ const formatTime = (time) => {
 }
 
 const loadDiary = async () => {
-  const date = route.params.date
+  const id = route.params.id
   try {
-    const diaryData = await getDiaryByDate(date)
+    const diaryData = await getDiaryById(id)
     diary.value = diaryData
     
     // 启动打字机效果

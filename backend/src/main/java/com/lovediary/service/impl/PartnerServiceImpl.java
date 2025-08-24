@@ -256,6 +256,13 @@ public class PartnerServiceImpl implements PartnerService {
         userRepository.save(user);
         userRepository.save(partner);
         
+        // 清理伴侣邀请表中的相关记录
+        // 删除所有与这两个用户相关的邀请记录（无论状态如何）
+        List<PartnerInvitation> invitationsToDelete = partnerInvitationRepository.findByFromUserIdOrToUserId(userId, partner.getId());
+        if (!invitationsToDelete.isEmpty()) {
+            partnerInvitationRepository.deleteAll(invitationsToDelete);
+        }
+        
         return ApiResponse.success("伴侣关系已解除");
     }
 
