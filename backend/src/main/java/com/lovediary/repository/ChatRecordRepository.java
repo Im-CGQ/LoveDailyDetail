@@ -47,4 +47,23 @@ public interface ChatRecordRepository extends JpaRepository<ChatRecord, Long> {
 
     @Query("SELECT c.chatType, SUM(c.durationMinutes) as totalDuration FROM ChatRecord c WHERE c.user.id = :userId1 OR c.user.id = :userId2 GROUP BY c.chatType ORDER BY totalDuration DESC")
     List<Object[]> getDurationByChatTypeForUserOrPartner(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
+
+    // 直接使用partner_id字段的查询方法（类似日记的实现）
+    @Query("SELECT c FROM ChatRecord c WHERE c.user.id = :userId OR c.partner.id = :userId ORDER BY c.date DESC")
+    List<ChatRecord> findByUserIdOrPartnerIdOrderByDateDesc(@Param("userId") Long userId);
+
+    @Query("SELECT c FROM ChatRecord c WHERE (c.user.id = :userId OR c.partner.id = :userId) AND c.date = :date ORDER BY c.date DESC")
+    List<ChatRecord> findByUserIdOrPartnerIdAndDateOrderByDateDesc(@Param("userId") Long userId, @Param("date") LocalDate date);
+
+    @Query("SELECT c FROM ChatRecord c WHERE (c.user.id = :userId OR c.partner.id = :userId) AND c.date BETWEEN :startDate AND :endDate ORDER BY c.date DESC")
+    List<ChatRecord> findByUserIdOrPartnerIdAndDateBetweenOrderByDateDesc(@Param("userId") Long userId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT SUM(c.durationMinutes) FROM ChatRecord c WHERE c.user.id = :userId OR c.partner.id = :userId")
+    Integer getTotalDurationByUserIdOrPartnerId(@Param("userId") Long userId);
+
+    @Query("SELECT SUM(c.durationMinutes) FROM ChatRecord c WHERE (c.user.id = :userId OR c.partner.id = :userId) AND c.date = :date")
+    Integer getTotalDurationByUserIdOrPartnerIdAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
+
+    @Query("SELECT c.chatType, SUM(c.durationMinutes) as totalDuration FROM ChatRecord c WHERE c.user.id = :userId OR c.partner.id = :userId GROUP BY c.chatType ORDER BY totalDuration DESC")
+    List<Object[]> getDurationByChatTypeForUserIdOrPartnerId(@Param("userId") Long userId);
 }

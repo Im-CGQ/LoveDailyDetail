@@ -38,14 +38,14 @@
           @click="showTimePicker = true"
         />
 
-        <van-field
+        <!-- <van-field
           v-model="form.unlockDateTime"
           name="unlockDateTime"
           label="完整时间"
           placeholder="自动生成的完整日期时间"
           readonly
           :rules="[{ required: true, message: '请先选择日期和时间' }]"
-        />
+        /> -->
 
         <van-field
           v-model="form.content"

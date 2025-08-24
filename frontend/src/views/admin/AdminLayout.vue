@@ -92,13 +92,7 @@ const showSubNav = computed(() => {
 })
 
 const goToFrontend = () => {
-  // 跳转到用户端首页，如果有伴侣关系则跳转到信箱，否则跳转到欢迎页
-  const userStore = useUserStore()
-  if (userStore.hasPartner) {
-    router.push('/letters')
-  } else {
-    router.push('/')
-  }
+  router.push('/')
 }
 
 

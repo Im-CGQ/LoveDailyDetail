@@ -33,16 +33,8 @@ public class ChatRecordServiceImpl implements ChatRecordService {
 
     @Override
     public List<ChatRecord> getChatRecordsByUserIdAndPartner(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        
-        if (user.getPartnerId() != null) {
-            // 获取自己和伴侣的聊天记录
-            return chatRecordRepository.findByUser_IdOrUser_IdOrderByDateDesc(userId, user.getPartnerId());
-        } else {
-            // 没有伴侣，只获取自己的聊天记录
-            return chatRecordRepository.findByUser_IdOrderByDateDesc(userId);
-        }
+        // 直接使用partner_id字段查询，类似日记的实现
+        return chatRecordRepository.findByUserIdOrPartnerIdOrderByDateDesc(userId);
     }
 
     @Override
@@ -63,16 +55,8 @@ public class ChatRecordServiceImpl implements ChatRecordService {
 
     @Override
     public List<ChatRecord> getChatRecordsByDateAndUserIdAndPartner(LocalDate date, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        
-        if (user.getPartnerId() != null) {
-            // 获取自己和伴侣在指定日期的聊天记录
-            return chatRecordRepository.findByDateAndUser_IdOrDateAndUser_IdOrderByDateDesc(date, userId, date, user.getPartnerId());
-        } else {
-            // 没有伴侣，只获取自己在指定日期的聊天记录
-            return chatRecordRepository.findByDateAndUser_IdOrderByDateDesc(date, userId);
-        }
+        // 直接使用partner_id字段查询，类似日记的实现
+        return chatRecordRepository.findByUserIdOrPartnerIdAndDateOrderByDateDesc(userId, date);
     }
 
     @Override
@@ -126,16 +110,8 @@ public class ChatRecordServiceImpl implements ChatRecordService {
 
     @Override
     public List<ChatRecord> getChatRecordsByDateRangeAndPartner(LocalDate startDate, LocalDate endDate, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        
-        if (user.getPartnerId() != null) {
-            // 获取自己和伴侣在指定日期范围的聊天记录
-            return chatRecordRepository.findByUser_IdAndDateBetweenOrUser_IdAndDateBetweenOrderByDateDesc(userId, startDate, endDate, user.getPartnerId(), startDate, endDate);
-        } else {
-            // 没有伴侣，只获取自己在指定日期范围的聊天记录
-            return chatRecordRepository.findByUser_IdAndDateBetweenOrderByDateDesc(userId, startDate, endDate);
-        }
+        // 直接使用partner_id字段查询，类似日记的实现
+        return chatRecordRepository.findByUserIdOrPartnerIdAndDateBetweenOrderByDateDesc(userId, startDate, endDate);
     }
 
     @Override
@@ -152,17 +128,9 @@ public class ChatRecordServiceImpl implements ChatRecordService {
 
     @Override
     public Integer getTotalDurationByUserIdAndPartner(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        
-        if (user.getPartnerId() != null) {
-            // 获取自己和伴侣的总聊天时长
-            Integer totalDuration = chatRecordRepository.getTotalDurationByUserIdOrUserId(userId, user.getPartnerId());
-            return totalDuration != null ? totalDuration : 0;
-        } else {
-            // 没有伴侣，只获取自己的总聊天时长
-            return getTotalDurationByUserId(userId);
-        }
+        // 直接使用partner_id字段查询，类似日记的实现
+        Integer totalDuration = chatRecordRepository.getTotalDurationByUserIdOrPartnerId(userId);
+        return totalDuration != null ? totalDuration : 0;
     }
 
     @Override
@@ -181,25 +149,17 @@ public class ChatRecordServiceImpl implements ChatRecordService {
 
     @Override
     public Map<String, Integer> getDurationByChatTypeAndPartner(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        // 直接使用partner_id字段查询，类似日记的实现
+        List<Object[]> results = chatRecordRepository.getDurationByChatTypeForUserIdOrPartnerId(userId);
+        Map<String, Integer> durationByType = new HashMap<>();
         
-        if (user.getPartnerId() != null) {
-            // 获取自己和伴侣的聊天类型时长统计
-            List<Object[]> results = chatRecordRepository.getDurationByChatTypeForUserOrPartner(userId, user.getPartnerId());
-            Map<String, Integer> durationByType = new HashMap<>();
-            
-            for (Object[] result : results) {
-                String chatType = (String) result[0];
-                Integer totalDuration = ((Number) result[1]).intValue();
-                durationByType.put(chatType, totalDuration);
-            }
-            
-            return durationByType;
-        } else {
-            // 没有伴侣，只获取自己的聊天类型时长统计
-            return getDurationByChatType(userId);
+        for (Object[] result : results) {
+            String chatType = (String) result[0];
+            Integer totalDuration = ((Number) result[1]).intValue();
+            durationByType.put(chatType, totalDuration);
         }
+        
+        return durationByType;
     }
 
     @Override
