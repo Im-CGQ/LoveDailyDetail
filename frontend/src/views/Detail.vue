@@ -202,6 +202,34 @@ const share = () => {
   router.push('/admin/diary/create')
 }
 
+// 兼容移动设备的复制功能
+const copyToClipboard = async (text) => {
+  try {
+    // 优先使用现代 Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+      return true
+    } else {
+      // 降级方案：使用传统的 document.execCommand
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      textArea.style.top = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      const successful = document.execCommand('copy')
+      document.body.removeChild(textArea)
+      return successful
+    }
+  } catch (error) {
+    console.error('复制失败:', error)
+    return false
+  }
+}
+
 const createShare = async () => {
   if (!diary.value) return
   
@@ -210,12 +238,49 @@ const createShare = async () => {
     const shareUrl = window.location.origin + result.shareUrl
     
     // 复制链接到剪贴板
-    await navigator.clipboard.writeText(shareUrl)
-    showToast('分享链接已复制到剪贴板，有效期3小时')
+    const success = await copyToClipboard(shareUrl)
+    if (success) {
+      showToast('分享链接已复制到剪贴板，有效期3小时')
+    } else {
+      // 如果复制失败，显示链接让用户手动复制
+      showToast('复制失败，请手动复制链接')
+      // 可以在这里显示一个弹窗让用户手动复制
+      showShareDialog(shareUrl)
+    }
   } catch (error) {
     showToast('创建分享链接失败')
     console.error('创建分享链接失败:', error)
   }
+}
+
+// 显示分享链接弹窗（用于复制失败的情况）
+const showShareDialog = (shareUrl) => {
+  // 创建一个临时的输入框让用户手动复制
+  const input = document.createElement('input')
+  input.value = shareUrl
+  input.style.position = 'fixed'
+  input.style.top = '50%'
+  input.style.left = '50%'
+  input.style.transform = 'translate(-50%, -50%)'
+  input.style.zIndex = '9999'
+  input.style.padding = '10px'
+  input.style.border = '2px solid #ff6b9d'
+  input.style.borderRadius = '8px'
+  input.style.fontSize = '14px'
+  input.style.width = '300px'
+  input.style.backgroundColor = 'white'
+  input.style.color = '#333'
+  
+  document.body.appendChild(input)
+  input.focus()
+  input.select()
+  
+  // 3秒后自动移除
+  setTimeout(() => {
+    if (document.body.contains(input)) {
+      document.body.removeChild(input)
+    }
+  }, 3000)
 }
 
 // 图片预览功能

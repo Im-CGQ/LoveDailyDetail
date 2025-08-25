@@ -16,7 +16,7 @@
     <artifactId>love-diary-backend</artifactId>
     <version>1.0.0</version>
     <name>love-diary-backend</name>
-    <description>记录和女朋友的每一天 - 后端服务</description>
+    <description>记录美好回忆的每一天 - 后端服务</description>
 
     <properties>
         <java.version>8</java.version>

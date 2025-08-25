@@ -17,7 +17,13 @@
           </div>
 
           <div class="letter-body">
-            <div class="content" v-html="letter.content"></div>
+            <div 
+              class="content" 
+              :class="{ 'typing-complete': typingComplete }"
+              @click="showFullText"
+            >
+              {{ displayText }}
+            </div>
           </div>
 
           <div class="letter-footer">
@@ -58,6 +64,9 @@ const router = useRouter()
 
 const letter = ref(null)
 const countdownTimer = ref(null)
+const displayText = ref('')
+const typingComplete = ref(false)
+let typingTimer = null
 
 const fetchLetterDetail = async () => {
   try {
@@ -68,6 +77,10 @@ const fetchLetterDetail = async () => {
     }
     
     letter.value = await getSharedLetter(shareToken)
+    // 启动打字机效果
+    if (letter.value && letter.value.content) {
+      startTyping(letter.value.content)
+    }
     // 获取信件详情后启动倒计时
     startCountdown()
   } catch (error) {
@@ -140,12 +153,45 @@ const stopCountdown = () => {
   }
 }
 
+// 打字机效果
+const startTyping = (text) => {
+  displayText.value = ''
+  typingComplete.value = false
+  let index = 0
+  
+  const typeNextChar = () => {
+    if (index < text.length) {
+      displayText.value += text[index]
+      index++
+      typingTimer = setTimeout(typeNextChar, 100) // 每100ms显示一个字
+    } else {
+      typingComplete.value = true
+    }
+  }
+  
+  typeNextChar()
+}
+
+// 点击显示全部内容
+const showFullText = () => {
+  if (letter.value && letter.value.content) {
+    displayText.value = letter.value.content
+    typingComplete.value = true
+    if (typingTimer) {
+      clearTimeout(typingTimer)
+    }
+  }
+}
+
 onMounted(() => {
   fetchLetterDetail()
 })
 
 onUnmounted(() => {
   stopCountdown()
+  if (typingTimer) {
+    clearTimeout(typingTimer) // 清理打字机定时器
+  }
 })
 </script>
 
@@ -328,6 +374,20 @@ onUnmounted(() => {
     letter-spacing: 1px;
     white-space: pre-wrap;
     word-wrap: break-word;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      // background: rgba(139, 69, 19, 0.05);
+      // border-radius: 8px;
+      // padding: 8px;
+      // margin: -8px;
+    }
+    
+    &.typing-complete {
+      cursor: default;
+    }
     
     :deep(p) {
       margin-bottom: 1.8em;

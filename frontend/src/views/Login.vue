@@ -9,7 +9,7 @@
       <div class="login-header float">
         <div class="logo heartbeat">💕</div>
         <h1 class="title text-gradient-romantic">{{ isAdmin ? '后台管理' : '美好回忆' }}</h1>
-        <p class="subtitle pulse">记录和女朋友的每一天</p>
+        <p class="subtitle pulse">记录美好回忆的每一天</p>
       </div>
 
       <div class="login-form">

@@ -1,7 +1,7 @@
 {
   "name": "love-diary-frontend",
   "version": "1.0.0",
-  "description": "记录和女朋友的每一天 - 前端",
+  "description": "记录美好回忆的每一天 - 前端",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
