@@ -22,8 +22,14 @@
         <div class="music-info">
           <span class="music-title">背景音乐</span>
           <div class="music-progress">
-            <div class="progress-bar">
+            <div class="progress-bar" @click="seekMusic" ref="progressBar">
               <div class="progress-fill" :style="{ width: musicProgress + '%' }"></div>
+              <div 
+                class="progress-handle" 
+                :style="{ left: musicProgress + '%' }"
+                @mousedown="startDrag"
+                @touchstart="startDrag"
+              ></div>
             </div>
             <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
           </div>
@@ -137,6 +143,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import { getDiaryById } from '@/api/diary'
+import { getBackgroundMusicAutoplay } from '@/api/systemConfig'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -152,6 +159,9 @@ const showMusicControls = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const musicProgress = ref(0)
+const progressBar = ref(null)
+const isDragging = ref(false)
+const musicAutoplay = ref(true) // 音乐自动播放配置
 let audioElement = null
 let progressTimer = null
 
@@ -354,6 +364,13 @@ const initAudio = () => {
   
   audioElement.addEventListener('loadedmetadata', () => {
     duration.value = audioElement.duration
+    // 根据配置决定是否自动播放
+    if (musicAutoplay.value) {
+      audioElement.play().catch(error => {
+        console.warn('自动播放失败:', error)
+        // 自动播放失败时不显示错误提示，因为可能是浏览器策略限制
+      })
+    }
   })
   
   audioElement.addEventListener('ended', () => {
@@ -375,7 +392,7 @@ const startProgressTimer = () => {
   }
   
   progressTimer = setInterval(() => {
-    if (audioElement && !audioElement.paused) {
+    if (audioElement && !audioElement.paused && !isDragging.value) {
       currentTime.value = audioElement.currentTime
       musicProgress.value = (audioElement.currentTime / audioElement.duration) * 100
     }
@@ -389,9 +406,75 @@ const formatTime = (time) => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
+// 点击进度条跳转
+const seekMusic = (event) => {
+  if (!audioElement || !progressBar.value) return
+  
+  const rect = progressBar.value.getBoundingClientRect()
+  const clickX = event.clientX - rect.left
+  const progressBarWidth = rect.width
+  const percentage = (clickX / progressBarWidth) * 100
+  
+  // 限制百分比在0-100之间
+  const clampedPercentage = Math.max(0, Math.min(100, percentage))
+  const newTime = (clampedPercentage / 100) * audioElement.duration
+  
+  audioElement.currentTime = newTime
+  currentTime.value = newTime
+  musicProgress.value = clampedPercentage
+}
+
+// 开始拖拽进度条
+const startDrag = (event) => {
+  if (!audioElement) return
+  isDragging.value = true
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', stopDrag)
+  document.addEventListener('touchmove', onDrag)
+  document.addEventListener('touchend', stopDrag)
+}
+
+// 拖拽进度条
+const onDrag = (event) => {
+  if (!isDragging.value || !audioElement || !progressBar.value) return
+  
+  event.preventDefault()
+  const rect = progressBar.value.getBoundingClientRect()
+  const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0)
+  const clickX = clientX - rect.left
+  const progressBarWidth = rect.width
+  const percentage = (clickX / progressBarWidth) * 100
+  
+  // 限制百分比在0-100之间
+  const clampedPercentage = Math.max(0, Math.min(100, percentage))
+  const newTime = (clampedPercentage / 100) * audioElement.duration
+  
+  audioElement.currentTime = newTime
+  currentTime.value = newTime
+  musicProgress.value = clampedPercentage
+}
+
+// 停止拖拽
+const stopDrag = () => {
+  isDragging.value = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+  document.removeEventListener('touchmove', onDrag)
+  document.removeEventListener('touchend', stopDrag)
+}
+
 const loadDiary = async () => {
   const id = route.params.id
   try {
+    // 加载音乐自动播放配置
+    try {
+      const autoplayConfig = await getBackgroundMusicAutoplay()
+      musicAutoplay.value = autoplayConfig
+    } catch (error) {
+      console.warn('加载音乐自动播放配置失败，使用默认值:', error)
+      musicAutoplay.value = true
+    }
+    
     const diaryData = await getDiaryById(id)
     diary.value = diaryData
     
@@ -433,6 +516,9 @@ onUnmounted(() => {
     clearInterval(progressTimer)
     progressTimer = null
   }
+  
+  // 清理拖拽事件监听器
+  stopDrag()
 })
 </script>
 
@@ -534,14 +620,41 @@ onUnmounted(() => {
           height: 4px;
           background: rgba(0, 0, 0, 0.1);
           border-radius: 2px;
-          overflow: hidden;
+          overflow: visible;
           margin-bottom: 6px;
+          position: relative;
+          cursor: pointer;
           
           .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #ff6b9d 0%, #ff8fab 100%);
             border-radius: 2px;
             transition: width 0.1s ease;
+          }
+          
+          .progress-handle {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #ff6b9d;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(255, 107, 157, 0.4);
+            cursor: grab;
+            transition: all 0.2s ease;
+            z-index: 10;
+            
+            &:hover {
+              transform: translate(-50%, -50%) scale(1.2);
+              box-shadow: 0 4px 12px rgba(255, 107, 157, 0.6);
+            }
+            
+            &:active {
+              cursor: grabbing;
+              transform: translate(-50%, -50%) scale(1.1);
+            }
           }
         }
         
