@@ -1,11 +1,12 @@
 <template>
-  <div class="calendar romantic-bg page-container">
+    <div class="calendar romantic-bg page-container">
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
     <div class="heart-decoration heart-3">💝</div>
     
 
+    
 
     <div class="content">
       <div class="header float">
@@ -53,9 +54,13 @@
               
               <!-- 媒体标记 -->
               <div class="media-badges">
+                <div v-if="diary.images && diary.images.length > 0" class="media-badge image-badge" title="包含图片">
+                  <van-icon name="photo-o" />
+                  <span>{{ diary.images.length }} 张图片</span>
+                </div>
                 <div v-if="diary.videos && diary.videos.length > 0" class="media-badge video-badge" title="包含视频">
                   <van-icon name="video-o" />
-                  <span>视频</span>
+                  <span>{{ diary.videos.length }} 个视频</span>
                 </div>
                 <div v-if="diary.backgroundMusic" class="media-badge music-badge" title="包含音乐">
                   <van-icon name="music-o" />
@@ -119,10 +124,10 @@
               @click="day.isCurrentMonth ? selectDate(day.date) : null"
             >
               <span class="day-number">{{ day.dayNumber }}</span>
-              <div v-if="day.hasDiary" class="diary-indicator">💕</div>
               
               <!-- 媒体标记 -->
               <div v-if="day.hasDiary" class="media-indicators">
+                <div v-if="day.hasImage" class="media-icon image-icon" title="包含图片">📷</div>
                 <div v-if="day.hasVideo" class="media-icon video-icon" title="包含视频">🎥</div>
                 <div v-if="day.hasMusic" class="media-icon music-icon" title="包含音乐">🎵</div>
               </div>
@@ -217,15 +222,15 @@ const calendarDays = computed(() => {
   const prevMonthDays = []
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
     const date = firstDay.subtract(i + 1, 'day')
-    const diary = getDiaryOnDate(date)
     prevMonthDays.push({
       key: `prev-${date.format('YYYY-MM-DD')}`,
       date: date,
       dayNumber: date.date(),
       isCurrentMonth: false,
       hasDiary: hasDiaryOnDate(date),
-      hasVideo: diary ? hasVideo(diary) : false,
-      hasMusic: diary ? hasBackgroundMusic(diary) : false,
+      hasImage: hasImageOnDate(date),
+      hasVideo: hasVideoOnDate(date),
+      hasMusic: hasBackgroundMusicOnDate(date),
       isToday: date.isSame(dayjs(), 'day')
     })
   }
@@ -234,15 +239,15 @@ const calendarDays = computed(() => {
   const currentMonthDays = []
   for (let i = 1; i <= lastDay.date(); i++) {
     const date = dayjs().year(year).month(month).date(i)
-    const diary = getDiaryOnDate(date)
     currentMonthDays.push({
       key: `current-${date.format('YYYY-MM-DD')}`,
       date: date,
       dayNumber: i,
       isCurrentMonth: true,
       hasDiary: hasDiaryOnDate(date),
-      hasVideo: diary ? hasVideo(diary) : false,
-      hasMusic: diary ? hasBackgroundMusic(diary) : false,
+      hasImage: hasImageOnDate(date),
+      hasVideo: hasVideoOnDate(date),
+      hasMusic: hasBackgroundMusicOnDate(date),
       isToday: date.isSame(dayjs(), 'day')
     })
   }
@@ -252,15 +257,15 @@ const calendarDays = computed(() => {
   const nextMonthDays = []
   for (let i = 1; i <= 6 - lastDayOfWeek; i++) {
     const date = lastDay.add(i, 'day')
-    const diary = getDiaryOnDate(date)
     nextMonthDays.push({
       key: `next-${date.format('YYYY-MM-DD')}`,
       date: date,
       dayNumber: date.date(),
       isCurrentMonth: false,
       hasDiary: hasDiaryOnDate(date),
-      hasVideo: diary ? hasVideo(diary) : false,
-      hasMusic: diary ? hasBackgroundMusic(diary) : false,
+      hasImage: hasImageOnDate(date),
+      hasVideo: hasVideoOnDate(date),
+      hasMusic: hasBackgroundMusicOnDate(date),
       isToday: date.isSame(dayjs(), 'day')
     })
   }
@@ -274,18 +279,47 @@ const hasDiaryOnDate = (date) => {
   return diaries.value.some(diary => diary.date === dateStr)
 }
 
-// 获取指定日期的日记
+// 获取指定日期的所有日记
+const getDiariesOnDate = (date) => {
+  const dateStr = date.format('YYYY-MM-DD')
+  return diaries.value.filter(diary => diary.date === dateStr)
+}
+
+// 获取指定日期的日记（兼容旧代码）
 const getDiaryOnDate = (date) => {
   const dateStr = date.format('YYYY-MM-DD')
   return diaries.value.find(diary => diary.date === dateStr)
 }
 
-// 检查日记是否有视频
+// 检查指定日期的所有日记是否有图片
+const hasImageOnDate = (date) => {
+  const diariesOnDate = getDiariesOnDate(date)
+  return diariesOnDate.some(diary => diary.images && diary.images.length > 0)
+}
+
+// 检查指定日期的所有日记是否有视频
+const hasVideoOnDate = (date) => {
+  const diariesOnDate = getDiariesOnDate(date)
+  return diariesOnDate.some(diary => diary.videos && diary.videos.length > 0)
+}
+
+// 检查指定日期的所有日记是否有背景音乐
+const hasBackgroundMusicOnDate = (date) => {
+  const diariesOnDate = getDiariesOnDate(date)
+  return diariesOnDate.some(diary => diary.backgroundMusic && diary.backgroundMusic.trim() !== '')
+}
+
+// 检查单个日记是否有图片（兼容旧代码）
+const hasImage = (diary) => {
+  return diary.images && diary.images.length > 0
+}
+
+// 检查单个日记是否有视频（兼容旧代码）
 const hasVideo = (diary) => {
   return diary.videos && diary.videos.length > 0
 }
 
-// 检查日记是否有背景音乐
+// 检查单个日记是否有背景音乐（兼容旧代码）
 const hasBackgroundMusic = (diary) => {
   return diary.backgroundMusic && diary.backgroundMusic.trim() !== ''
 }
@@ -518,6 +552,17 @@ onMounted(() => {
               font-weight: 600;
             }
             
+            &.image-badge {
+              background: rgba(52, 152, 219, 0.3);
+              border-color: rgba(52, 152, 219, 0.5);
+              
+              &:hover {
+                background: rgba(52, 152, 219, 0.4);
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+              }
+            }
+            
             &.video-badge {
               background: rgba(255, 71, 87, 0.3);
               border-color: rgba(255, 71, 87, 0.5);
@@ -653,27 +698,24 @@ onMounted(() => {
           z-index: 2;
         }
         
-        .diary-indicator {
-          position: absolute;
-          bottom: 4px;
-          font-size: 12px;
-          animation: heartbeat 2s ease-in-out infinite;
-        }
+
         
         .media-indicators {
           position: absolute;
-          top: 2px;
-          right: 2px;
+          bottom: 2px;
+          left: 50%;
+          transform: translateX(-50%);
           display: flex;
+          flex-direction: row;
           gap: 2px;
           
           .media-icon {
-            font-size: 10px;
-            padding: 1px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            font-size: 8px;
             animation: pulse 2s ease-in-out infinite;
+            
+            &.image-icon {
+              color: #3498db;
+            }
             
             &.video-icon {
               color: #ff4757;

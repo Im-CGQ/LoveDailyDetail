@@ -38,9 +38,15 @@
         <van-uploader
           v-model="form.images"
           multiple
-          :max-count="5"
+          :max-count="20"
           :after-read="afterRead"
+          :before-delete="beforeDelete"
+          @oversize="onOversize"
+          accept="image/*"
         />
+        <div class="upload-tips">
+          <p>支持上传最多20张图片，每张图片大小不超过20MB</p>
+        </div>
       </div>
       
       <div class="upload-section">
@@ -148,12 +154,55 @@ const onDateConfirm = (value) => {
 }
 
 const afterRead = async (file) => {
+  // 如果是多选上传，file可能是一个数组
+  if (Array.isArray(file)) {
+    // 批量处理多个文件
+    for (const singleFile of file) {
+      await processSingleFile(singleFile)
+    }
+  } else {
+    // 单个文件处理
+    await processSingleFile(file)
+  }
+}
+
+const processSingleFile = async (file) => {
   try {
+    // 检查文件大小
+    if (file.file.size > 20 * 1024 * 1024) {
+      showToast('图片大小不能超过20MB')
+      // 移除超大的文件
+      const index = form.value.images.findIndex(f => f.file === file.file)
+      if (index > -1) {
+        form.value.images.splice(index, 1)
+      }
+      return
+    }
+    
+    // 检查文件类型
+    if (!file.file.type.startsWith('image/')) {
+      showToast('只能上传图片文件')
+      // 移除非图片文件
+      const index = form.value.images.findIndex(f => f.file === file.file)
+      if (index > -1) {
+        form.value.images.splice(index, 1)
+      }
+      return
+    }
+    
+    // 显示上传进度
+    file.status = 'uploading'
+    file.message = '上传中...'
+    
     const url = await uploadImage(file.file)
     file.url = url
+    file.status = 'done'
+    file.message = '上传成功'
     showToast('图片上传成功')
   } catch (error) {
     console.error('图片上传失败:', error)
+    file.status = 'failed'
+    file.message = '上传失败'
     showToast('图片上传失败')
     // 移除上传失败的文件
     const index = form.value.images.findIndex(f => f.file === file.file)
@@ -161,6 +210,18 @@ const afterRead = async (file) => {
       form.value.images.splice(index, 1)
     }
   }
+}
+
+const beforeDelete = (file) => {
+  return new Promise(resolve => {
+    showToast('请先删除图片')
+    resolve(false)
+  })
+}
+
+const onOversize = (file) => {
+  showToast('图片大小不能超过20MB')
+  return false
 }
 
 const afterVideoRead = async (file) => {
@@ -328,6 +389,16 @@ onMounted(() => {
       border-radius: 2px;
     }
   }
+}
+
+.upload-tips {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
 }
 
 .submit-section {
