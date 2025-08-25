@@ -9,6 +9,16 @@
     <div class="form-container">
       <van-form @submit="submitForm">
         <van-field
+          v-model="form.receiver"
+          name="receiver"
+          label="收件人"
+          placeholder="请选择收件人"
+          readonly
+          :rules="[{ required: true, message: '请选择收件人' }]"
+          @click="showReceiverPicker = true"
+        />
+
+        <van-field
           v-model="form.title"
           name="title"
           label="信件标题"
@@ -100,7 +110,7 @@
             :loading="loading"
             block
           >
-            {{ hasPartner ? '发送给伴侣' : '发送给自己' }}
+            发送给{{ form.receiver || (hasPartner ? '伴侣' : '自己') }}
           </van-button>
         </div>
       </van-form>
@@ -128,13 +138,22 @@
       />
     </van-popup>
 
+    <!-- 收件人选择器 -->
+    <van-popup v-model:show="showReceiverPicker" position="bottom">
+      <van-picker
+        :columns="receiverOptions"
+        @confirm="onReceiverConfirm"
+        @cancel="showReceiverPicker = false"
+      />
+    </van-popup>
+
     <!-- 预览模态框 -->
     <van-popup v-model:show="previewVisible" position="center" :style="{ width: '90%', maxWidth: '500px' }">
       <div class="preview-content">
         <div class="preview-header">
           <h3>{{ form.title }}</h3>
           <p class="unlock-time">解锁时间：{{ form.unlockDateTime }}</p>
-          <p class="receiver-info">{{ hasPartner ? '收件人：伴侣' : '收件人：自己' }}</p>
+          <p class="receiver-info">收件人：{{ form.receiver }}</p>
         </div>
         <div class="content" v-html="form.content"></div>
         <div class="preview-actions">
@@ -177,13 +196,15 @@ const form = reactive({
   unlockDate: '',
   unlockTime: '',
   unlockDateTime: '', // 组合后的完整日期时间
-  receiverId: null
+  receiverId: null,
+  receiver: '' // 新增：收件人显示文本
 })
 
 const loading = ref(false)
 const previewVisible = ref(false)
 const showDatePicker = ref(false)
 const showTimePicker = ref(false)
+const showReceiverPicker = ref(false) // 新增：收件人选择器
 
 // 初始化当前日期为数组格式，用于日期选择器
 const currentDate = ref([
@@ -200,6 +221,19 @@ const currentTime = ref([
 ])
 
 const minDate = ref(new Date())
+
+// 收件人选项
+const receiverOptions = computed(() => {
+  const options = [
+    { text: '自己', value: '自己' }
+  ]
+  
+  if (hasPartner.value) {
+    options.unshift({ text: '伴侣', value: '伴侣' })
+  }
+  
+  return options
+})
 
 // 格式化时间显示
 const formatDateTime = (dateTime) => {
@@ -306,6 +340,21 @@ const onTimeConfirm = (val) => {
   }
 }
 
+// 收件人选择确认
+const onReceiverConfirm = (value) => {
+  form.receiver = value.selectedValues[0]
+  showReceiverPicker.value = false
+  
+  // 根据选择的收件人设置receiverId
+  if (form.receiver === '伴侣') {
+    form.receiverId = userStore.partnerId
+  } else {
+    form.receiverId = userStore.userId
+  }
+  
+  console.log('选择的收件人:', form.receiver, '收件人ID:', form.receiverId)
+}
+
 // 组合日期和时间
 const combineDateTime = () => {
   if (form.unlockDate && form.unlockTime) {
@@ -320,6 +369,11 @@ const combineDateTime = () => {
 
 // 提交表单
 const submitForm = async () => {
+  if (!form.receiver) {
+    showToast('请选择收件人')
+    return
+  }
+  
   if (!form.title.trim()) {
     showToast('请输入信件标题')
     return
@@ -342,6 +396,7 @@ const submitForm = async () => {
 const resetForm = () => {
   form.title = ''
   form.content = ''
+  form.receiver = ''
   form.receiverId = null
   
   // 重置为明天中午12点
@@ -371,14 +426,8 @@ const confirmSend = async () => {
     console.log('是否有伴侣:', userStore.hasPartner)
     console.log('用户ID:', userStore.userId)
     console.log('伴侣ID:', userStore.partnerId)
-    
-    if (userStore.hasPartner) {
-      // 有伴侣关系，发送给伴侣
-      form.receiverId = userStore.partnerId
-    } else {
-      // 没有伴侣关系，发送给自己
-      form.receiverId = userStore.userId
-    }
+    console.log('选择的收件人:', form.receiver)
+    console.log('收件人ID:', form.receiverId)
     
     console.log('发送信件数据:', form)
     
@@ -391,7 +440,7 @@ const confirmSend = async () => {
     }
     
     await createLetter(letterData)
-    showToast(hasPartner.value ? '信件发送给伴侣成功！' : '信件发送给自己成功！')
+    showToast(`信件发送给${form.receiver}成功！`)
     previewVisible.value = false
     resetForm()
     router.push('/admin/letters')
@@ -414,6 +463,15 @@ onMounted(async () => {
   
   console.log('组件挂载时的用户信息:', userStore.userInfo)
   console.log('是否有伴侣:', userStore.hasPartner)
+  
+  // 设置默认收件人
+  if (userStore.hasPartner) {
+    form.receiver = '伴侣'
+    form.receiverId = userStore.partnerId
+  } else {
+    form.receiver = '自己'
+    form.receiverId = userStore.userId
+  }
   
   const tomorrow = getDefaultTime()
   form.unlockDate = dayjs(tomorrow).format('YYYY-MM-DD')
