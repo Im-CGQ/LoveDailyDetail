@@ -1,0 +1,8 @@
+
+复制上一层backend/application.yml到backend项目对应目录
+cd ./backend
+docker stop love-diary
+docker rm -f love-diary
+mvn clean package -DskipTests
+docker build -t love-diary-backend:1.0.0 .
+docker run -d -p 9999:9999 --name love-diary love-diary-backend:1.0.0
