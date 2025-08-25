@@ -11,6 +11,9 @@ if ! git status > /dev/null 2>&1; then
     exit 1
 fi
 
+echo "Git操作：拉取最新代码..."
+git pull
+
 # 检查是否有备份文件
 BACKUP_DIR="./database/backups"
 BACKUP_FILES=$(ls $BACKUP_DIR/backup_*.sql 2>/dev/null | wc -l)
