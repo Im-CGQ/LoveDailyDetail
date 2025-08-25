@@ -121,6 +121,21 @@ public class LetterController {
         }
     }
 
+    // 更新信件
+    @PutMapping("/{letterId}")
+    public ResponseEntity<ApiResponse<LetterDTO>> updateLetter(
+            @PathVariable Long letterId,
+            @RequestBody CreateLetterRequest request,
+            HttpServletRequest httpRequest) {
+        try {
+            Long userId = getUserIdFromRequest(httpRequest);
+            LetterDTO letter = letterService.updateLetter(letterId, request, userId);
+            return ResponseEntity.ok(ApiResponse.success(letter));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
     // 删除信件
     @DeleteMapping("/{letterId}")
     public ResponseEntity<ApiResponse<Void>> deleteLetter(

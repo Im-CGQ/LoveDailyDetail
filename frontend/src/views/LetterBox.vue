@@ -1,5 +1,10 @@
 <template>
   <div class="letter-box-page page-container">
+    <!-- 返回按钮 -->
+    <div class="back-button">
+      <van-icon name="arrow-left" @click="goBack" />
+    </div>
+    
     <div class="page-header">
       <h1 class="page-title">💌 我的信箱</h1>
       <p class="page-subtitle">查看收到的信件和我写的信件</p>
@@ -124,6 +129,10 @@ const countdownTimer = ref(null)
 
 const router = useRouter()
 
+const goBack = () => {
+  router.go(-1)
+}
+
 // 加载信件列表
 const loadLetters = async () => {
   try {
@@ -240,6 +249,30 @@ onBeforeUnmount(() => {
   padding: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
+}
+
+.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  
+  .van-icon {
+    font-size: 24px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    border-radius: 50%;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    
+    &:hover {
+      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+    }
+  }
 }
 
 .page-header {

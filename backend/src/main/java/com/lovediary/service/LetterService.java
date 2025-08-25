@@ -27,6 +27,9 @@ public interface LetterService {
     // 标记信件为已读
     void markAsRead(Long letterId, Long userId);
     
+    // 更新信件
+    LetterDTO updateLetter(Long letterId, CreateLetterRequest request, Long userId);
+    
     // 删除信件
     void deleteLetter(Long letterId, Long userId);
 }

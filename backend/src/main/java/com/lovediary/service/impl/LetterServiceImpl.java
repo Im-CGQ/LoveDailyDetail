@@ -138,6 +138,39 @@ public class LetterServiceImpl implements LetterService {
     }
 
     @Override
+    public LetterDTO updateLetter(Long letterId, CreateLetterRequest request, Long userId) {
+        // 查找要更新的信件
+        Letter letter = letterRepository.findById(letterId)
+                .orElseThrow(() -> new RuntimeException("信件不存在"));
+
+        // 验证用户是否有权限更新此信件（只能更新自己发送的信件）
+        if (!letter.getSender().getId().equals(userId)) {
+            throw new RuntimeException("只能更新自己发送的信件");
+        }
+
+        // 验证接收者是否存在
+        User receiver = userRepository.findById(request.getReceiverId())
+                .orElseThrow(() -> new RuntimeException("接收者不存在"));
+
+        // 验证是否为伴侣关系或给自己写信
+        User sender = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("发送者不存在"));
+        
+        if (!sender.getId().equals(receiver.getId()) && !isPartner(sender, receiver)) {
+            throw new RuntimeException("只能给伴侣写信，或者给自己写信");
+        }
+
+        // 更新信件信息
+        letter.setTitle(request.getTitle());
+        letter.setContent(request.getContent());
+        letter.setUnlockTime(request.getUnlockTime());
+        letter.setReceiver(receiver);
+
+        Letter updatedLetter = letterRepository.save(letter);
+        return convertToDTO(updatedLetter);
+    }
+
+    @Override
     public void deleteLetter(Long letterId, Long userId) {
         Letter letter = letterRepository.findById(letterId)
                 .orElseThrow(() -> new RuntimeException("信件不存在"));

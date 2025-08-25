@@ -1,5 +1,10 @@
 <template>
   <div class="chat-record-page page-container">
+    <!-- 返回按钮 -->
+    <div class="back-button">
+      <van-icon name="arrow-left" @click="goBack" />
+    </div>
+    
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
@@ -123,8 +128,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { getAllChatRecords, createChatRecord } from '@/api/chatRecord'
 import { showToast } from 'vant'
+
+const router = useRouter()
 
 const chatRecords = ref([])
 const loading = ref(false)
@@ -133,6 +141,10 @@ const showAddDialog = ref(false)
 const showTypePicker = ref(false)
 const showDatePicker = ref(false)
 const submitting = ref(false)
+
+const goBack = () => {
+  router.go(-1)
+}
 // 初始化当前日期为数组格式，用于日期选择器
 const selectedDate = ref([
   new Date().getFullYear().toString(),
@@ -349,6 +361,30 @@ onMounted(() => {
   min-height: 100vh;
   position: relative;
   overflow: hidden;
+}
+
+.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  
+  .van-icon {
+    font-size: 24px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    border-radius: 50%;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    
+    &:hover {
+      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+    }
+  }
 }
 
 .page-header {

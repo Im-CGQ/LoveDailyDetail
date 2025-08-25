@@ -1,5 +1,10 @@
 <template>
     <div class="calendar romantic-bg page-container">
+    <!-- 返回按钮 -->
+    <div class="back-button">
+      <van-icon name="arrow-left" @click="goBack" />
+    </div>
+    
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
@@ -165,6 +170,10 @@ const router = useRouter()
 const route = useRoute()
 const viewMode = ref('list') // 'list' 或 'calendar'
 const selectedDate = ref(dayjs())
+
+const goBack = () => {
+  router.go(-1)
+}
 
 const diaries = ref([])
 
@@ -392,6 +401,30 @@ onMounted(() => {
 .calendar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   position: relative;
+}
+
+.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  
+  .van-icon {
+    font-size: 24px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    border-radius: 50%;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    
+    &:hover {
+      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+    }
+  }
 }
 
 

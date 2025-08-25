@@ -105,6 +105,21 @@ export const markAsRead = async (letterId) => {
   }
 }
 
+// 更新信件
+export const updateLetter = async (letterId, data) => {
+  try {
+    const response = await api.put(`/letters/${letterId}`, data)
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '更新信件失败')
+    }
+  } catch (error) {
+    console.error('更新信件失败:', error.message)
+    throw new Error(error.message || '更新信件失败，请检查网络连接')
+  }
+}
+
 // 删除信件
 export const deleteLetter = async (letterId) => {
   try {
