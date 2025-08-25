@@ -4,6 +4,8 @@ CREATE DATABASE IF NOT EXISTS love_diary DEFAULT CHARACTER SET utf8mb4 COLLATE u
 USE love_diary;
 
 -- 删除已存在的表（如果存在）
+DROP TABLE IF EXISTS letter_share_links;
+DROP TABLE IF EXISTS diary_share_links;
 DROP TABLE IF EXISTS chat_records;
 DROP TABLE IF EXISTS diary_images;
 DROP TABLE IF EXISTS diary_videos;
@@ -111,6 +113,28 @@ CREATE TABLE chat_records (
     FOREIGN KEY (partner_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- 创建日记分享链接表
+CREATE TABLE diary_share_links (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    diary_id BIGINT NOT NULL,
+    share_token VARCHAR(32) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (diary_id) REFERENCES diaries(id) ON DELETE CASCADE
+);
+
+-- 创建信件分享链接表
+CREATE TABLE letter_share_links (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    letter_id BIGINT NOT NULL,
+    share_token VARCHAR(32) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (letter_id) REFERENCES letters(id) ON DELETE CASCADE
+);
+
 -- 插入默认管理员用户 (用户名: admin, 密码: admin)
 INSERT INTO users (username, password, display_name, role) VALUES 
 ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '管理员', 'ADMIN');
@@ -139,4 +163,10 @@ CREATE INDEX idx_chat_records_user_partner ON chat_records(user_id, partner_id);
 CREATE INDEX idx_chat_records_date ON chat_records(date);
 CREATE INDEX idx_chat_records_chat_type ON chat_records(chat_type);
 CREATE INDEX idx_system_configs_key ON system_configs(config_key);
-CREATE INDEX idx_system_configs_user_id ON system_configs(user_id); 
+CREATE INDEX idx_system_configs_user_id ON system_configs(user_id);
+CREATE INDEX idx_diary_share_links_token ON diary_share_links(share_token);
+CREATE INDEX idx_diary_share_links_diary_id ON diary_share_links(diary_id);
+CREATE INDEX idx_diary_share_links_expires_at ON diary_share_links(expires_at);
+CREATE INDEX idx_letter_share_links_token ON letter_share_links(share_token);
+CREATE INDEX idx_letter_share_links_letter_id ON letter_share_links(letter_id);
+CREATE INDEX idx_letter_share_links_expires_at ON letter_share_links(expires_at); 

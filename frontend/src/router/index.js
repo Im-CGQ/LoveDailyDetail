@@ -46,6 +46,18 @@ const routes = [
     meta: { title: '信件详情', requiresAuth: true }
   },
   {
+    path: '/share/diary/:shareToken',
+    name: 'SharedDiary',
+    component: () => import('@/views/SharedDiary.vue'),
+    meta: { title: '分享的日记', requiresAuth: false }
+  },
+  {
+    path: '/share/letter/:shareToken',
+    name: 'SharedLetter',
+    component: () => import('@/views/SharedLetter.vue'),
+    meta: { title: '分享的信件', requiresAuth: false }
+  },
+  {
     path: '/chat-record',
     name: 'ChatRecord',
     component: () => import('@/views/ChatRecord.vue'),
@@ -136,7 +148,7 @@ router.beforeEach(async (to, from, next) => {
   document.title = to.meta.title || '记录美好回忆'
 
   // 检查是否需要登录
-  if (to.meta.requiresAuth) {
+  if (to.meta.requiresAuth === true) {
     if (!checkLoginState()) {
       // 跳转到登录页面，并传递目标路径
       const isAdminPage = to.path.startsWith('/admin')

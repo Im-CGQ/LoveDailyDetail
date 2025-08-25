@@ -1,9 +1,6 @@
 <template>
   <div class="letter-detail-page">
     <div class="letter-paper" v-if="letter">
-      <div class="back-button">
-        <van-icon name="arrow-left" @click="goBack" />
-      </div>
       <div class="paper-border">
         <div class="paper-content">
           <div class="letter-header">
@@ -40,30 +37,9 @@
          </div>
        </div>
 
-      <div class="letter-actions">
-        <van-button 
-          type="primary" 
-          size="large"
-          @click="markAsReadHandler"
-          :loading="markingAsRead"
-          round
-          v-if="!letter.isRead && letter.senderName"
-        >
-          标记已读
-        </van-button>
-        
-        <van-button 
-          type="default" 
-          size="large"
-          @click="createShare"
-          round
-          class="share-btn"
-        >
-          <span class="btn-icon">🔗</span>
-          分享链接
-        </van-button>
-      </div>
+      <!-- 分享页面不需要操作按钮 -->
     </div>
+  
 
     <div v-else class="loading-state">
       <van-loading type="spinner" size="24px">加载中...</van-loading>
@@ -74,48 +50,33 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getLetterById, markAsRead } from '@/api/letter'
-import { createLetterShareLink } from '@/api/share'
+import { getSharedLetter } from '@/api/share'
 import { showToast } from 'vant'
 
 const route = useRoute()
 const router = useRouter()
 
 const letter = ref(null)
-const markingAsRead = ref(false)
 const countdownTimer = ref(null)
 
 const fetchLetterDetail = async () => {
   try {
-    const letterId = route.params.id
-    if (!letterId) {
-      showToast('信件ID不存在')
+    const shareToken = route.params.shareToken
+    if (!shareToken) {
+      showToast('分享链接不存在')
       return
     }
     
-    letter.value = await getLetterById(letterId)
+    letter.value = await getSharedLetter(shareToken)
     // 获取信件详情后启动倒计时
     startCountdown()
   } catch (error) {
-    showToast('获取信件详情失败')
-    console.error('获取信件详情失败:', error)
+    showToast('分享链接已过期或不存在')
+    console.error('获取分享信件失败:', error)
   }
 }
 
-const markAsReadHandler = async () => {
-  if (!letter.value) return
-  
-  markingAsRead.value = true
-  try {
-    await markAsRead(letter.value.id)
-    letter.value.isRead = true
-    showToast('已标记为已读')
-  } catch (error) {
-    showToast('标记已读失败')
-  } finally {
-    markingAsRead.value = false
-  }
-}
+// 分享页面不需要标记已读功能
 
 const goBack = () => {
   router.back()
@@ -179,22 +140,6 @@ const stopCountdown = () => {
   }
 }
 
-const createShare = async () => {
-  if (!letter.value) return
-  
-  try {
-    const result = await createLetterShareLink(letter.value.id)
-    const shareUrl = window.location.origin + result.shareUrl
-    
-    // 复制链接到剪贴板
-    await navigator.clipboard.writeText(shareUrl)
-    showToast('分享链接已复制到剪贴板，有效期3小时')
-  } catch (error) {
-    showToast('创建分享链接失败')
-    console.error('创建分享链接失败:', error)
-  }
-}
-
 onMounted(() => {
   fetchLetterDetail()
 })
@@ -243,7 +188,7 @@ onUnmounted(() => {
   .van-icon {
     font-size: 24px;
     color: #ffffff;
-    background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #CD853F 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     border-radius: 50%;
     padding: 10px;
     cursor: pointer;
@@ -512,7 +457,6 @@ onUnmounted(() => {
     color: #F5DEB3;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
-    margin: 0 10px;
     
     &:active {
       transform: translateY(2px);
@@ -526,16 +470,6 @@ onUnmounted(() => {
       box-shadow: 
         0 8px 25px rgba(139, 69, 19, 0.5),
         inset 0 2px 4px rgba(255, 255, 255, 0.2);
-    }
-    
-    &.share-btn {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-color: #5a6fd8;
-      margin-top: 12px;
-      
-      &:hover {
-        background: linear-gradient(135deg, #5a6fd8, #6a4190);
-      }
     }
   }
 }

@@ -1,10 +1,6 @@
 <template>
   <div class="detail romantic-bg page-container">
-    <!-- 返回按钮 -->
-    <div class="back-button">
-      <van-icon name="arrow-left" @click="goBack" />
-    </div>
-    
+
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
@@ -126,38 +122,9 @@
         </div>
       </div>
 
-      <div class="actions">
-        <van-button 
-          type="primary" 
-          size="large" 
-          @click="share" 
-          class="action-btn btn-primary ripple"
-        >
-          <span class="btn-icon">💌</span>
-          创建美好回忆
-        </van-button>
-        
-        <van-button 
-          type="default" 
-          size="large" 
-          @click="createShare" 
-          class="action-btn share-btn"
-        >
-          <span class="btn-icon">🔗</span>
-          分享链接
-        </van-button>
-        
-        <van-button 
-          type="default" 
-          size="large" 
-          @click="goBackToCalendar" 
-          class="action-btn share-btn"
-        >
-          <span class="btn-icon">📅</span>
-          返回日历
-        </van-button>
-      </div>
+      <!-- 分享页面不需要操作按钮 -->
     </div>
+ 
 
     <div v-else class="loading">
       <div class="loading-heart heartbeat">💕</div>
@@ -170,9 +137,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
-import { getDiaryById } from '@/api/diary'
+import { getSharedDiary } from '@/api/share'
 import { getBackgroundMusicAutoplay } from '@/api/systemConfig'
-import { createShareLink } from '@/api/share'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -198,25 +164,7 @@ const formatDate = (date) => {
   return dayjs(date).format('YYYY年MM月DD日')
 }
 
-const share = () => {
-  router.push('/admin/diary/create')
-}
-
-const createShare = async () => {
-  if (!diary.value) return
-  
-  try {
-    const result = await createShareLink(diary.value.id)
-    const shareUrl = window.location.origin + result.shareUrl
-    
-    // 复制链接到剪贴板
-    await navigator.clipboard.writeText(shareUrl)
-    showToast('分享链接已复制到剪贴板，有效期3小时')
-  } catch (error) {
-    showToast('创建分享链接失败')
-    console.error('创建分享链接失败:', error)
-  }
-}
+// 分享页面不需要分享功能
 
 // 图片预览功能
 const previewImage = (index) => {
@@ -499,18 +447,9 @@ const stopDrag = () => {
 }
 
 const loadDiary = async () => {
-  const id = route.params.id
+  const shareToken = route.params.shareToken
   try {
-    // 加载音乐自动播放配置
-    try {
-      const autoplayConfig = await getBackgroundMusicAutoplay()
-      musicAutoplay.value = autoplayConfig
-    } catch (error) {
-      console.warn('加载音乐自动播放配置失败，使用默认值:', error)
-      musicAutoplay.value = true
-    }
-    
-    const diaryData = await getDiaryById(id)
+    const diaryData = await getSharedDiary(shareToken)
     diary.value = diaryData
     
     // 启动打字机效果
@@ -523,8 +462,8 @@ const loadDiary = async () => {
       initAudio()
     }
   } catch (error) {
-    console.error('加载日记失败:', error)
-    showToast('加载日记失败，请稍后重试')
+    console.error('加载分享日记失败:', error)
+    showToast('分享链接已过期或不存在')
   }
 }
 
@@ -537,10 +476,7 @@ const goBack = () => {
   router.go(-1)
 }
 
-// 返回日历页面，保持之前的状态
-const goBackToCalendar = () => {
-  router.push('/calendar')
-}
+// 分享页面不需要返回日历功能
 
 onUnmounted(() => {
   if (typingTimer) {
