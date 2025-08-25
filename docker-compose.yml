@@ -24,13 +24,13 @@ services:
     container_name: lovediary_backend
     restart: unless-stopped
     ports:
-      - "40000:8080"
+      - "9999:9999"
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/love_diary?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
-      SERVER_PORT: 8080
+      SERVER_PORT: 9999
       SERVER_ADDRESS: 0.0.0.0
       SERVER_SERVLET_CONTEXT_PATH: /api
     depends_on:

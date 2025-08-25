@@ -16,46 +16,20 @@ echo -e "${BLUE}🚀 LoveDaily项目一键部署脚本${NC}"
 echo "=================================="
 
 # 获取参数
-GITHUB_USER=${1:-"yourusername"}
+GITHUB_USER=${1:-"Im-CGQ"}
 REPO_NAME=${2:-"LoveDailyDetail"}
 
 echo "GitHub用户: $GITHUB_USER"
 echo "仓库名: $REPO_NAME"
 echo ""
 
-# 检查是否为root用户（允许root运行，但给出警告）
-if [ "$EUID" -eq 0 ]; then
-    echo -e "${YELLOW}⚠️  检测到root用户，继续运行但建议使用普通用户${NC}"
-    echo "按任意键继续，或按Ctrl+C取消..."
-    read -n 1 -s
-fi
-
-# 检查系统要求
-echo -e "${BLUE}📋 检查系统要求...${NC}"
-
-# 检查内存
-MEMORY_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-MEMORY_GB=$((MEMORY_KB / 1024 / 1024))
-if [ $MEMORY_GB -lt 2 ]; then
-    echo -e "${YELLOW}⚠️  内存不足，建议至少2GB内存${NC}"
-fi
-echo "内存: ${MEMORY_GB}GB"
-
-# 检查磁盘空间
-DISK_SPACE=$(df / | awk 'NR==2 {print $4}')
-DISK_SPACE_GB=$((DISK_SPACE / 1024 / 1024))
-if [ $DISK_SPACE_GB -lt 5 ]; then
-    echo -e "${YELLOW}⚠️  磁盘空间不足，建议至少5GB可用空间${NC}"
-fi
-echo "可用磁盘空间: ${DISK_SPACE_GB}GB"
-
 # 检查端口占用
 echo -e "${BLUE}🔍 检查端口占用...${NC}"
 if netstat -tulpn 2>/dev/null | grep -q ":80 "; then
     echo -e "${YELLOW}⚠️  端口80已被占用${NC}"
 fi
-if netstat -tulpn 2>/dev/null | grep -q ":40000 "; then
-    echo -e "${YELLOW}⚠️  端口40000已被占用${NC}"
+if netstat -tulpn 2>/dev/null | grep -q ":9999 "; then
+    echo -e "${YELLOW}⚠️  端口9999已被占用${NC}"
 fi
 
 # 安装Git
@@ -147,23 +121,20 @@ echo -e "${BLUE}📥 克隆项目...${NC}"
 if [ -d "$REPO_NAME" ]; then
     echo "项目已存在，更新代码..."
     cd "$REPO_NAME"
+    # 检查是否有本地修改
+    if [ -n "$(git status --porcelain)" ]; then
+        echo -e "${YELLOW}⚠️  检测到本地修改${NC}"
+        echo "本地修改的文件:"
+        git status --short
+        git stash
+    fi
     git pull origin main
 else
     echo "克隆项目..."
-    git clone "git@github.com:Im-CGQ/LoveDailyDetail.git"
+    git clone git@github.com:$GITHUB_USER/$REPO_NAME.git
     cd "$REPO_NAME"
 fi
 
-# 检查项目文件完整性
-echo -e "${BLUE}🔍 检查项目文件完整性...${NC}"
-required_files=("docker/docker-compose.yml" "docker/frontend/Dockerfile" "docker/backend/Dockerfile" "deploy.sh")
-for file in "${required_files[@]}"; do
-    if [ ! -f "$file" ]; then
-        echo -e "${RED}❌ 缺少必要文件: $file${NC}"
-        exit 1
-    fi
-done
-echo -e "${GREEN}✅ 项目文件完整${NC}"
 
 # 运行部署脚本
 echo -e "${BLUE}🚀 开始部署...${NC}"
@@ -174,7 +145,7 @@ echo -e "${GREEN}🎉 部署完成！${NC}"
 echo ""
 echo -e "${BLUE}📋 访问信息:${NC}"
 echo "前端: http://localhost"
-echo "后端API: http://localhost:40000/api"
+echo "后端API: http://localhost:9999/api"
 echo ""
 echo -e "${BLUE}🔧 管理命令:${NC}"
 echo "查看状态: cd $REPO_NAME/docker && docker-compose ps"
