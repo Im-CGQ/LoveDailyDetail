@@ -2,7 +2,7 @@
   <div class="letter-box-page page-container">
     <div class="page-header">
       <h1 class="page-title">💌 我的信箱</h1>
-      <p class="page-subtitle">来自伴侣的温暖信件</p>
+      <p class="page-subtitle">查看收到的信件和我写的信件</p>
     </div>
 
     <van-tabs v-model:active="activeTab" @change="handleTabChange" class="letter-tabs">
@@ -55,40 +55,32 @@
           </van-cell>
         </div>
       </van-tab>
-    </van-tabs>
 
-    <!-- 信件详情弹窗 -->
-    <van-popup
-      v-model:show="letterDetailVisible"
-      position="bottom"
-      :style="{ height: '80%' }"
-      round
-      closeable
-    >
-      <div class="letter-detail" v-if="selectedLetter">
-        <div class="letter-header">
-          <h2 class="letter-title">{{ selectedLetter.title }}</h2>
-          <div class="letter-meta">
-            <span>来自: {{ selectedLetter.senderName }}</span>
-            <span>{{ formatDateTime(selectedLetter.createdAt) }}</span>
+      <van-tab title="我写的信" name="sent">
+        <div class="letter-list">
+          <div v-if="sentLetters.length === 0" class="empty-state">
+            <van-icon name="edit" size="48" color="#ccc" />
+            <p>暂无我写的信件</p>
           </div>
-        </div>
-        <div class="letter-content">
-          <div v-html="selectedLetter.content"></div>
-        </div>
-        <div class="letter-actions">
-          <van-button 
-            v-if="!selectedLetter.isRead" 
-            type="primary" 
-            size="small"
-            @click="markAsReadHandler"
-            :loading="markingAsRead"
+          <van-cell
+            v-for="letter in sentLetters"
+            :key="letter.id"
+            :title="letter.title"
+            :label="`收件人: ${letter.receiverName} | 解锁时间: ${formatDateTime(letter.unlockTime)}`"
+            is-link
+            @click="viewSentLetter(letter)"
+            class="letter-item sent"
           >
-            标记已读
-          </van-button>
+            <template #right-icon>
+              <div class="status-badge">
+                <van-tag v-if="isLetterLocked(letter)" type="warning" size="small" round>待解锁</van-tag>
+                <van-tag v-else type="success" size="small" round>已解锁</van-tag>
+              </div>
+            </template>
+          </van-cell>
         </div>
-      </div>
-    </van-popup>
+      </van-tab>
+    </van-tabs>
 
     <!-- 未解锁信件提示弹窗 -->
     <van-popup
@@ -118,25 +110,32 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { getUnlockedLetters, getLockedLetters, getLetterById, markAsRead } from '@/api/letter'
+import { getUnlockedLetters, getLockedLetters, getSentLetters } from '@/api/letter'
 import { showToast } from 'vant'
+import { useRouter } from 'vue-router'
 
 const activeTab = ref('unlocked')
 const unlockedLetters = ref([])
 const lockedLetters = ref([])
+const sentLetters = ref([]) // 新增：我写的信件列表
 const selectedLetter = ref(null)
-const letterDetailVisible = ref(false)
 const lockedLetterVisible = ref(false)
-const markingAsRead = ref(false)
 const countdownTimer = ref(null)
+
+const router = useRouter()
 
 // 加载信件列表
 const loadLetters = async () => {
   try {
     if (activeTab.value === 'unlocked') {
       unlockedLetters.value = await getUnlockedLetters()
-    } else {
+    } else if (activeTab.value === 'locked') {
       lockedLetters.value = await getLockedLetters()
+    } else if (activeTab.value === 'sent') {
+      // 加载我写的信件列表，假设有一个API端点
+      // 这里需要根据实际API结构调整，例如：sentLetters.value = await getSentLetters()
+      // 目前假设有一个getSentLetters函数
+      sentLetters.value = await getSentLetters() // 示例：从API获取我写的信件
     }
   } catch (error) {
     showToast('加载信件失败')
@@ -151,12 +150,7 @@ const handleTabChange = (name) => {
 
 // 查看信件详情
 const viewLetter = async (letter) => {
-  try {
-    selectedLetter.value = await getLetterById(letter.id)
-    letterDetailVisible.value = true
-  } catch (error) {
-    showToast('获取信件详情失败')
-  }
+  router.push(`/letter/${letter.id}`)
 }
 
 // 查看未解锁信件
@@ -165,25 +159,19 @@ const viewLockedLetter = (letter) => {
   lockedLetterVisible.value = true
 }
 
-// 标记已读
-const markAsReadHandler = async () => {
-  if (!selectedLetter.value) return
-  
-  markingAsRead.value = true
-  try {
-    await markAsRead(selectedLetter.value.id)
-    selectedLetter.value.isRead = true
-    showToast('已标记为已读')
-    // 更新列表中的状态
-    const index = unlockedLetters.value.findIndex(l => l.id === selectedLetter.value.id)
-    if (index !== -1) {
-      unlockedLetters.value[index].isRead = true
-    }
-  } catch (error) {
-    showToast('标记已读失败')
-  } finally {
-    markingAsRead.value = false
+// 查看我写的信件详情
+const viewSentLetter = async (letter) => {
+  router.push(`/letter/${letter.id}`)
+}
+
+// 判断信件是否待解锁
+const isLetterLocked = (letter) => {
+  if (letter.unlockTime) {
+    const unlockTime = new Date(letter.unlockTime).getTime()
+    const now = new Date().getTime()
+    return unlockTime > now
   }
+  return false
 }
 
 // 格式化日期时间
@@ -302,6 +290,30 @@ onBeforeUnmount(() => {
     position: relative;
     opacity: 0.7;
   }
+
+  &.sent {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border: 1px solid #bbdefb;
+    box-shadow: 0 2px 8px rgba(187, 222, 251, 0.3);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: linear-gradient(135deg, #bbdefb 0%, #e1bee7 100%);
+      border-color: #90caf9;
+      box-shadow: 0 4px 12px rgba(187, 222, 251, 0.4);
+      transform: translateY(-1px);
+    }
+    
+    .van-cell__title {
+      font-weight: 600;
+      color: #1976d2;
+    }
+    
+    .van-cell__label {
+      color: #666;
+      font-size: 13px;
+    }
+  }
 }
 
 .countdown-overlay {
@@ -329,63 +341,29 @@ onBeforeUnmount(() => {
   }
 }
 
-.letter-detail {
-  padding: 20px;
-  height: 100%;
+.status-badge {
   display: flex;
-  flex-direction: column;
+  gap: 5px; /* 标签之间的间距 */
   
-  .letter-header {
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
+  .van-tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 12px;
     
-    .letter-title {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #333;
+    &.van-tag--warning {
+      background: linear-gradient(135deg, #ff9500 0%, #ff6b35 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 2px 4px rgba(255, 149, 0, 0.3);
     }
     
-    .letter-meta {
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-      color: #666;
+    &.van-tag--success {
+      background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
     }
-  }
-  
-  .letter-content {
-    flex: 1;
-    overflow-y: auto;
-    line-height: 1.6;
-    color: #333;
-    
-    :deep(p) {
-      margin-bottom: 10px;
-    }
-    
-    :deep(h1, h2, h3, h4, h5, h6) {
-      margin: 15px 0 10px 0;
-      color: #333;
-    }
-    
-    :deep(strong, b) {
-      font-weight: bold;
-    }
-    
-    :deep(em, i) {
-      font-style: italic;
-    }
-    
-    :deep(u) {
-      text-decoration: underline;
-    }
-  }
-  
-  .letter-actions {
-    margin-top: 20px;
-    text-align: center;
   }
 }
 

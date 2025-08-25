@@ -40,6 +40,12 @@ const routes = [
     meta: { title: '我的信箱', requiresAuth: true }
   },
   {
+    path: '/letter/:id',
+    name: 'LetterDetail',
+    component: () => import('@/views/LetterDetail.vue'),
+    meta: { title: '信件详情', requiresAuth: true }
+  },
+  {
     path: '/chat-record',
     name: 'ChatRecord',
     component: () => import('@/views/ChatRecord.vue'),
