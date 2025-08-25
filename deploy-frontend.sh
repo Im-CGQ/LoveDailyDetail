@@ -12,6 +12,10 @@ git stash
 echo "Git操作：拉取最新代码..."
 git pull
 
+# 复制配置文件
+echo "复制配置文件..."
+cp ../backend/application.yml ./backend/src/main/resources/
+
 # 进入frontend目录
 echo "进入frontend目录..."
 cd ./frontend

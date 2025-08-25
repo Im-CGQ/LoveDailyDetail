@@ -14,7 +14,7 @@ git pull
 
 # 复制配置文件
 echo "复制配置文件..."
-cp ../backend/application.yml ./backend/backend/src/main/resources/
+cp ../backend/application.yml ./backend/src/main/resources/
 
 echo "代码拉取完成！"
 
