@@ -234,15 +234,34 @@ const goToLogin = () => {
   .form-field {
     margin-bottom: 20px;
     
+    :deep(.van-cell) {
+      padding: 8px 0;
+    }
+    
     :deep(.van-field__label) {
       color: #333;
       font-weight: 500;
       font-size: 16px;
+      margin-bottom: 8px;
+      display: block;
+      width: 100%;
+      text-align: left;
+      
+      &::after {
+        content: ':';
+        margin-left: 2px;
+      }
     }
     
     :deep(.van-field__control) {
       color: #333;
       font-size: 16px;
+      width: 100%;
+    }
+    
+    :deep(.van-field__body) {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
   

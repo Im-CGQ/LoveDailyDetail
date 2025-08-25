@@ -466,6 +466,36 @@ onMounted(() => {
   background: white;
   border-radius: 15px;
   
+  :deep(.van-cell) {
+    padding: 8px 0;
+  }
+  
+  :deep(.van-field) {
+    .van-field__label {
+      margin-bottom: 8px;
+      display: block;
+      width: 100%;
+      text-align: left;
+      font-weight: 500;
+      color: #333;
+      
+      &::after {
+        content: ':';
+        margin-left: 2px;
+      }
+    }
+    
+    .van-field__control {
+      margin-top: 0;
+      width: 100%;
+    }
+    
+    .van-field__body {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+  
   .form-actions {
     display: flex;
     gap: 15px;
