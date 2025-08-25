@@ -80,21 +80,26 @@
             <h3 class="video-title">美好视频</h3>
           </div>
           <div class="video-container">
-            <video 
+            <div 
               v-for="(video, index) in currentDiary.videos" 
               :key="index"
-              :src="video"
-              class="video-player"
-              controls
-              preload="metadata"
-              poster=""
-              @click="playVideo(index)"
-              @ended="onVideoEnded"
-              @play="onVideoPlay"
-              @pause="onVideoPause"
+              class="video-wrapper"
             >
-              您的浏览器不支持视频播放
-            </video>
+              <video 
+                :src="video"
+                class="video-player"
+                preload="metadata"
+                poster=""
+                @ended="onVideoEnded"
+                @play="onVideoPlay"
+                @pause="onVideoPause"
+              >
+                您的浏览器不支持视频播放
+              </video>
+              <div class="play-overlay" @click="playVideo(index)">
+                <div class="play-button">▶</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -300,8 +305,141 @@ const previewImage = (index) => {
 
 // 视频播放相关方法
 const playVideo = (index) => {
-  console.log('播放视频:', index)
-  // 可以在这里添加视频播放逻辑
+  console.log('点击视频，索引:', index)
+  if (currentDiary.value && currentDiary.value.videos && currentDiary.value.videos[index]) {
+    // 创建全屏视频播放器
+    const videoUrl = currentDiary.value.videos[index]
+    const videoElement = document.createElement('video')
+    videoElement.src = videoUrl
+    videoElement.controls = true
+    videoElement.autoplay = true
+    videoElement.muted = true // 先静音播放，满足浏览器策略
+    videoElement.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 9999;
+      object-fit: contain;
+    `
+    
+    // 添加关闭按钮
+    const closeButton = document.createElement('div')
+    closeButton.innerHTML = '✕'
+    closeButton.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 10000;
+      transition: all 0.3s ease;
+      user-select: none;
+    `
+    
+    // 添加悬停效果
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = 'rgba(255, 107, 157, 0.8)'
+      closeButton.style.transform = 'scale(1.1)'
+    })
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.7)'
+      closeButton.style.transform = 'scale(1)'
+    })
+    
+    // 事件监听器
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape') {
+        closeVideo()
+        document.removeEventListener('keydown', handleEscKey)
+      }
+    }
+    
+    const loadedmetadataHandler = () => {
+      console.log('Video metadata loaded, attempting to play')
+      videoElement.play().then(() => {
+        console.log('Video started playing successfully')
+        // 播放成功后立即取消静音
+        videoElement.muted = false
+        console.log('Video unmuted')
+      }).catch(error => {
+        console.error('Failed to autoplay video:', error)
+        // 如果自动播放失败，显示提示
+        showToast('点击播放按钮开始播放')
+      })
+    }
+    
+    const errorHandler = (error) => {
+      console.error('Video load error:', error)
+      showToast('视频加载失败')
+    }
+    
+    // 添加用户交互事件来确保取消静音
+    const unmuteOnInteraction = () => {
+      if (videoElement.muted) {
+        videoElement.muted = false
+        console.log('Video unmuted on user interaction')
+      }
+      // 移除事件监听器，避免重复触发
+      videoElement.removeEventListener('click', unmuteOnInteraction)
+      videoElement.removeEventListener('play', unmuteOnInteraction)
+    }
+    
+    videoElement._unmuteOnInteraction = unmuteOnInteraction
+    videoElement.addEventListener('click', unmuteOnInteraction)
+    videoElement.addEventListener('play', unmuteOnInteraction)
+    
+    // 保存事件监听器引用以便清理
+    videoElement._loadedmetadataHandler = loadedmetadataHandler
+    videoElement._errorHandler = errorHandler
+    
+    videoElement.addEventListener('loadedmetadata', loadedmetadataHandler)
+    videoElement.addEventListener('error', errorHandler)
+    
+    // 关闭功能
+    const closeVideo = () => {
+      videoElement.pause()
+      // 清理事件监听器
+      videoElement.removeEventListener('loadedmetadata', videoElement._loadedmetadataHandler)
+      videoElement.removeEventListener('error', videoElement._errorHandler)
+      videoElement.removeEventListener('click', videoElement._unmuteOnInteraction)
+      videoElement.removeEventListener('play', videoElement._unmuteOnInteraction)
+      document.removeEventListener('keydown', handleEscKey)
+      // 移除元素
+      document.body.removeChild(videoElement)
+      document.body.removeChild(closeButton)
+      document.body.style.overflow = 'auto'
+    }
+    
+    closeButton.addEventListener('click', closeVideo)
+    
+    // 点击视频背景关闭
+    videoElement.addEventListener('click', (event) => {
+      if (event.target === videoElement) {
+        closeVideo()
+        document.removeEventListener('keydown', handleEscKey)
+      }
+    })
+    
+    // 添加键盘事件监听
+    document.addEventListener('keydown', handleEscKey)
+    
+    // 添加到页面并禁止滚动
+    document.body.style.overflow = 'hidden'
+    document.body.appendChild(videoElement)
+    document.body.appendChild(closeButton)
+  }
 }
 
 const onVideoEnded = () => {
@@ -674,40 +812,74 @@ onUnmounted(() => {
       }
     }
     
-    .video-container {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      
-      .video-player {
-        width: 100%;
-        height: 300px;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        background: #000;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        
-        &:hover {
-          transform: scale(1.02);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+         .video-container {
+       display: flex;
+       flex-direction: column;
+       gap: 15px;
+       
+               .video-wrapper {
+          position: relative;
+          cursor: pointer;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+          transition: all 0.3s ease;
+          
+          &:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+          }
         }
         
-        &::-webkit-media-controls {
-          background: rgba(0, 0, 0, 0.7);
+        .video-player {
+          width: 100%;
+          height: 300px;
+          border-radius: 20px;
+          overflow: hidden;
+          background: #000;
+          transition: all 0.3s ease;
+          pointer-events: none;
         }
         
-        &::-webkit-media-controls-panel {
-          background: rgba(0, 0, 0, 0.7);
-        }
-        
-        &::-webkit-media-controls-play-button {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 50%;
-        }
-      }
-    }
+                 .play-overlay {
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           bottom: 0;
+           background: rgba(0, 0, 0, 0.3);
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           border-radius: 20px;
+           cursor: pointer;
+           transition: all 0.3s ease;
+           pointer-events: auto;
+           
+           &:hover {
+             background: rgba(0, 0, 0, 0.5);
+             
+             .play-button {
+               transform: scale(1.2);
+               background: rgba(255, 107, 157, 0.9);
+             }
+           }
+         }
+         
+         .play-button {
+           width: 60px;
+           height: 60px;
+           background: rgba(255, 107, 157, 0.8);
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           color: white;
+           font-size: 24px;
+           transition: all 0.3s ease;
+           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+         }
+     }
   }
 }
 

@@ -38,7 +38,7 @@
           label="聊天描述"
           type="textarea"
           placeholder="描述一下这次聊天内容..."
-          rows="4"
+          autosize
         />
         
         <van-field
