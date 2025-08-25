@@ -98,12 +98,16 @@
             >
               <video 
                 :src="video"
+                :poster="getVideoPoster(video)"
                 class="video-player"
                 preload="metadata"
                 controls
                 @ended="onVideoEnded"
                 @play="onVideoPlay"
                 @pause="onVideoPause"
+                @loadstart="onVideoLoadStart"
+                @loadeddata="onVideoLoadedData"
+                @loadedmetadata="onVideoLoadedMetadata"
               >
                 您的浏览器不支持视频播放
               </video>
@@ -323,11 +327,28 @@ const playVideo = (index) => {
 
 const onVideoEnded = () => {
   console.log('视频播放结束')
-  showToast('视频播放完成')
 }
 
-const onVideoPlay = () => {
+const onVideoPlay = (event) => {
   console.log('视频开始播放')
+  // 停止背景音乐
+  if (audioElement.value && isMusicPlaying.value) {
+    audioElement.value.pause()
+    isMusicPlaying.value = false
+    if (progressTimer.value) {
+      clearInterval(progressTimer.value)
+      progressTimer.value = null
+    }
+  }
+  
+  // 停止其他视频
+  const currentVideo = event.target
+  const allVideos = document.querySelectorAll('.video-player')
+  allVideos.forEach(video => {
+    if (video !== currentVideo && !video.paused) {
+      video.pause()
+    }
+  })
 }
 
 const onVideoPause = () => {
@@ -338,6 +359,35 @@ const onVideoPause = () => {
 const onImageLoad = (event) => {
   // 图片加载完成后的处理逻辑
   console.log('图片加载完成')
+}
+
+// 视频加载开始
+const onVideoLoadStart = (event) => {
+  console.log('视频开始加载')
+}
+
+// 视频数据加载完成
+const onVideoLoadedData = (event) => {
+  console.log('视频数据加载完成')
+}
+
+// 视频元数据加载完成
+const onVideoLoadedMetadata = (event) => {
+  console.log('视频元数据加载完成')
+}
+
+// 生成视频封面
+const getVideoPoster = (videoUrl) => {
+  if (!videoUrl) return ''
+  
+  // 检查是否是OSS URL
+  if (videoUrl.includes('aliyuncs.com')) {
+    // 添加OSS视频截图参数
+    return `${videoUrl}?x-oss-process=video/snapshot,t_1000,f_jpg,w_800,h_600,m_fast`
+  }
+  
+  // 如果不是OSS URL，返回空字符串（使用视频默认封面）
+  return ''
 }
 
 
@@ -404,6 +454,14 @@ const toggleMusic = () => {
   if (isMusicPlaying.value) {
     audioElement.value.pause()
   } else {
+    // 停止所有视频播放
+    const allVideos = document.querySelectorAll('.video-player')
+    allVideos.forEach(video => {
+      if (!video.paused) {
+        video.pause()
+      }
+    })
+    
     audioElement.value.play()
   }
 }
@@ -437,6 +495,14 @@ const initAudio = () => {
   audioElement.value.addEventListener('play', () => {
     isMusicPlaying.value = true
     startProgressTimer()
+    
+    // 停止所有视频播放
+    const allVideos = document.querySelectorAll('.video-player')
+    allVideos.forEach(video => {
+      if (!video.paused) {
+        video.pause()
+      }
+    })
   })
   
   audioElement.value.addEventListener('pause', () => {
@@ -757,78 +823,45 @@ onUnmounted(() => {
       }
     }
     
-         .video-container {
-       display: flex;
-       flex-direction: column;
-       gap: 15px;
-       
-               .video-wrapper {
-          position: relative;
-          cursor: pointer;
-          border-radius: 20px;
-          overflow: hidden;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-          transition: all 0.3s ease;
-          
-          &:hover {
-            transform: scale(1.02);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-          }
-        }
-        
-        .video-player {
-          width: 100%;
-          height: 300px;
-          border-radius: 20px;
-          overflow: hidden;
-          background: #000;
-          transition: all 0.3s ease;
-          pointer-events: none;
-        }
-        
-                 .play-overlay {
-           position: absolute;
-           top: 0;
-           left: 0;
-           right: 0;
-           bottom: 0;
-           background: rgba(0, 0, 0, 0.3);
-           display: flex;
-           align-items: center;
-           justify-content: center;
-           border-radius: 20px;
+       .video-container {
+         display: flex;
+         flex-direction: column;
+         gap: 15px;
+         
+         .video-wrapper {
+           position: relative;
            cursor: pointer;
+           border-radius: 20px;
+           overflow: hidden;
+           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
            transition: all 0.3s ease;
-           pointer-events: auto;
+           min-height: 200px;
+           background: #000;
            
            &:hover {
-             background: rgba(0, 0, 0, 0.5);
-             
-             .play-button {
-               transform: scale(1.2);
-               background: rgba(255, 107, 157, 0.9);
-             }
+             transform: scale(1.02);
+             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
            }
          }
          
-         .play-button {
-           width: 60px;
-           height: 60px;
-           background: rgba(255, 107, 157, 0.8);
-           border-radius: 50%;
-           display: flex;
-           align-items: center;
-           justify-content: center;
-           color: white;
-           font-size: 24px;
+         .video-player {
+           width: 100%;
+           height: auto;
+           max-height: 600px;
+           min-height: 200px;
+           border-radius: 20px;
+           overflow: hidden;
+           background: #000;
            transition: all 0.3s ease;
-           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+           object-fit: contain;
+           display: block;
          }
+       }
      }
-  }
-}
+   }
+ 
 
-.description-section {
+ .description-section {
   margin-bottom: 30px;
   
   .description-card {
@@ -871,11 +904,9 @@ onUnmounted(() => {
          padding: 8px;
          margin: -8px;
        }
-       
-       
      }
-  }
-}
+   }
+ }
 
 .action-section {
   display: flex;
@@ -907,8 +938,6 @@ onUnmounted(() => {
         transform: translateY(-2px);
       }
     }
-    
-
   }
 }
 
@@ -1191,6 +1220,16 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .back-button {
+    top: 15px;
+    left: 15px;
+    
+    .van-icon {
+      font-size: 20px;
+      padding: 8px;
+    }
+  }
+  
   .title-section .main-title {
     font-size: 28px;
   }
@@ -1199,8 +1238,13 @@ onUnmounted(() => {
     max-height: 300px;
   }
   
+  .media-section .video-section .video-container .video-wrapper {
+    min-height: 150px;
+  }
+  
   .media-section .video-section .video-container .video-player {
-    height: 200px;
+    max-height: 500px;
+    min-height: 150px;
   }
   
   .action-section .action-btn {

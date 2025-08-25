@@ -607,6 +607,16 @@ onMounted(() => {
 
 // 响应式设计
 @media (max-width: 768px) {
+  .back-button {
+    top: 15px;
+    left: 15px;
+    
+    .van-icon {
+      font-size: 20px;
+      padding: 8px;
+    }
+  }
+  
   .chat-record-page {
     padding: 15px;
   }

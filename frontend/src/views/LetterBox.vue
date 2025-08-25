@@ -439,4 +439,28 @@ onBeforeUnmount(() => {
     }
   }
 }
+
+@media (max-width: 768px) {
+  .back-button {
+    top: 15px;
+    left: 15px;
+    
+    .van-icon {
+      font-size: 20px;
+      padding: 8px;
+    }
+  }
+  
+  .content {
+    padding: 15px;
+  }
+  
+  .page-header .page-title {
+    font-size: 24px;
+  }
+  
+  .letter-list {
+    padding: 15px;
+  }
+}
 </style>

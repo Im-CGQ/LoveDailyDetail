@@ -213,18 +213,18 @@ onUnmounted(() => {
   
   .van-icon {
     font-size: 24px;
-    color: #F5DEB3;
-    background: rgba(139, 69, 19, 0.9);
+    color: #ffffff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     border-radius: 50%;
     padding: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     
     &:hover {
-      background: rgba(139, 69, 19, 1);
+      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
       transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
     }
   }
 }
@@ -516,6 +516,16 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .back-button {
+    top: 15px;
+    left: 15px;
+    
+    .van-icon {
+      font-size: 20px;
+      padding: 8px;
+    }
+  }
+  
   .letter-detail-page {
     padding: 10px;
   }
