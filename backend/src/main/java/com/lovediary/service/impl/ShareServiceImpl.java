@@ -9,6 +9,8 @@ import com.lovediary.repository.ShareLinkRepository;
 import com.lovediary.repository.LetterRepository;
 import com.lovediary.repository.LetterShareLinkRepository;
 import com.lovediary.service.ShareService;
+import com.lovediary.dto.SharedDiaryDTO;
+import com.lovediary.dto.SharedLetterDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +52,7 @@ public class ShareServiceImpl implements ShareService {
     
     @Override
     @Transactional(readOnly = true)
-    public Diary getDiaryByShareToken(String shareToken) {
+    public SharedDiaryDTO getDiaryByShareToken(String shareToken) {
         ShareLink shareLink = shareLinkRepository.findByShareTokenAndIsActiveTrue(shareToken)
                 .orElseThrow(() -> new RuntimeException("分享链接不存在或已过期"));
         
@@ -62,14 +64,26 @@ public class ShareServiceImpl implements ShareService {
         Diary diary = diaryRepository.findById(shareLink.getDiaryId())
                 .orElseThrow(() -> new RuntimeException("日记不存在"));
         
-        // 强制加载关联对象，避免懒加载问题
+        // 转换为DTO，避免懒加载问题
+        SharedDiaryDTO dto = new SharedDiaryDTO();
+        dto.setId(diary.getId());
+        dto.setTitle(diary.getTitle());
+        dto.setDescription(diary.getDescription());
+        dto.setDate(diary.getDate());
+        dto.setImages(diary.getImages());
+        dto.setVideos(diary.getVideos());
+        dto.setBackgroundMusic(diary.getBackgroundMusic());
+        dto.setCreatedAt(diary.getCreatedAt());
+        dto.setUpdatedAt(diary.getUpdatedAt());
+        
+        // 设置用户信息
         if (diary.getUser() != null) {
-            diary.getUser().getId(); // 触发懒加载
-            diary.getUser().getUsername(); // 触发懒加载
-            diary.getUser().getDisplayName(); // 触发懒加载
+            dto.setUserId(diary.getUser().getId());
+            dto.setUserName(diary.getUser().getUsername());
+            dto.setUserDisplayName(diary.getUser().getDisplayName());
         }
         
-        return diary;
+        return dto;
     }
     
     @Override
@@ -128,7 +142,7 @@ public class ShareServiceImpl implements ShareService {
     
     @Override
     @Transactional(readOnly = true)
-    public Letter getLetterByShareToken(String shareToken) {
+    public SharedLetterDTO getLetterByShareToken(String shareToken) {
         LetterShareLink shareLink = letterShareLinkRepository.findByShareTokenAndIsActiveTrue(shareToken)
                 .orElseThrow(() -> new RuntimeException("分享链接不存在或已过期"));
         
@@ -140,20 +154,31 @@ public class ShareServiceImpl implements ShareService {
         Letter letter = letterRepository.findById(shareLink.getLetterId())
                 .orElseThrow(() -> new RuntimeException("信件不存在"));
         
-        // 强制加载关联对象，避免懒加载问题
+        // 转换为DTO，避免懒加载问题
+        SharedLetterDTO dto = new SharedLetterDTO();
+        dto.setId(letter.getId());
+        dto.setTitle(letter.getTitle());
+        dto.setContent(letter.getContent());
+        dto.setUnlockTime(letter.getUnlockTime());
+        dto.setCreatedAt(letter.getCreatedAt());
+        dto.setUpdatedAt(letter.getUpdatedAt());
+        dto.setIsRead(letter.getIsRead());
+        
+        // 设置发送者信息
         if (letter.getSender() != null) {
-            letter.getSender().getId(); // 触发懒加载
-            letter.getSender().getUsername(); // 触发懒加载
-            letter.getSender().getDisplayName(); // 触发懒加载
+            dto.setSenderId(letter.getSender().getId());
+            dto.setSenderName(letter.getSender().getUsername());
+            dto.setSenderDisplayName(letter.getSender().getDisplayName());
         }
         
+        // 设置接收者信息
         if (letter.getReceiver() != null) {
-            letter.getReceiver().getId(); // 触发懒加载
-            letter.getReceiver().getUsername(); // 触发懒加载
-            letter.getReceiver().getDisplayName(); // 触发懒加载
+            dto.setReceiverId(letter.getReceiver().getId());
+            dto.setReceiverName(letter.getReceiver().getUsername());
+            dto.setReceiverDisplayName(letter.getReceiver().getDisplayName());
         }
         
-        return letter;
+        return dto;
     }
     
     @Override

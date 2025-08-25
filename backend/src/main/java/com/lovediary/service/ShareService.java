@@ -4,6 +4,8 @@ import com.lovediary.entity.Diary;
 import com.lovediary.entity.ShareLink;
 import com.lovediary.entity.Letter;
 import com.lovediary.entity.LetterShareLink;
+import com.lovediary.dto.SharedDiaryDTO;
+import com.lovediary.dto.SharedLetterDTO;
 
 public interface ShareService {
     
@@ -19,7 +21,7 @@ public interface ShareService {
      * @param shareToken 分享token
      * @return 日记信息
      */
-    Diary getDiaryByShareToken(String shareToken);
+    SharedDiaryDTO getDiaryByShareToken(String shareToken);
     
     /**
      * 验证分享链接是否有效
@@ -45,7 +47,7 @@ public interface ShareService {
      * @param shareToken 分享token
      * @return 信件信息
      */
-    Letter getLetterByShareToken(String shareToken);
+    SharedLetterDTO getLetterByShareToken(String shareToken);
     
     /**
      * 验证信件分享链接是否有效

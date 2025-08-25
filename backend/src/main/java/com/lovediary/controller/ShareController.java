@@ -1,9 +1,9 @@
 package com.lovediary.controller;
 
 import com.lovediary.dto.ApiResponse;
-import com.lovediary.entity.Diary;
+import com.lovediary.dto.SharedDiaryDTO;
+import com.lovediary.dto.SharedLetterDTO;
 import com.lovediary.entity.ShareLink;
-import com.lovediary.entity.Letter;
 import com.lovediary.entity.LetterShareLink;
 import com.lovediary.service.ShareService;
 import lombok.RequiredArgsConstructor;
@@ -47,9 +47,9 @@ public class ShareController {
      * 通过分享链接查看日记（无需登录）
      */
     @GetMapping("/diary/{shareToken}")
-    public ResponseEntity<ApiResponse<Diary>> viewSharedDiary(@PathVariable String shareToken) {
+    public ResponseEntity<ApiResponse<SharedDiaryDTO>> viewSharedDiary(@PathVariable String shareToken) {
         try {
-            Diary diary = shareService.getDiaryByShareToken(shareToken);
+            SharedDiaryDTO diary = shareService.getDiaryByShareToken(shareToken);
             return ResponseEntity.ok(ApiResponse.success("获取分享日记成功", diary));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取分享日记失败：" + e.getMessage()));
@@ -95,9 +95,9 @@ public class ShareController {
      * 通过分享链接查看信件（无需登录）
      */
     @GetMapping("/letter/{shareToken}")
-    public ResponseEntity<ApiResponse<Letter>> viewSharedLetter(@PathVariable String shareToken) {
+    public ResponseEntity<ApiResponse<SharedLetterDTO>> viewSharedLetter(@PathVariable String shareToken) {
         try {
-            Letter letter = shareService.getLetterByShareToken(shareToken);
+            SharedLetterDTO letter = shareService.getLetterByShareToken(shareToken);
             return ResponseEntity.ok(ApiResponse.success("获取分享信件成功", letter));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取分享信件失败：" + e.getMessage()));

@@ -30,12 +30,12 @@
       </div>
 
              <!-- 解锁时间信息 -->
-       <div class="unlock-info" v-if="letter.unlockTime && !letter.isRead">
+       <!-- <div class="unlock-info" v-if="letter.unlockTime && !letter.isRead">
          <div class="unlock-content">
            <van-icon name="clock-o" />
            <span>解锁时间：{{ formatCountdown(letter.unlockTime) }}</span>
          </div>
-       </div>
+       </div> -->
 
       <!-- 分享页面不需要操作按钮 -->
     </div>
