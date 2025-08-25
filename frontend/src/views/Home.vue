@@ -61,22 +61,28 @@
       </div>
 
       <div class="media-section hover-lift">
-        <!-- 图片轮播 -->
-        <van-swipe 
-          v-if="currentDiary.images && currentDiary.images.length > 0"
-          class="image-swipe glow"
-          :autoplay="4000"
-          indicator-color="#ff6b9d"
-        >
-          <van-swipe-item v-for="(image, index) in currentDiary.images" :key="index">
-            <img 
-              :src="image" 
-              :alt="`回忆图片 ${index + 1}`" 
-              class="memory-image" 
-              @click="previewImage(index)"
-            />
-          </van-swipe-item>
-        </van-swipe>
+        <!-- 图片展示 -->
+        <div v-if="currentDiary.images && currentDiary.images.length > 0" class="images-section">
+          <div class="images-header">
+            <span class="images-emoji">📸</span>
+            <h3 class="images-title">美好瞬间</h3>
+          </div>
+          <div class="images-container">
+            <div 
+              v-for="(image, index) in currentDiary.images" 
+              :key="index"
+              class="image-wrapper"
+            >
+              <img 
+                :src="image" 
+                :alt="`回忆图片 ${index + 1}`" 
+                class="memory-image" 
+                @click="previewImage(index)"
+                @load="onImageLoad"
+              />
+            </div>
+          </div>
+        </div>
         
         <!-- 视频播放器 -->
         <div v-if="currentDiary.videos && currentDiary.videos.length > 0" class="video-section">
@@ -326,6 +332,12 @@ const onVideoPlay = () => {
 
 const onVideoPause = () => {
   console.log('视频暂停')
+}
+
+// 图片加载完成事件
+const onImageLoad = (event) => {
+  // 图片加载完成后的处理逻辑
+  console.log('图片加载完成')
 }
 
 
@@ -666,20 +678,56 @@ onUnmounted(() => {
 .media-section {
   margin-bottom: 30px;
   
-  .image-swipe {
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  /* 图片展示样式 */
+  .images-section {
+    margin-bottom: 20px;
     
-    .memory-image {
-      width: 100%;
-      height: 300px;
-      object-fit: cover;
-      cursor: pointer;
-      transition: transform 0.3s ease;
+    .images-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
       
-      &:hover {
-        transform: scale(1.02);
+      .images-emoji {
+        font-size: 24px;
+        animation: heartbeat 2s ease-in-out infinite;
+      }
+      
+      .images-title {
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        margin: 0;
+        text-align: center;
+      }
+    }
+    
+    .images-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      
+      .image-wrapper {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        
+        &:hover {
+          transform: scale(1.02);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .memory-image {
+          width: 100%;
+          height: auto;
+          max-height: 400px;
+          object-fit: cover;
+          display: block;
+          transition: transform 0.3s ease;
+        }
       }
     }
   }
@@ -1147,8 +1195,8 @@ onUnmounted(() => {
     font-size: 28px;
   }
   
-  .media-section .image-swipe .memory-image {
-    height: 250px;
+  .media-section .images-section .images-container .image-wrapper .memory-image {
+    max-height: 300px;
   }
   
   .media-section .video-section .video-container .video-player {
