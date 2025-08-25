@@ -298,8 +298,8 @@ onUnmounted(() => {
 
 .letter-title {
   text-align: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
   
   h1 {
     font-family: 'Times New Roman', serif;
@@ -316,7 +316,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
   font-family: 'Times New Roman', serif;
   
   .to-section {
@@ -352,6 +352,8 @@ onUnmounted(() => {
     text-align: justify;
     text-indent: 2em;
     letter-spacing: 1px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
     
     :deep(p) {
       margin-bottom: 1.8em;

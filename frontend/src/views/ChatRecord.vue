@@ -8,8 +8,7 @@
                                                                                                    <div class="page-header">
                   <div class="placeholder"></div>
                   <div class="total-duration-display">
-                    <span class="duration-number">{{ totalMinutes }}</span>
-                    <span class="duration-unit">分钟</span>
+                    <span class="duration-text" v-html="formattedTotalDurationHtml"></span>
                   </div>
                   <van-button type="primary" @click="showAddDialog = true" class="create-btn">
             <span class="btn-icon">📝</span>
@@ -161,6 +160,32 @@ const totalMinutes = computed(() => {
   return chatRecords.value.reduce((total, record) => {
     return total + (record.durationMinutes || 0)
   }, 0)
+})
+
+// 格式化总时长为小时和分钟
+const formattedTotalDuration = computed(() => {
+  const total = totalMinutes.value
+  const hours = Math.floor(total / 60)
+  const minutes = total % 60
+  
+  if (hours > 0) {
+    return `${hours}小时${minutes}分钟`
+  } else {
+    return `${minutes}分钟`
+  }
+})
+
+// 格式化总时长为HTML格式（用于样式区分）
+const formattedTotalDurationHtml = computed(() => {
+  const total = totalMinutes.value
+  const hours = Math.floor(total / 60)
+  const minutes = total % 60
+  
+  if (hours > 0) {
+    return `<span class="number">${hours}</span><span class="text">小时</span><span class="number">${minutes}</span><span class="text">分钟</span>`
+  } else {
+    return `<span class="number">${minutes}</span><span class="text">分钟</span>`
+  }
 })
 
 // 获取聊天类型图标
@@ -335,17 +360,23 @@ onMounted(() => {
   .total-duration-display {
     display: flex;
     align-items: center;
-    gap: 4px;
     
-    .duration-number {
-      font-size: 24px;
+    .duration-text {
+      font-size: 18px;
       font-weight: bold;
-      color: #ff6b9d;
-    }
-    
-    .duration-unit {
-      color: white;
-      font-size: 14px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      
+      :deep(.number) {
+        font-size: 24px;
+        color: #ff6b9d;
+        font-weight: bold;
+      }
+      
+      :deep(.text) {
+        font-size: 16px;
+        color: white;
+        font-weight: normal;
+      }
     }
   }
   
@@ -459,6 +490,8 @@ onMounted(() => {
   background: #f8f9fa;
   padding: 10px;
   border-radius: 8px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .add-chat-dialog {

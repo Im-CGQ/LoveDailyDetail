@@ -647,6 +647,8 @@ onUnmounted(() => {
        cursor: pointer;
        position: relative;
        transition: all 0.3s ease;
+       white-space: pre-wrap;
+       word-wrap: break-word;
        
        &:hover {
          background: rgba(255, 255, 255, 0.1);

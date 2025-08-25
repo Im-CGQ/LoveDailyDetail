@@ -63,21 +63,25 @@
             <h3 class="video-title">美好视频</h3>
           </div>
           <div class="video-container">
-            <video 
+            <div 
               v-for="(video, index) in diary.videos" 
               :key="index"
-              :src="video"
-              class="video-player"
-              controls
-              preload="metadata"
-              poster=""
+              class="video-wrapper"
               @click="playVideo(index)"
-              @ended="onVideoEnded"
-              @play="onVideoPlay"
-              @pause="onVideoPause"
             >
-              您的浏览器不支持视频播放
-            </video>
+              <video 
+                :src="video"
+                class="video-player"
+                controls
+                preload="metadata"
+                poster=""
+                @ended="onVideoEnded"
+                @play="onVideoPlay"
+                @pause="onVideoPause"
+              >
+                您的浏览器不支持视频播放
+              </video>
+            </div>
           </div>
         </div>
       </div>
@@ -207,8 +211,88 @@ const showFullText = () => {
 
 // 视频播放相关方法
 const playVideo = (index) => {
-  console.log('播放视频:', index)
-  // 可以在这里添加视频播放逻辑
+  console.log('点击视频，索引:', index)
+  if (diary.value && diary.value.videos && diary.value.videos[index]) {
+    // 创建全屏视频播放器
+    const videoUrl = diary.value.videos[index]
+    const videoElement = document.createElement('video')
+    videoElement.src = videoUrl
+    videoElement.controls = true
+    videoElement.autoplay = true
+    videoElement.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 9999;
+      object-fit: contain;
+    `
+    
+    // 添加关闭按钮
+    const closeButton = document.createElement('div')
+    closeButton.innerHTML = '✕'
+    closeButton.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 10000;
+      transition: all 0.3s ease;
+      user-select: none;
+    `
+    
+    // 添加悬停效果
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = 'rgba(255, 107, 157, 0.8)'
+      closeButton.style.transform = 'scale(1.1)'
+    })
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.7)'
+      closeButton.style.transform = 'scale(1)'
+    })
+    
+    // 添加遮罩层
+    const overlay = document.createElement('div')
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 9998;
+    `
+    
+    // 关闭功能
+    const closeVideo = () => {
+      document.body.removeChild(videoElement)
+      document.body.removeChild(closeButton)
+      document.body.removeChild(overlay)
+      document.body.style.overflow = ''
+    }
+    
+    closeButton.addEventListener('click', closeVideo)
+    overlay.addEventListener('click', closeVideo)
+    videoElement.addEventListener('ended', closeVideo)
+    
+    // 添加到页面
+    document.body.style.overflow = 'hidden'
+    document.body.appendChild(overlay)
+    document.body.appendChild(videoElement)
+    document.body.appendChild(closeButton)
+  }
 }
 
 const onVideoEnded = () => {
@@ -552,20 +636,23 @@ onUnmounted(() => {
       flex-direction: column;
       gap: 15px;
       
-      .video-player {
-        width: 100%;
-        height: 280px;
+      .video-wrapper {
+        cursor: pointer;
         border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        background: #000;
-        cursor: pointer;
         transition: all 0.3s ease;
         
         &:hover {
           transform: scale(1.02);
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
+      }
+      
+      .video-player {
+        width: 100%;
+        height: 280px;
+        background: #000;
+        display: block;
         
         &::-webkit-media-controls {
           background: rgba(0, 0, 0, 0.7);
@@ -616,10 +703,12 @@ onUnmounted(() => {
        color: white;
        text-align: justify;
        cursor: pointer;
-       position: relative;
-       transition: all 0.3s ease;
-       
-       &:hover {
+                position: relative;
+         transition: all 0.3s ease;
+         white-space: pre-wrap;
+         word-wrap: break-word;
+         
+         &:hover {
          background: rgba(255, 255, 255, 0.1);
          border-radius: 8px;
          padding: 8px;

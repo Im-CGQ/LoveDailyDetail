@@ -488,6 +488,8 @@ onMounted(() => {
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+          white-space: pre-wrap;
+          word-wrap: break-word;
         }
         
         .media-badges {
