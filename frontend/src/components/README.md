@@ -46,6 +46,7 @@ import BackButton from '@/components/BackButton.vue'
 - ✅ EditLetter.vue - 编辑信件页面
 - ✅ Home.vue - 首页
 - ✅ DiaryList.vue - 日记列表页面
+- ✅ LetterBox.vue - 信箱页面
 
 ## 注意事项
 
