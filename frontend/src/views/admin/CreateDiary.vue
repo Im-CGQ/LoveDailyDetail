@@ -956,33 +956,6 @@ const onSubmit = async (values) => {
     overflow: hidden;
     width: 100%;
     height: auto;
-    
-    &:hover {
-      transform: scale(1.02);
-      transition: transform 0.2s ease;
-    }
-    
-    &::-webkit-media-controls {
-      background: rgba(0, 0, 0, 0.7);
-    }
-    
-    &::-webkit-media-controls-panel {
-      background: rgba(0, 0, 0, 0.7);
-    }
-    
-    &::-webkit-media-controls-play-button {
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 50%;
-    }
-    
-    &::-webkit-media-controls-timeline {
-      background: rgba(255, 255, 255, 0.3);
-    }
-    
-    &::-webkit-media-controls-current-time-display,
-    &::-webkit-media-controls-time-remaining-display {
-      color: white;
-    }
   }
 }
 
