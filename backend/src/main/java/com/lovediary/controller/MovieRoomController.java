@@ -1,8 +1,11 @@
 package com.lovediary.controller;
 
 import com.lovediary.dto.ApiResponse;
+import com.lovediary.dto.MovieDTO;
 import com.lovediary.dto.MoviePlaybackDTO;
 import com.lovediary.dto.MovieRoomDTO;
+import com.lovediary.dto.MovieRoomDetailDTO;
+import com.lovediary.dto.MovieRoomMemberDTO;
 import com.lovediary.entity.MovieRoom;
 import com.lovediary.entity.MovieRoomMember;
 import com.lovediary.entity.User;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/movie-rooms")
@@ -41,7 +45,7 @@ public class MovieRoomController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<MovieRoom>> createRoom(
+    public ResponseEntity<ApiResponse<MovieRoomDetailDTO>> createRoom(
             @Valid @RequestBody MovieRoomDTO roomDTO,
             @RequestHeader(value = "Authorization", required = false) String token) {
         try {
@@ -50,14 +54,15 @@ public class MovieRoomController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             MovieRoom room = movieRoomService.createRoom(roomDTO, userId);
-            return ResponseEntity.ok(ApiResponse.success("创建房间成功", room));
+            MovieRoomDetailDTO roomDetailDTO = convertToDetailDTO(room);
+            return ResponseEntity.ok(ApiResponse.success("创建房间成功", roomDetailDTO));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("创建房间失败：" + e.getMessage()));
         }
     }
 
     @PostMapping("/{roomCode}/join")
-    public ResponseEntity<ApiResponse<MovieRoom>> joinRoom(
+    public ResponseEntity<ApiResponse<MovieRoomDetailDTO>> joinRoom(
             @PathVariable String roomCode,
             @RequestHeader(value = "Authorization", required = false) String token) {
         try {
@@ -66,7 +71,8 @@ public class MovieRoomController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             MovieRoom room = movieRoomService.joinRoom(roomCode, userId);
-            return ResponseEntity.ok(ApiResponse.success("加入房间成功", room));
+            MovieRoomDetailDTO roomDetailDTO = convertToDetailDTO(room);
+            return ResponseEntity.ok(ApiResponse.success("加入房间成功", roomDetailDTO));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("加入房间失败：" + e.getMessage()));
         }
@@ -89,7 +95,7 @@ public class MovieRoomController {
     }
 
     @GetMapping("/{roomCode}")
-    public ResponseEntity<ApiResponse<MovieRoom>> getRoom(
+    public ResponseEntity<ApiResponse<MovieRoomDetailDTO>> getRoom(
             @PathVariable String roomCode,
             @RequestHeader(value = "Authorization", required = false) String token) {
         try {
@@ -98,14 +104,15 @@ public class MovieRoomController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             MovieRoom room = movieRoomService.getRoomByCode(roomCode);
-            return ResponseEntity.ok(ApiResponse.success("获取房间信息成功", room));
+            MovieRoomDetailDTO roomDTO = convertToDetailDTO(room);
+            return ResponseEntity.ok(ApiResponse.success("获取房间信息成功", roomDTO));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取房间信息失败：" + e.getMessage()));
         }
     }
 
     @GetMapping("/{roomCode}/members")
-    public ResponseEntity<ApiResponse<List<MovieRoomMember>>> getRoomMembers(
+    public ResponseEntity<ApiResponse<List<MovieRoomMemberDTO>>> getRoomMembers(
             @PathVariable String roomCode,
             @RequestHeader(value = "Authorization", required = false) String token) {
         try {
@@ -114,14 +121,17 @@ public class MovieRoomController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             List<MovieRoomMember> members = movieRoomService.getRoomMembers(roomCode);
-            return ResponseEntity.ok(ApiResponse.success("获取房间成员成功", members));
+            List<MovieRoomMemberDTO> memberDTOs = members.stream()
+                    .map(this::convertToMemberDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(ApiResponse.success("获取房间成员成功", memberDTOs));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取房间成员失败：" + e.getMessage()));
         }
     }
 
     @PostMapping("/{roomCode}/playback")
-    public ResponseEntity<ApiResponse<MovieRoom>> updatePlayback(
+    public ResponseEntity<ApiResponse<MovieRoomDetailDTO>> updatePlayback(
             @PathVariable String roomCode,
             @Valid @RequestBody MoviePlaybackDTO playbackDTO,
             @RequestHeader(value = "Authorization", required = false) String token) {
@@ -131,7 +141,8 @@ public class MovieRoomController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             MovieRoom room = movieRoomService.updatePlayback(roomCode, playbackDTO, userId);
-            return ResponseEntity.ok(ApiResponse.success("更新播放状态成功", room));
+            MovieRoomDetailDTO roomDetailDTO = convertToDetailDTO(room);
+            return ResponseEntity.ok(ApiResponse.success("更新播放状态成功", roomDetailDTO));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("更新播放状态失败：" + e.getMessage()));
         }
@@ -154,7 +165,7 @@ public class MovieRoomController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<MovieRoom>>> getMyRooms(
+    public ResponseEntity<ApiResponse<List<MovieRoomDetailDTO>>> getMyRooms(
             @RequestHeader(value = "Authorization", required = false) String token) {
         try {
             Long userId = getCurrentUserId(token);
@@ -162,7 +173,10 @@ public class MovieRoomController {
                 return ResponseEntity.ok(ApiResponse.error("用户未登录"));
             }
             List<MovieRoom> rooms = movieRoomService.getUserRooms(userId);
-            return ResponseEntity.ok(ApiResponse.success("获取我的房间成功", rooms));
+            List<MovieRoomDetailDTO> roomDTOs = rooms.stream()
+                    .map(this::convertToDetailDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(ApiResponse.success("获取我的房间成功", roomDTOs));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取我的房间失败：" + e.getMessage()));
         }
@@ -182,6 +196,89 @@ public class MovieRoomController {
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("删除房间失败：" + e.getMessage()));
         }
+    }
+
+    private MovieRoomDetailDTO convertToDetailDTO(MovieRoom room) {
+        MovieRoomDetailDTO dto = new MovieRoomDetailDTO();
+        dto.setId(room.getId());
+        dto.setRoomName(room.getRoomName());
+        dto.setRoomCode(room.getRoomCode());
+        dto.setPlayTime(room.getPlayTime());
+        dto.setIsPlaying(room.getIsPlaying());
+        dto.setLastUpdatedBy(room.getLastUpdatedBy());
+        dto.setLastUpdatedAt(room.getLastUpdatedAt());
+        dto.setCreatedAt(room.getCreatedAt());
+        dto.setUpdatedAt(room.getUpdatedAt());
+        
+        // 设置创建者信息
+        if (room.getCreator() != null) {
+            dto.setCreatorId(room.getCreator().getId());
+            dto.setCreatorName(room.getCreator().getDisplayName());
+        }
+        
+        // 设置电影信息
+        if (room.getMovie() != null) {
+            MovieDTO movieDTO = new MovieDTO();
+            movieDTO.setId(room.getMovie().getId());
+            movieDTO.setTitle(room.getMovie().getTitle());
+            movieDTO.setDescription(room.getMovie().getDescription());
+            movieDTO.setCoverUrl(room.getMovie().getCoverUrl());
+            movieDTO.setMovieUrl(room.getMovie().getMovieUrl());
+            movieDTO.setFileName(room.getMovie().getFileName());
+            movieDTO.setIsPublic(room.getMovie().getIsPublic());
+            movieDTO.setDurationMinutes(room.getMovie().getDurationMinutes());
+            movieDTO.setFileSize(room.getMovie().getFileSize());
+            movieDTO.setWidth(room.getMovie().getWidth());
+            movieDTO.setHeight(room.getMovie().getHeight());
+            movieDTO.setCreatedAt(room.getMovie().getCreatedAt());
+            movieDTO.setUpdatedAt(room.getMovie().getUpdatedAt());
+            
+            // 设置创建者信息
+            if (room.getMovie().getUser() != null) {
+                movieDTO.setCreatorId(room.getMovie().getUser().getId());
+                movieDTO.setCreatorName(room.getMovie().getUser().getDisplayName());
+            }
+            
+            // 设置伴侣信息
+            if (room.getMovie().getPartner() != null) {
+                movieDTO.setPartnerId(room.getMovie().getPartner().getId());
+                movieDTO.setPartnerName(room.getMovie().getPartner().getDisplayName());
+            }
+            
+            dto.setMovie(movieDTO);
+        }
+        
+        // 设置成员信息
+        if (room.getMembers() != null) {
+            List<MovieRoomMemberDTO> memberDTOs = room.getMembers().stream()
+                    .map(this::convertToMemberDTO)
+                    .collect(Collectors.toList());
+            dto.setMembers(memberDTOs);
+        }
+        
+        return dto;
+    }
+
+    private MovieRoomMemberDTO convertToMemberDTO(MovieRoomMember member) {
+        MovieRoomMemberDTO dto = new MovieRoomMemberDTO();
+        dto.setId(member.getId());
+        dto.setJoinedAt(member.getJoinedAt());
+        dto.setIsOnline(member.getIsOnline());
+        
+        if (member.getUser() != null) {
+            dto.setUserId(member.getUser().getId());
+            dto.setUsername(member.getUser().getUsername());
+            dto.setDisplayName(member.getUser().getDisplayName());
+            
+            // 设置用户对象
+            MovieRoomMemberDTO.UserInfo userInfo = new MovieRoomMemberDTO.UserInfo();
+            userInfo.setId(member.getUser().getId());
+            userInfo.setUsername(member.getUser().getUsername());
+            userInfo.setDisplayName(member.getUser().getDisplayName());
+            dto.setUser(userInfo);
+        }
+        
+        return dto;
     }
 }
 

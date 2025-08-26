@@ -1,5 +1,6 @@
 package com.lovediary.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -30,6 +31,7 @@ public class User {
     @Column(name = "partner_id")
     private Long partnerId;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "partner_id", insertable = false, updatable = false)
     private User partner;

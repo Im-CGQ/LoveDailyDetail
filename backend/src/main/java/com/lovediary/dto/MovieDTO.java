@@ -8,6 +8,8 @@ import javax.validation.constraints.NotNull;
 @Data
 public class MovieDTO {
     
+    private Long id;
+    
     @NotBlank(message = "电影标题不能为空")
     private String title;
     
@@ -37,4 +39,8 @@ public class MovieDTO {
     // 伴侣信息
     private Long partnerId;
     private String partnerName;
+    
+    // 时间信息
+    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime updatedAt;
 }

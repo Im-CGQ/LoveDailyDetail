@@ -187,3 +187,4 @@ mysql -u username -p database_name < database/update_movie_feature.sql
 - 后端日志: 查看Spring Boot应用日志
 - 前端日志: 打开浏览器开发者工具查看控制台
 
+

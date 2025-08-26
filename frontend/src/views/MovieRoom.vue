@@ -34,21 +34,32 @@
             @seeked="onSeeked"
           ></video>
           
-          <!-- 播放控制 -->
-          <div class="video-controls">
-            <div class="progress-bar" @click="seekTo">
-              <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
-              <div class="progress-handle" :style="{ left: progressPercent + '%' }"></div>
-            </div>
-            
-            <div class="control-buttons">
-              <button class="control-btn" @click="togglePlay">
-                {{ isPlaying ? '⏸️' : '▶️' }}
-              </button>
-              <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
-              <button class="control-btn" @click="leaveRoom">离开房间</button>
-            </div>
-          </div>
+                     <!-- 播放控制 -->
+           <div class="video-controls">
+             <div class="progress-bar" 
+                  @click="seekTo"
+                  :class="{ 'disabled': !isRoomOwner }"
+                  :title="isRoomOwner ? '点击调整播放进度' : '只有房主才能控制播放进度'">
+               <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+               <div class="progress-handle" :style="{ left: progressPercent + '%' }"></div>
+             </div>
+             
+             <div class="control-buttons">
+               <button class="control-btn" 
+                       @click="togglePlay"
+                       :class="{ 'disabled': !isRoomOwner }"
+                       :title="isRoomOwner ? '播放/暂停' : '只有房主才能控制播放'">
+                 {{ isPlaying ? '⏸️' : '▶️' }}
+               </button>
+               <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+               <button class="control-btn" @click="leaveRoom">离开房间</button>
+             </div>
+             
+             <!-- 房主提示 -->
+             <div v-if="!isRoomOwner" class="owner-notice">
+               <span>👑 只有房主可以控制播放</span>
+             </div>
+           </div>
         </div>
 
         <!-- 房间成员 -->
@@ -61,10 +72,10 @@
               class="member-item"
             >
               <div class="member-avatar">
-                {{ member.user.displayName?.charAt(0) || 'U' }}
+                {{ member.user?.displayName?.charAt(0) || member.displayName?.charAt(0) || 'U' }}
               </div>
               <div class="member-info">
-                <span class="member-name">{{ member.user.displayName || '用户' }}</span>
+                <span class="member-name">{{ member.user?.displayName || member.displayName || '用户' }}</span>
                 <span class="member-status" :class="{ online: member.isOnline }">
                   {{ member.isOnline ? '在线' : '离线' }}
                 </span>
@@ -83,6 +94,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import BackButton from '@/components/BackButton.vue'
 import { getRoom, getRoomMembers, leaveRoom as leaveRoomApi, updatePlayback, getPlaybackStatus } from '@/api/movieRoom.js'
+import { getUserInfo } from '@/api/auth.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -97,6 +109,8 @@ const isPlaying = ref(false)
 const isSeeking = ref(false)
 const syncInterval = ref(null)
 const playbackInterval = ref(null)
+const currentUser = ref(null) // 当前用户信息
+const isRoomOwner = ref(false) // 是否是房主
 
 const progressPercent = computed(() => {
   if (duration.value === 0) return 0
@@ -108,8 +122,15 @@ const roomCode = computed(() => route.params.roomCode)
 const loadRoom = async () => {
   loading.value = true
   try {
+    // 获取当前用户信息
+    const userData = await getUserInfo()
+    currentUser.value = userData.data
+    
     const roomData = await getRoom(roomCode.value)
     room.value = roomData
+    
+    // 判断是否是房主
+    isRoomOwner.value = currentUser.value && roomData.creatorId === currentUser.value.id
     
     // 加载播放状态
     const playbackData = await getPlaybackStatus(roomCode.value)
@@ -177,11 +198,17 @@ const onTimeUpdate = () => {
 }
 
 const onPlay = () => {
+  // 只有房主才能控制播放
+  if (!isRoomOwner.value) return
+  
   isPlaying.value = true
   updateRemotePlayback()
 }
 
 const onPause = () => {
+  // 只有房主才能控制播放
+  if (!isRoomOwner.value) return
+  
   isPlaying.value = false
   updateRemotePlayback()
 }
@@ -199,6 +226,12 @@ const onSeeked = () => {
 }
 
 const togglePlay = () => {
+  // 只有房主才能控制播放
+  if (!isRoomOwner.value) {
+    showToast('只有房主才能控制播放')
+    return
+  }
+  
   if (videoPlayer.value) {
     if (isPlaying.value) {
       videoPlayer.value.pause()
@@ -209,6 +242,12 @@ const togglePlay = () => {
 }
 
 const seekTo = (event) => {
+  // 只有房主才能控制进度
+  if (!isRoomOwner.value) {
+    showToast('只有房主才能控制播放进度')
+    return
+  }
+  
   if (!videoPlayer.value) return
   
   const rect = event.currentTarget.getBoundingClientRect()
@@ -222,6 +261,9 @@ const seekTo = (event) => {
 }
 
 const updateRemotePlayback = async () => {
+  // 只有房主才能更新播放状态
+  if (!isRoomOwner.value) return
+  
   try {
     await updatePlayback(roomCode.value, {
       currentTime: currentTime.value,
@@ -367,6 +409,12 @@ onUnmounted(() => {
   border-radius: 4px;
   cursor: pointer;
   margin-bottom: 15px;
+  transition: opacity 0.3s;
+}
+
+.progress-bar.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .progress-fill {
@@ -410,10 +458,30 @@ onUnmounted(() => {
   background: #5a6fd8;
 }
 
+.control-btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.control-btn.disabled:hover {
+  background: #667eea;
+}
+
 .time-display {
   font-family: monospace;
   font-size: 14px;
   color: #666;
+}
+
+.owner-notice {
+  text-align: center;
+  margin-top: 10px;
+  padding: 8px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 14px;
 }
 
 .members-section {

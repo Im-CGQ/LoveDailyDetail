@@ -157,6 +157,11 @@ public class MovieServiceImpl implements MovieService {
             return true;
         }
         
+        // 如果是创建者的伴侣，可以查看
+        if (movie.getUser().getPartnerId() != null && movie.getUser().getPartnerId().equals(userId)) {
+            return true;
+        }
+        
         return false;
     }
 

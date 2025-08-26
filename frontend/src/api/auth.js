@@ -127,7 +127,7 @@ export const logout = async () => {
 // 获取用户信息
 export const getUserInfo = async () => {
   try {
-    const response = await api.get('/auth/user-info')
+    const response = await api.get('/auth/profile')
     
     if (response.data.success) {
       return response.data
