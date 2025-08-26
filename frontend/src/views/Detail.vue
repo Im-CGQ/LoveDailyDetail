@@ -1,5 +1,8 @@
 <template>
   <div class="detail romantic-bg page-container">
+    <!-- 返回按钮 -->
+    <BackButton />
+    
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
@@ -154,6 +157,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import { getDiaryById } from '@/api/diary'
 import { getBackgroundMusicAutoplay } from '@/api/systemConfig'
+import BackButton from '@/components/BackButton.vue'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -519,6 +523,8 @@ onUnmounted(() => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   position: relative;
 }
+
+
 
 
 

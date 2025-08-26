@@ -1,9 +1,7 @@
 <template>
   <div class="diary-list-page romantic-bg page-container">
     <!-- 返回按钮 -->
-    <div class="back-button">
-      <van-icon name="arrow-left" @click="goBack" />
-    </div>
+    <BackButton />
     
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
@@ -114,6 +112,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import { getDiariesByDate } from '@/api/diary'
+import BackButton from '@/components/BackButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -123,9 +122,7 @@ const diaries = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-const goBack = () => {
-  router.go(-1)
-}
+
 
 const loadDiaries = async () => {
   if (!selectedDate.value) {
@@ -240,29 +237,7 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-.back-button {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
-  
-  .van-icon {
-    font-size: 24px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    border-radius: 50%;
-    padding: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    
-    &:hover {
-      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
-      transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
-    }
-  }
-}
+
 
 .content {
   padding: 20px;
@@ -586,15 +561,6 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .back-button {
-    top: 15px;
-    left: 15px;
-    
-    .van-icon {
-      font-size: 20px;
-      padding: 8px;
-    }
-  }
   
   .content {
     padding: 15px;

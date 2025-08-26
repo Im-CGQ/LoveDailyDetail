@@ -1,5 +1,8 @@
 <template>
   <div class="home romantic-bg page-container">
+    <!-- 返回按钮 -->
+    <BackButton />
+    
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
@@ -191,6 +194,7 @@ import { showToast, showImagePreview } from 'vant'
 import dayjs from 'dayjs'
 import { getLatestDiary } from '@/api/diary'
 import { getBackgroundMusicAutoplay, getTogetherDate } from '@/api/systemConfig'
+import BackButton from '@/components/BackButton.vue'
 
 const router = useRouter()
 const currentDiary = ref(null)

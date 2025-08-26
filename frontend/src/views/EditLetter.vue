@@ -1,5 +1,8 @@
 <template>
   <div class="edit-letter">
+    <!-- 返回按钮 -->
+    <BackButton />
+    
     <div class="header">
       <h2>编辑信件</h2>
       <p class="subtitle">修改你的信件内容</p>
@@ -164,6 +167,7 @@ import { getLetterById, updateLetter } from '@/api/letter'
 import { showToast } from 'vant'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
+import BackButton from '@/components/BackButton.vue'
 
 const router = useRouter()
 const route = useRoute()
