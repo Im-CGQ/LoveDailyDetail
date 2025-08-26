@@ -46,6 +46,12 @@ const routes = [
     meta: { title: '信件详情', requiresAuth: true }
   },
   {
+    path: '/letter/edit/:id',
+    name: 'EditLetter',
+    component: () => import('@/views/EditLetter.vue'),
+    meta: { title: '编辑信件', requiresAuth: true }
+  },
+  {
     path: '/share/diary/:shareToken',
     name: 'SharedDiary',
     component: () => import('@/views/SharedDiary.vue'),
