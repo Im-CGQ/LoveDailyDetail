@@ -18,6 +18,9 @@
         @click="toggleMusicControls"
       >
         <span class="music-emoji">🎵</span>
+        <div v-if="isMusicPlaying" class="music-playing-indicator">
+          <span class="music-playing-dot"></span>
+        </div>
       </div>
       
       <!-- 音乐控制面板 -->
@@ -97,6 +100,9 @@
                 :poster="generateVideoPoster(video.videoUrl, video)"
                 controls
                 @click="playVideo(index)"
+                @play="onVideoPlay(index)"
+                @pause="onVideoPause(index)"
+                ref="videoRefs"
               >
                 您的浏览器不支持视频播放
               </video>
@@ -178,6 +184,7 @@ const musicProgress = ref(0)
 const progressBar = ref(null)
 const isDragging = ref(false)
 const musicAutoplay = ref(true) // 音乐自动播放配置
+const playingVideoIndex = ref(-1) // 当前播放的视频索引
 let audioElement = null
 let progressTimer = null
 
@@ -313,27 +320,87 @@ const getVideoStyle = (video) => {
 
 // 视频播放功能
 const playVideo = (index) => {
-  // 如果音乐正在播放，先停止音乐
-  if (isMusicPlaying.value && audioElement) {
-    audioElement.pause()
-    isMusicPlaying.value = false
-    if (progressTimer) {
-      clearInterval(progressTimer)
-      progressTimer = null
-    }
-  }
-  
   const videoElements = document.querySelectorAll('.video-player')
-  const videoElement = videoElements[index]
-  if (videoElement) {
-    if (videoElement.paused) {
-      videoElement.play().catch(error => {
+  const targetVideo = videoElements[index]
+  
+  if (targetVideo) {
+    if (targetVideo.paused) {
+
+      
+      // 强制停止音乐播放
+      forceStopMusic()
+      
+      // 停止其他视频播放
+      videoElements.forEach((video, i) => {
+        if (i !== index && !video.paused) {
+          video.pause()
+        }
+      })
+      
+      // 播放目标视频
+      targetVideo.play().catch(error => {
         console.error('视频播放失败:', error)
         showToast('视频播放失败')
       })
     } else {
-      videoElement.pause()
+      // 暂停目标视频
+      targetVideo.pause()
     }
+  }
+}
+
+// 视频开始播放事件处理
+const onVideoPlay = (index) => {
+  // 强制停止音乐播放
+  forceStopMusic()
+  
+  // 停止其他视频播放
+  const videoElements = document.querySelectorAll('.video-player')
+  videoElements.forEach((video, i) => {
+    if (i !== index && !video.paused) {
+      video.pause()
+    }
+  })
+  
+  // 更新当前播放的视频索引
+  playingVideoIndex.value = index
+}
+
+// 视频暂停事件处理
+const onVideoPause = (index) => {
+  // 如果暂停的是当前播放的视频，清除播放状态
+  if (playingVideoIndex.value === index) {
+    playingVideoIndex.value = -1
+  }
+}
+
+// 全局媒体管理：停止所有其他媒体播放
+const stopOtherMedia = (excludeVideoIndex = null) => {
+  // 停止音乐播放 - 强制停止，不管状态如何
+  forceStopMusic()
+  
+  // 停止其他视频播放
+  const videoElements = document.querySelectorAll('.video-player')
+  videoElements.forEach((video, i) => {
+    if (excludeVideoIndex === null || i !== excludeVideoIndex) {
+      if (!video.paused) {
+        video.pause()
+      }
+    }
+  })
+  
+  // 更新播放状态
+  if (excludeVideoIndex === null) {
+    // 如果停止所有视频，清除播放状态
+    playingVideoIndex.value = -1
+  }
+}
+
+// 页面可见性变化处理
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    // 页面隐藏时暂停所有媒体
+    stopOtherMedia()
   }
 }
 
@@ -387,22 +454,37 @@ const toggleMusic = () => {
       progressTimer = null
     }
   } else {
-    // 如果音乐要开始播放，先停止所有视频
-    const videoElements = document.querySelectorAll('.video-player')
-    videoElements.forEach(video => {
-      if (!video.paused) {
-        video.pause()
-      }
-    })
+
+    
+    // 播放音乐前，停止所有视频
+    stopOtherMedia()
     
     // 然后播放音乐
-    audioElement.play()
+    audioElement.play().catch(error => {
+      console.error('音乐播放失败:', error)
+      showToast('音乐播放失败')
+    })
     isMusicPlaying.value = true
     startProgressTimer()
   }
 }
 
 const stopMusic = () => {
+  if (audioElement) {
+    audioElement.pause()
+    audioElement.currentTime = 0
+    isMusicPlaying.value = false
+    currentTime.value = 0
+    musicProgress.value = 0
+    if (progressTimer) {
+      clearInterval(progressTimer)
+      progressTimer = null
+    }
+  }
+}
+
+// 强制停止音乐播放的专用函数
+const forceStopMusic = () => {
   if (audioElement) {
     audioElement.pause()
     audioElement.currentTime = 0
@@ -431,6 +513,14 @@ const initAudio = () => {
         // 自动播放失败时不显示错误提示，因为可能是浏览器策略限制
       })
     }
+  })
+  
+  audioElement.addEventListener('play', () => {
+    isMusicPlaying.value = true
+  })
+  
+  audioElement.addEventListener('pause', () => {
+    isMusicPlaying.value = false
   })
   
   audioElement.addEventListener('ended', () => {
@@ -555,6 +645,9 @@ const loadDiary = async () => {
 
 onMounted(() => {
   loadDiary()
+  
+  // 监听页面可见性变化
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 // 返回日历页面，保持之前的状态
@@ -566,6 +659,9 @@ onUnmounted(() => {
   if (typingTimer) {
     clearTimeout(typingTimer) // 清理打字机定时器
   }
+  
+  // 停止所有媒体播放
+  stopOtherMedia()
   
   // 清理音乐播放器资源
   if (audioElement) {
@@ -579,6 +675,9 @@ onUnmounted(() => {
   
   // 清理拖拽事件监听器
   stopDrag()
+  
+  // 清理页面可见性监听器
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 
@@ -648,6 +747,21 @@ onUnmounted(() => {
     .music-emoji {
       font-size: 20px;
       color: white;
+    }
+    
+    .music-playing-indicator {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      
+      .music-playing-dot {
+        width: 8px;
+        height: 8px;
+        background: #ff6b9d;
+        border-radius: 50%;
+        animation: pulse 1.5s ease-in-out infinite;
+        border: 2px solid white;
+      }
     }
   }
   
@@ -763,6 +877,8 @@ onUnmounted(() => {
 .media {
   margin-bottom: 25px;
   
+
+  
   /* 图片展示样式 */
   .image-section {
     margin-bottom: 20px;
@@ -843,6 +959,8 @@ onUnmounted(() => {
          margin: 0;
          text-align: center;
        }
+       
+       
      }
     
     .video-container {
@@ -870,6 +988,13 @@ onUnmounted(() => {
         background: #000;
         transition: all 0.3s ease;
         display: block;
+        cursor: pointer;
+        
+        &:hover {
+          transform: scale(1.02);
+        }
+        
+
       }
     }
   }
@@ -1033,5 +1158,7 @@ onUnmounted(() => {
     transform: translateY(0);
   }
 }
+
+
 
 </style> 
