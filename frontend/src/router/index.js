@@ -45,12 +45,7 @@ const routes = [
     component: () => import('@/views/LetterDetail.vue'),
     meta: { title: '信件详情', requiresAuth: true }
   },
-  {
-    path: '/letter/edit/:id',
-    name: 'EditLetter',
-    component: () => import('@/views/EditLetter.vue'),
-    meta: { title: '编辑信件', requiresAuth: true }
-  },
+
   {
     path: '/share/diary/:shareToken',
     name: 'SharedDiary',
@@ -113,6 +108,11 @@ const routes = [
         path: 'write-letter',
         name: 'WriteLetter',
         component: () => import('@/views/admin/WriteLetter.vue')
+      },
+      {
+        path: 'letter/edit/:id',
+        name: 'EditLetter',
+        component: () => import('@/views/EditLetter.vue')
       },
       {
         path: 'letters',

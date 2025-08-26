@@ -61,14 +61,23 @@
                 is-link
               >
                 <template #right-icon>
-                  <van-button 
-                    size="small" 
-                    type="danger" 
-                    @click.stop="deleteLetterHandler(letter.id)"
-                    :loading="deletingLetter === letter.id"
-                  >
-                    删除
-                  </van-button>
+                  <div class="action-buttons">
+                    <van-button 
+                      size="small" 
+                      type="primary" 
+                      @click.stop="editLetter(letter)"
+                    >
+                      编辑
+                    </van-button>
+                    <van-button 
+                      size="small" 
+                      type="danger" 
+                      @click.stop="deleteLetterHandler(letter.id)"
+                      :loading="deletingLetter === letter.id"
+                    >
+                      删除
+                    </van-button>
+                  </div>
                 </template>
               </van-cell>
             </van-cell-group>
@@ -114,6 +123,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { 
   getReceivedLetters, 
   getSentLetters, 
@@ -122,6 +132,9 @@ import {
   deleteLetter 
 } from '@/api/letter'
 import { showToast, showDialog } from 'vant'
+
+// 获取路由实例
+const router = useRouter()
 
 // 响应式数据
 const activeTab = ref('received') // 0: received, 1: sent
@@ -199,6 +212,14 @@ const deleteLetterHandler = async (letterId) => {
   } finally {
     deletingLetter.value = null
   }
+}
+
+// 编辑信件
+const editLetter = (letter) => {
+  // 跳转到编辑信件页面，传递信件数据
+  router.push({
+    path: `/admin/letter/edit/${letter.id}`
+  })
 }
 
 // 格式化日期
@@ -286,6 +307,17 @@ onBeforeUnmount(() => {
         &.unread {
           .van-cell__title {
             font-weight: bold;
+          }
+        }
+        
+        .action-buttons {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          
+          .van-button {
+            min-width: 50px;
+            font-size: 12px;
           }
         }
       }
