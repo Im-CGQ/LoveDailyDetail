@@ -30,6 +30,10 @@ public class User {
     @Column(name = "partner_id")
     private Long partnerId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partner_id", insertable = false, updatable = false)
+    private User partner;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;

@@ -1,0 +1,546 @@
+<template>
+  <div class="movie-list">
+    <div class="top-bar">
+      <BackButton />
+      <button class="create-btn" @click="goToCreateMovie">
+        ➕ 上传电影
+      </button>
+    </div>
+    
+    <div class="content">
+      <h1 class="title">🎬 一起看电影</h1>
+      
+      <div class="search-section">
+                 <input 
+           v-model="searchKeyword" 
+           type="text" 
+           placeholder="搜索电影..." 
+           class="search-input"
+           @input="handleSearchInput"
+         />
+        
+        <div class="filter-tabs">
+          <button 
+            class="filter-tab" 
+            :class="{ active: currentTab === 'all' }"
+            @click="switchTab('all')"
+          >
+            全部
+          </button>
+          <button 
+            class="filter-tab" 
+            :class="{ active: currentTab === 'my' }"
+            @click="switchTab('my')"
+          >
+            我的
+          </button>
+          <button 
+            class="filter-tab" 
+            :class="{ active: currentTab === 'public' }"
+            @click="switchTab('public')"
+          >
+            公开
+          </button>
+        </div>
+      </div>
+
+      <div v-if="loading" class="loading">加载中...</div>
+      
+      <div v-else-if="filteredMovies.length === 0" class="empty">
+        <div class="empty-content">
+          <div class="empty-icon">🎬</div>
+          <h3>{{ getEmptyTitle() }}</h3>
+          <p>{{ getEmptyMessage() }}</p>
+          <button v-if="currentTab === 'my'" class="empty-btn" @click="goToCreateMovie">
+            ➕ 上传第一部电影
+          </button>
+        </div>
+      </div>
+      
+      <div v-else class="movies-grid">
+        <div 
+          v-for="movie in filteredMovies" 
+          :key="movie.id"
+          class="movie-card"
+          @click="viewMovie(movie)"
+        >
+          <div class="movie-cover">
+            <img 
+              v-if="movie.coverUrl" 
+              :src="movie.coverUrl" 
+              :alt="movie.title"
+            />
+            <div v-else class="cover-placeholder">🎬</div>
+            <div class="movie-overlay">
+              <button class="play-btn" @click.stop="handleCreateRoom(movie)">
+                一起看
+              </button>
+            </div>
+          </div>
+          
+          <div class="movie-info">
+            <h3>{{ movie.title }}</h3>
+            <p>{{ movie.description || '暂无描述' }}</p>
+            <div class="movie-meta">
+              <span v-if="movie.durationMinutes">{{ formatDuration(movie.durationMinutes) }}</span>
+              <span :class="movie.isPublic ? 'public' : 'private'">
+                {{ movie.isPublic ? '公开' : '私密' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { showToast } from 'vant'
+import BackButton from '@/components/BackButton.vue'
+import { getAllMovies, getMyMovies, getPublicMovies } from '@/api/movie.js'
+import { createRoom } from '@/api/movieRoom.js'
+
+const router = useRouter()
+
+const loading = ref(false)
+const currentTab = ref('all')
+const searchKeyword = ref('')
+const movies = ref([])
+const searchTimeout = ref(null)
+
+const filteredMovies = computed(() => {
+  let filtered = movies.value
+  
+  // 根据当前tab过滤
+  if (currentTab.value === 'my') {
+    // 我的tab显示当前用户上传的所有电影（包括公开和私密的）
+    // 这里不需要额外过滤，因为getMyMovies()已经返回了当前用户的电影
+    filtered = movies.value
+  } else if (currentTab.value === 'public') {
+    filtered = movies.value.filter(movie => movie.isPublic)
+  }
+  // 'all' tab 不需要额外过滤，显示所有电影
+  
+  // 根据搜索关键词过滤
+  if (searchKeyword.value.trim()) {
+    const keyword = searchKeyword.value.toLowerCase().trim()
+    filtered = filtered.filter(movie => 
+      movie.title.toLowerCase().includes(keyword) ||
+      (movie.description && movie.description.toLowerCase().includes(keyword))
+    )
+  }
+  
+  return filtered
+})
+
+
+
+const loadMovies = async () => {
+  loading.value = true
+  try {
+    const data = await getAllMovies()
+    movies.value = data
+  } catch (error) {
+    showToast(error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+const switchTab = async (tab) => {
+  if (currentTab.value === tab) return // 如果点击的是当前tab，不重复加载
+  
+  currentTab.value = tab
+  loading.value = true
+  
+  try {
+    let data
+    if (tab === 'my') {
+      data = await getMyMovies()
+    } else if (tab === 'public') {
+      data = await getPublicMovies()
+    } else {
+      data = await getAllMovies()
+    }
+    
+    // 只更新数据，不触发页面刷新
+    movies.value = data
+  } catch (error) {
+    showToast(error.message || '加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const viewMovie = (movie) => {
+  router.push(`/movie/${movie.id}`)
+}
+
+
+
+const handleCreateRoom = async (movie) => {
+  try {
+    const roomData = {
+      roomName: `观看 ${movie.title}`,
+      movieId: movie.id
+    }
+    
+    const room = await createRoom(roomData)
+    router.push(`/movie-room/${room.roomCode}`)
+  } catch (error) {
+    showToast(error.message || '创建房间失败')
+  }
+}
+
+const handleSearchInput = () => {
+  // 清除之前的定时器
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
+  
+  // 设置新的定时器，300ms后执行搜索
+  searchTimeout.value = setTimeout(() => {
+    // 搜索是实时的，通过computed属性自动过滤
+    // 这里可以添加额外的搜索逻辑，比如高亮搜索结果等
+  }, 300)
+}
+
+const goToCreateMovie = () => {
+  router.push('/create-movie')
+}
+
+const formatDuration = (minutes) => {
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return hours > 0 ? `${hours}小时${mins}分钟` : `${mins}分钟`
+}
+
+const getEmptyTitle = () => {
+  if (currentTab.value === 'my') {
+    return '还没有上传电影'
+  } else if (currentTab.value === 'public') {
+    return '暂无公开电影'
+  } else {
+    return '暂无电影'
+  }
+}
+
+const getEmptyMessage = () => {
+  if (currentTab.value === 'my') {
+    return '上传你的第一部电影，与伴侣一起观看'
+  } else if (currentTab.value === 'public') {
+    return '暂时没有公开的电影可以观看'
+  } else {
+    return '暂时没有电影可以观看'
+  }
+}
+
+onMounted(() => {
+  loadMovies()
+})
+</script>
+
+<style scoped>
+.movie-list {
+  padding: 20px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  z-index: 100;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 80px;
+}
+
+.title {
+  text-align: center;
+  color: white;
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.search-section {
+  background: rgba(255,255,255,0.95);
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.filter-tab {
+  padding: 8px 16px;
+  border: 2px solid #667eea;
+  border-radius: 20px;
+  background: transparent;
+  color: #667eea;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-tab.active {
+  background: #667eea;
+  color: white;
+}
+
+.create-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ff6b9d 0%, #f093fb 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position:absolute;
+  right:20px;
+  top: 25px;
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+  white-space: nowrap;
+}
+
+.create-btn:hover {
+  background: linear-gradient(135deg, #f55a8b 0%, #e085e8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+}
+
+.loading {
+  text-align: center;
+  color: white;
+  padding: 40px;
+  font-size: 18px;
+}
+
+.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 40px;
+}
+
+.empty-content {
+  text-align: center;
+  background: rgba(255,255,255,0.95);
+  border-radius: 25px;
+  padding: 40px;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  max-width: 400px;
+}
+
+.empty-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+}
+
+.empty-content h3 {
+  color: #333;
+  font-size: 24px;
+  margin: 0 0 15px 0;
+  font-weight: 600;
+}
+
+.empty-content p {
+  color: #666;
+  font-size: 16px;
+  margin: 0 0 25px 0;
+  line-height: 1.5;
+}
+
+.empty-btn {
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #ff6b9d 0%, #f093fb 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+}
+
+.empty-btn:hover {
+  background: linear-gradient(135deg, #f55a8b 0%, #e085e8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+}
+
+.movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.movie-card {
+  background: rgba(255,255,255,0.9);
+  border-radius: 15px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s;
+  backdrop-filter: blur(10px);
+}
+
+.movie-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.movie-cover {
+  position: relative;
+  height: 200px;
+}
+
+.movie-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+}
+
+.movie-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.movie-card:hover .movie-overlay {
+  opacity: 1;
+}
+
+.play-btn {
+  padding: 10px 20px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.movie-info {
+  padding: 15px;
+}
+
+.movie-info h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.movie-info p {
+  color: #666;
+  margin: 0 0 10px 0;
+  font-size: 14px;
+}
+
+.movie-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.public {
+  color: #4caf50;
+}
+
+.private {
+  color: #ff9800;
+}
+
+
+
+@media (max-width: 768px) {
+  .top-bar {
+    padding: 10px 15px;
+  }
+  
+  .search-section {
+    padding: 20px;
+  }
+  
+  .create-btn {
+    padding: 8px 15px;
+    font-size: 12px;
+  }
+  
+  .movies-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .empty-content {
+    padding: 30px 20px;
+    margin: 0 20px;
+  }
+  
+  .empty-icon {
+    font-size: 50px;
+  }
+  
+  .empty-content h3 {
+    font-size: 20px;
+  }
+  
+  .empty-content p {
+    font-size: 14px;
+  }
+}
+</style>

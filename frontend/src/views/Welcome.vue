@@ -12,9 +12,9 @@
         <h1 class="title text-gradient-romantic">美好回忆</h1>
       </div>
 
-      <!-- 伴侣状态显示区域 -->
-      <div v-if="isLoggedIn" class="partner-status-section">
-                 <!-- 没有伴侣时显示邀请图标 -->
+             <!-- 伴侣状态显示区域 -->
+       <div v-if="isLoggedIn" class="partner-status-section">
+                  <!-- 没有伴侣时显示邀请图标 -->
          <div v-if="!partnerInfo.hasPartner && !partnerInfo.hasPendingInvitation && !partnerInfo.hasSentInvitation" 
               class="partner-invite-section" @click="showInviteDialog = true">
            <div class="partner-invite-icon">💝</div>
@@ -24,15 +24,15 @@
            </div>
          </div>
 
-        <!-- 有伴侣时显示伴侣信息 -->
-        <div v-else-if="partnerInfo.hasPartner" 
-             class="partner-info-section" @click="showPartnerDialog = true">
-          <div class="partner-avatar">💑</div>
-          <div class="partner-info">
-            <h3>我的伴侣</h3>
-            <p>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</p>
-          </div>
-        </div>
+                             <!-- 有伴侣时显示伴侣信息，点击显示伴侣信息弹窗 -->
+           <div v-else-if="partnerInfo.hasPartner" 
+                class="partner-info-section" @click="showPartnerDialog = true">
+             <div class="partner-avatar">💑</div>
+             <div class="partner-info">
+               <h3>我的伴侣</h3>
+               <p>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</p>
+             </div>
+           </div>
 
                  <!-- 有邀请时显示邀请信息 -->
          <div v-else-if="partnerInfo.hasPendingInvitation" 
@@ -85,23 +85,32 @@
             </div>
           </div>
           
+          <div class="feature-item" @click="goToMovies">
+            <span class="feature-icon">🎬</span>
+            <div class="feature-text">
+              <h3>一起看电影</h3>
+              <p>与伴侣同步观看电影</p>
+            </div>
+          </div>
+          
 
-        </div>
-      </div>
+                 </div>
+       </div>
 
-             <div class="welcome-actions">
+       <!-- 未登录时显示登录按钮 -->
+       <div v-if="!isLoggedIn" class="login-section">
          <van-button 
            type="primary" 
            size="large" 
            @click="goToLogin"
            class="btn-primary ripple"
-           style="z-index: 1000; position: relative;"
          >
            <span class="btn-icon">💕</span>
            开始使用
          </van-button>
-         
-         <!-- 管理按钮组 -->
+       </div>
+
+             <!-- 管理按钮组 -->
          <div v-if="isLoggedIn" class="admin-actions">
            <van-button size="small" type="default" @click="goToAdmin" class="admin-btn" title="后台管理">
              <span class="btn-icon">🎛️</span>
@@ -112,7 +121,6 @@
              <span class="btn-text">退出</span>
            </van-button>
          </div>
-       </div>
     </div>
 
     <!-- 邀请伴侣弹窗 -->
@@ -131,20 +139,19 @@
       </div>
     </van-dialog>
 
-    <!-- 伴侣信息弹窗 -->
-    <van-dialog v-model:show="showPartnerDialog" title="伴侣信息" :show-confirm-button="false">
-      <div class="partner-dialog-content">
-        <div class="partner-detail">
-          <div class="partner-avatar-large">💑</div>
-          <h3>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</h3>
-          <p>用户名: {{ partnerInfo.partnerUsername }}</p>
-        </div>
-                 <div class="partner-actions">
-           <van-button @click="showPartnerDialog = false" type="default">关闭</van-button>
-           <van-button @click="handleUnbindPartner" type="danger" :loading="unbindLoading">解除关系</van-button>
-         </div>
-      </div>
-    </van-dialog>
+                                                                                                                       <!-- 伴侣信息弹窗 -->
+         <van-dialog v-model:show="showPartnerDialog" title="伴侣信息" :show-confirm-button="false" :close-on-click-overlay="true">
+           <div class="partner-dialog-content">
+             <div class="partner-detail">
+               <div class="partner-avatar-large" @click="confirmUnbindPartner" :class="{ 'unbind-loading': unbindLoading }">💑</div>
+               <h3>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</h3>
+               <p>用户名: {{ partnerInfo.partnerUsername }}</p>
+             </div>
+                                         <div class="partner-actions">
+                 <van-button @click="goToHome" class="enter-space-btn">进入我们的空间</van-button>
+               </div>
+           </div>
+         </van-dialog>
 
          <!-- 邀请处理弹窗 -->
      <van-dialog v-model:show="showInvitationDialog" title="伴侣邀请" :show-confirm-button="false">
@@ -185,7 +192,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { checkLoginState, clearLoginState } from '@/utils/auth'
 import { getPartnerInfo, invitePartner, acceptInvitation, rejectInvitation, unbindPartner, cancelInvitation } from '@/api/partner'
-import { showToast } from 'vant'
+import { showToast, showDialog } from 'vant'
 
 const router = useRouter()
 
@@ -214,15 +221,6 @@ const cancelLoading = ref(false)
 const isLoggedIn = computed(() => checkLoginState())
 
 // 方法
-const goToLogin = () => {
-  if (checkLoginState()) {
-    // 已登录，直接跳转到首页
-    router.push('/home')
-  } else {
-    // 未登录，跳转到登录页面
-    router.push('/login?mode=user')
-  }
-}
 
 const goToAdmin = () => {
   if (checkLoginState()) {
@@ -258,6 +256,35 @@ const goToChatRecord = () => {
   if (checkLoginState()) {
     // 已登录，直接跳转到聊天记录页面
     router.push('/chat-record')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login?mode=user')
+  }
+}
+
+const goToMovies = () => {
+  if (checkLoginState()) {
+    // 已登录，直接跳转到电影列表页面
+    router.push('/movies')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login?mode=user')
+  }
+}
+
+const goToHome = () => {
+  if (checkLoginState() && partnerInfo.value.hasPartner) {
+    // 已登录且有伴侣，跳转到首页
+    router.push('/home')
+  } else {
+    showToast('需要先建立伴侣关系')
+  }
+}
+
+const goToLogin = () => {
+  if (checkLoginState()) {
+    // 已登录，直接跳转到首页
+    router.push('/home')
   } else {
     // 未登录，跳转到登录页面
     router.push('/login?mode=user')
@@ -334,6 +361,22 @@ const handleRejectInvitation = async () => {
   } finally {
     rejectLoading.value = false
   }
+}
+
+// 二次确认解除伴侣关系
+const confirmUnbindPartner = () => {
+  showDialog({
+    title: '确认解除关系',
+    message: '确定要解除与伴侣的关系吗？此操作不可撤销。',
+    showCancelButton: true,
+    confirmButtonText: '确定解除',
+    cancelButtonText: '取消',
+    confirmButtonColor: '#ff6b9d'
+  }).then(() => {
+    handleUnbindPartner()
+  }).catch(() => {
+    // 用户取消操作
+  })
 }
 
 // 解除伴侣关系
@@ -541,23 +584,7 @@ const handleLogout = () => {
   }
 }
 
-.welcome-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  
-  .van-button {
-    height: 50px;
-    font-size: 18px;
-    font-weight: 600;
-    
-    .btn-icon {
-      margin-right: 8px;
-    }
-  }
-  
 
-}
 
 @media (max-width: 768px) {
   .welcome-container {
@@ -575,29 +602,32 @@ const handleLogout = () => {
     }
   }
   
-  .welcome-actions .van-button {
-    height: 48px;
-    font-size: 16px;
-  }
+
   
-  .admin-actions {
-    gap: 10px;
-    margin-top: 0px;
-    
-    .van-button {
-      height: 36px;
-      padding: 0 12px;
-      
-      .btn-text {
-        font-size: 12px;
-      }
-      
-      .btn-icon {
-        font-size: 14px;
-      }
-    }
-  }
-}
+     .admin-actions {
+     gap: 10px;
+     margin-top: 0px;
+     
+     .van-button {
+       height: 36px;
+       padding: 0 12px;
+       
+       .btn-text {
+         font-size: 12px;
+       }
+       
+       .btn-icon {
+         font-size: 14px;
+       }
+     }
+   }
+   
+   .login-section .van-button {
+     height: 48px;
+     font-size: 16px;
+     padding: 0 25px;
+   }
+ }
 
 // 伴侣状态区域样式
 .partner-status-section {
@@ -656,6 +686,31 @@ const handleLogout = () => {
     font-size: 14px;
     margin: 0;
   }
+  
+  .click-hint {
+    color: #667eea;
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 5px;
+  }
+}
+
+// 登录区域样式
+.login-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  
+  .van-button {
+    height: 50px;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 0 30px;
+    
+    .btn-icon {
+      margin-right: 8px;
+    }
+  }
 }
 
 // 弹窗样式
@@ -663,7 +718,10 @@ const handleLogout = () => {
 .partner-dialog-content,
 .invitation-dialog-content {
   padding: 15px;
+  position: relative;
 }
+
+
 
 .invite-tip {
   color: #666;
@@ -673,7 +731,6 @@ const handleLogout = () => {
 }
 
 .invite-actions,
-.partner-actions,
 .invitation-actions {
   display: flex;
   gap: 10px;
@@ -682,6 +739,27 @@ const handleLogout = () => {
   
   .van-button {
     flex: 1;
+  }
+}
+
+.partner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+  
+  .van-button {
+    width: 100%;
+  }
+  
+  .enter-space-btn {
+    background: linear-gradient(135deg, #ff6b9d 0%, #f093fb 100%);
+    color: white;
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(135deg, #f55a8b 0%, #e085e8 100%);
+    }
   }
 }
 
@@ -696,6 +774,25 @@ const handleLogout = () => {
   font-size: 48px;
   margin-bottom: 15px;
 }
+
+.partner-avatar-large {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  padding: 10px;
+  
+  &:hover {
+    background: rgba(255, 107, 157, 0.1);
+    transform: scale(1.1);
+  }
+  
+  &.unbind-loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+
 
 .partner-detail h3,
 .invitation-detail h3 {

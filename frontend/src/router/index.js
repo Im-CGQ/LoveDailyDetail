@@ -65,6 +65,37 @@ const routes = [
     meta: { title: '聊天记录', requiresAuth: true }
   },
 
+  // 电影相关路由
+            {
+            path: '/movies',
+            name: 'MovieList',
+            component: () => import('@/views/MovieList.vue'),
+            meta: { title: '一起看电影', requiresAuth: true }
+          },
+          {
+            path: '/create-movie',
+            name: 'CreateMovie',
+            component: () => import('@/views/CreateMovie.vue'),
+            meta: { title: '上传电影', requiresAuth: true }
+          },
+  {
+    path: '/movie/:id',
+    name: 'MovieDetail',
+    component: () => import('@/views/MovieDetail.vue'),
+    meta: { title: '电影详情', requiresAuth: true }
+  },
+  {
+    path: '/join-room',
+    name: 'JoinRoom',
+    component: () => import('@/views/JoinRoom.vue'),
+    meta: { title: '加入房间', requiresAuth: true }
+  },
+  {
+    path: '/movie-room/:roomCode',
+    name: 'MovieRoom',
+    component: () => import('@/views/MovieRoom.vue'),
+    meta: { title: '电影房间', requiresAuth: true }
+  },
 
   {
     path: '/login',
