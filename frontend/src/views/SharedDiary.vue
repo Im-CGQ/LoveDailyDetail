@@ -22,7 +22,7 @@
       <!-- 音乐控制面板 -->
       <div class="music-controls" v-show="showMusicControls">
         <div class="music-info">
-          <span class="music-title">背景音乐</span>
+          <span class="music-title">{{ diary.backgroundMusic[0].fileName || '背景音乐' }}</span>
           <div class="music-progress">
             <div class="progress-bar" @click="seekMusic" ref="progressBar">
               <div class="progress-fill" :style="{ width: musicProgress + '%' }"></div>
@@ -46,11 +46,22 @@
       </div>
     </div>
     
-    <div class="content" v-if="diary">
-      <div class="header float">
-        <h1 class="title text-gradient-romantic">{{ diary.title }}</h1>
-        <p class="date pulse">{{ formatDate(diary.date) }}</p>
-      </div>
+         <div class="content" v-if="diary">
+       <!-- 倒计时显示 -->
+       <div class="countdown-section" v-if="countdown">
+         <div class="countdown-card">
+           <div class="countdown-icon">⏰</div>
+           <div class="countdown-info">
+             <span class="countdown-label">分享链接剩余时间</span>
+             <span class="countdown-time">{{ countdown }}</span>
+           </div>
+         </div>
+       </div>
+       
+       <div class="header float">
+         <h1 class="title text-gradient-romantic">{{ diary.title }}</h1>
+         <p class="date pulse">{{ formatDate(diary.date) }}</p>
+       </div>
 
       <div class="media hover-lift">
         <!-- 图片展示 -->
@@ -152,6 +163,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import { getSharedDiary } from '@/api/share'
+import { getShareExpireMinutes } from '@/api/systemConfig'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -162,6 +174,11 @@ const typingComplete = ref(false)
 const loading = ref(true)
 const error = ref(false)
 let typingTimer = null
+
+// 倒计时相关
+const countdown = ref(null)
+const countdownTimer = ref(null)
+const expiresAt = ref(null)
 
 // 音乐播放相关
 const isMusicPlaying = ref(false)
@@ -177,6 +194,47 @@ let progressTimer = null
 
 const formatDate = (date) => {
   return dayjs(date).format('YYYY年MM月DD日')
+}
+
+// 计算倒计时
+const calculateCountdown = () => {
+  if (!expiresAt.value) return
+  
+  const now = new Date().getTime()
+  const expireTime = new Date(expiresAt.value).getTime()
+  const diff = expireTime - now
+  
+  if (diff <= 0) {
+    // 倒计时结束，直接显示错误页面
+    countdown.value = '00:00:00'
+    clearInterval(countdownTimer.value)
+    error.value = true
+    diary.value = null
+    return
+  }
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+  
+  countdown.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+}
+
+// 启动倒计时
+const startCountdown = () => {
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+  }
+  calculateCountdown() // 立即计算一次
+  countdownTimer.value = setInterval(calculateCountdown, 1000)
+}
+
+// 停止倒计时
+const stopCountdown = () => {
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+    countdownTimer.value = null
+  }
 }
 
 // 分享页面不需要分享功能
@@ -262,6 +320,16 @@ const getVideoStyle = (video) => {
 
 // 视频播放功能
 const playVideo = (index) => {
+  // 如果音乐正在播放，先停止音乐
+  if (isMusicPlaying.value && audioElement) {
+    audioElement.pause()
+    isMusicPlaying.value = false
+    if (progressTimer) {
+      clearInterval(progressTimer)
+      progressTimer = null
+    }
+  }
+  
   const videoElements = document.querySelectorAll('.video-player')
   const videoElement = videoElements[index]
   if (videoElement) {
@@ -326,6 +394,15 @@ const toggleMusic = () => {
       progressTimer = null
     }
   } else {
+    // 如果音乐要开始播放，先停止所有视频
+    const videoElements = document.querySelectorAll('.video-player')
+    videoElements.forEach(video => {
+      if (!video.paused) {
+        video.pause()
+      }
+    })
+    
+    // 然后播放音乐
     audioElement.play()
     isMusicPlaying.value = true
     startProgressTimer()
@@ -465,6 +542,18 @@ const loadDiary = async () => {
     const diaryData = await getSharedDiary(shareToken)
     diary.value = diaryData
     
+    // 从分享链接数据中获取过期时间
+    if (diaryData.expiresAt) {
+      expiresAt.value = new Date(diaryData.expiresAt)
+    } else {
+      // 如果没有过期时间，使用系统配置的默认时间
+      const expireMinutes = await getShareExpireMinutes()
+      expiresAt.value = new Date(Date.now() + expireMinutes * 60 * 1000)
+    }
+    
+    // 启动倒计时
+    startCountdown()
+    
     // 启动打字机效果
     if (diary.value && diary.value.description) {
       startTyping(diary.value.description)
@@ -477,6 +566,7 @@ const loadDiary = async () => {
   } catch (err) {
     console.error('加载分享日记失败:', err)
     error.value = true
+    stopCountdown()
   } finally {
     loading.value = false
   }
@@ -506,6 +596,9 @@ onUnmounted(() => {
     clearTimeout(typingTimer) // 清理打字机定时器
   }
   
+  // 清理倒计时定时器
+  stopCountdown()
+  
   // 清理音乐播放器资源
   if (audioElement) {
     audioElement.pause()
@@ -531,12 +624,55 @@ onUnmounted(() => {
 
 
 
-.content {
-  padding: 20px;
-  position: relative;
-  z-index: 2;
-  padding-bottom: 40px;
-}
+ .content {
+   padding: 20px;
+   position: relative;
+   z-index: 2;
+   padding-bottom: 40px;
+ }
+
+/* 倒计时样式 */
+.countdown-section {
+   margin-bottom: 20px;
+   
+   .countdown-card {
+     background: rgba(255, 255, 255, 0.1);
+     backdrop-filter: blur(10px);
+     border-radius: 15px;
+     padding: 15px 20px;
+     display: flex;
+     align-items: center;
+     gap: 15px;
+     border: 1px solid rgba(255, 255, 255, 0.2);
+     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+     
+     .countdown-icon {
+       font-size: 24px;
+       animation: pulse 2s ease-in-out infinite;
+     }
+     
+     .countdown-info {
+       flex: 1;
+       display: flex;
+       flex-direction: column;
+       gap: 5px;
+       
+       .countdown-label {
+         color: rgba(255, 255, 255, 0.8);
+         font-size: 14px;
+         font-weight: 500;
+       }
+       
+       .countdown-time {
+         color: white;
+         font-size: 20px;
+         font-weight: bold;
+         font-family: 'Courier New', monospace;
+         letter-spacing: 2px;
+       }
+     }
+   }
+ }
 
 .header {
   text-align: center;
@@ -864,59 +1000,66 @@ onUnmounted(() => {
     /* 分享页面不需要操作按钮样式 */
  
  .error-container {
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   height: 60vh;
-   padding: 20px;
-   
-   .error-content {
-     text-align: center;
-     max-width: 400px;
-     
-     .error-icon {
-       font-size: 64px;
-       margin-bottom: 20px;
-       animation: pulse 2s ease-in-out infinite;
-     }
-     
-     .error-title {
-       color: white;
-       font-size: 24px;
-       font-weight: bold;
-       margin-bottom: 15px;
-     }
-     
-     .error-message {
-       color: rgba(255, 255, 255, 0.8);
-       font-size: 16px;
-       line-height: 1.6;
-       margin-bottom: 30px;
-     }
-     
-     .home-btn {
-       height: 48px;
-       border-radius: 24px;
-       font-size: 16px;
-       font-weight: 500;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       gap: 8px;
-       background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
-       border: none;
-       
-       .btn-icon {
-         font-size: 18px;
-       }
-       
-       &:hover {
-         transform: translateY(-2px);
-         box-shadow: 0 8px 25px rgba(255, 107, 157, 0.4);
-       }
-     }
-   }
- }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  padding: 20px;
+  position: relative;
+  z-index: 10;
+  
+  .error-content {
+    text-align: center;
+    max-width: 400px;
+    position: relative;
+    z-index: 11;
+    
+    .error-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .error-title {
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    
+    .error-message {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    
+    .home-btn {
+      height: 48px;
+      border-radius: 24px;
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+      border: none;
+      position: relative;
+      z-index: 12;
+      cursor: pointer;
+      
+      .btn-icon {
+        font-size: 18px;
+      }
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255, 107, 157, 0.4);
+      }
+    }
+  }
+}
  
  .loading {
   display: flex;

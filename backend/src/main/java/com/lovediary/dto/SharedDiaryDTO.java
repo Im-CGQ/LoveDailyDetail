@@ -21,4 +21,7 @@ public class SharedDiaryDTO {
     private Long userId;
     private String userName;
     private String userDisplayName;
+    
+    // 分享链接信息
+    private LocalDateTime expiresAt;
 }

@@ -689,6 +689,26 @@ watch(audioElement, (newElement) => {
 })
 
 const onSubmit = async (values) => {
+  // 检查是否有正在上传的媒体资源
+  const uploadingImages = form.value.images.some(file => file.status === 'uploading')
+  const uploadingVideos = form.value.videos.some(file => file.status === 'uploading')
+  const uploadingMusic = form.value.backgroundMusic.some(file => file.status === 'uploading')
+  
+  if (uploadingImages || uploadingVideos || uploadingMusic) {
+    showToast('请等待媒体资源上传完成后再提交')
+    return
+  }
+  
+  // 检查是否有上传失败的媒体资源
+  const failedImages = form.value.images.some(file => file.status === 'failed')
+  const failedVideos = form.value.videos.some(file => file.status === 'failed')
+  const failedMusic = form.value.backgroundMusic.some(file => file.status === 'failed')
+  
+  if (failedImages || failedVideos || failedMusic) {
+    showToast('请处理上传失败的媒体资源后再提交')
+    return
+  }
+  
   loading.value = true
   
   try {
@@ -955,6 +975,8 @@ onUnmounted(() => {
     display: block;
     cursor: pointer;
     overflow: hidden;
+    width: 100%;
+    height: auto;
     
     &:hover {
       transform: scale(1.02);
@@ -967,6 +989,20 @@ onUnmounted(() => {
     
     &::-webkit-media-controls-panel {
       background: rgba(0, 0, 0, 0.7);
+    }
+    
+    &::-webkit-media-controls-play-button {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+    }
+    
+    &::-webkit-media-controls-timeline {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    &::-webkit-media-controls-current-time-display,
+    &::-webkit-media-controls-time-remaining-display {
+      color: white;
     }
   }
 }

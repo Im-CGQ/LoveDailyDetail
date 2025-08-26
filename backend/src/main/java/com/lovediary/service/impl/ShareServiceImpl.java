@@ -133,6 +133,9 @@ public class ShareServiceImpl implements ShareService {
             dto.setUserDisplayName(diary.getUser().getDisplayName());
         }
         
+        // 设置分享链接过期时间
+        dto.setExpiresAt(shareLink.getExpiresAt());
+        
         return dto;
     }
     
@@ -229,6 +232,9 @@ public class ShareServiceImpl implements ShareService {
             dto.setReceiverName(letter.getReceiver().getUsername());
             dto.setReceiverDisplayName(letter.getReceiver().getDisplayName());
         }
+        
+        // 设置分享链接过期时间
+        dto.setExpiresAt(shareLink.getExpiresAt());
         
         return dto;
     }

@@ -23,7 +23,7 @@
       <!-- 音乐控制面板 -->
       <div class="music-controls" v-show="showMusicControls">
         <div class="music-info">
-          <span class="music-title">背景音乐</span>
+          <span class="music-title">{{ currentDiary.backgroundMusic[0].fileName || '背景音乐' }}</span>
           <div class="music-progress">
             <div class="progress-bar" @click="seekMusic" ref="progressBar">
               <div class="progress-fill" :style="{ width: musicProgress + '%' }"></div>
@@ -71,13 +71,13 @@
               :key="index"
               class="image-wrapper"
             >
-              <img 
-                :src="image.imageUrl" 
-                :alt="`回忆图片 ${index + 1}`" 
-                class="memory-image" 
+            <img 
+              :src="image.imageUrl" 
+              :alt="`回忆图片 ${index + 1}`" 
+              class="memory-image" 
                 :style="getImageStyle(image)"
-                @click="previewImage(index)"
-              />
+              @click="previewImage(index)"
+            />
             </div>
           </div>
         </div>
@@ -127,12 +127,13 @@
         </div>
       </div>
 
-      <div class="action-section">
+      <div class="action-section" style="position: relative; z-index: 10;">
         <van-button 
           type="primary" 
           size="large" 
           @click="goToCalendar"
           class="action-btn btn-primary ripple"
+          style="position: relative; z-index: 11;"
         >
           <span class="btn-icon">📅</span>
           查看时光日历
@@ -143,6 +144,7 @@
           size="large" 
           @click="shareMemory"
           class="action-btn share-btn"
+          style="position: relative; z-index: 11;"
         >
           <span class="btn-icon">💌</span>
           创建美好回忆
@@ -161,12 +163,13 @@
         <h2 class="no-diary-title">还没有美好回忆</h2>
         <p class="no-diary-subtitle">开始记录你们的美好时光吧</p>
         
-        <div class="no-diary-actions">
+        <div class="no-diary-actions" style="position: relative; z-index: 10;">
           <van-button 
             type="primary" 
             size="large" 
             @click="goToCreateDiary"
             class="create-diary-btn ripple"
+            style="position: relative; z-index: 11;"
           >
             <span class="btn-icon">✍️</span>
             写第一篇日记
@@ -177,6 +180,7 @@
             size="large" 
             @click="goToCalendar"
             class="view-calendar-btn"
+            style="position: relative; z-index: 11;"
           >
             <span class="btn-icon">📅</span>
             查看时光日历
@@ -376,6 +380,13 @@ const getVideoStyle = (video) => {
 
 // 视频播放功能
 const playVideo = (index) => {
+  // 如果音乐正在播放，先停止音乐
+  if (isMusicPlaying.value && audioElement.value) {
+    audioElement.value.pause()
+    isMusicPlaying.value = false
+    stopProgressTimer()
+  }
+  
   const videoElements = document.querySelectorAll('.video-player')
   const videoElement = videoElements[index]
   if (videoElement) {
@@ -453,9 +464,19 @@ const toggleMusicControls = () => {
 const toggleMusic = () => {
   if (!audioElement.value) return
   
+  // 如果音乐正在播放，停止音乐
   if (isMusicPlaying.value) {
     audioElement.value.pause()
   } else {
+    // 如果音乐要开始播放，先停止所有视频
+    const videoElements = document.querySelectorAll('.video-player')
+    videoElements.forEach(video => {
+      if (!video.paused) {
+        video.pause()
+      }
+    })
+    
+    // 然后播放音乐
     audioElement.value.play()
   }
 }
@@ -737,26 +758,26 @@ onUnmounted(() => {
       gap: 15px;
       
       .image-wrapper {
-        border-radius: 20px;
+    border-radius: 20px;
         overflow: visible;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
         
         &:hover {
           transform: scale(1.02);
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
-        
-        .memory-image {
+    
+    .memory-image {
           width: 100% !important;
           height: auto !important;
           max-height: none !important;
           display: block;
-          cursor: pointer;
-          transition: transform 0.3s ease;
-          
-          &:hover {
-            transform: scale(1.02);
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      
+      &:hover {
+        transform: scale(1.02);
           }
         }
       }
@@ -813,7 +834,7 @@ onUnmounted(() => {
           background: #000;
           transition: all 0.3s ease;
           display: block;
-        }
+         }
      }
   }
 }

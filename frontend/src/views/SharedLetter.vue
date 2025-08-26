@@ -1,5 +1,16 @@
 <template>
   <div class="letter-detail-page">
+    <!-- 倒计时显示 -->
+    <div class="countdown-section" v-if="countdown">
+      <div class="countdown-card">
+        <div class="countdown-icon">⏰</div>
+        <div class="countdown-info">
+          <span class="countdown-label">分享链接剩余时间</span>
+          <span class="countdown-time">{{ countdown }}</span>
+        </div>
+      </div>
+    </div>
+    
     <div class="letter-paper" v-if="letter">
       <div class="paper-border">
         <div class="paper-content">
@@ -74,18 +85,23 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getSharedLetter } from '@/api/share'
+import { getShareExpireMinutes } from '@/api/systemConfig'
 import { showToast } from 'vant'
 
 const route = useRoute()
 const router = useRouter()
 
 const letter = ref(null)
-const countdownTimer = ref(null)
 const displayText = ref('')
 const typingComplete = ref(false)
 const loading = ref(true)
 const error = ref(false)
 let typingTimer = null
+
+// 倒计时相关
+const countdown = ref(null)
+const countdownTimer = ref(null)
+const expiresAt = ref(null)
 
 const fetchLetterDetail = async () => {
   try {
@@ -98,13 +114,25 @@ const fetchLetterDetail = async () => {
       return
     }
     
-    letter.value = await getSharedLetter(shareToken)
+    const letterData = await getSharedLetter(shareToken)
+    letter.value = letterData
+    
+    // 从分享链接数据中获取过期时间
+    if (letterData.expiresAt) {
+      expiresAt.value = new Date(letterData.expiresAt)
+    } else {
+      // 如果没有过期时间，使用系统配置的默认时间
+      const expireMinutes = await getShareExpireMinutes()
+      expiresAt.value = new Date(Date.now() + expireMinutes * 60 * 1000)
+    }
+    
+    // 启动倒计时
+    startCountdown()
+    
     // 启动打字机效果
     if (letter.value && letter.value.content) {
       startTyping(letter.value.content)
     }
-    // 获取信件详情后启动倒计时
-    startCountdown()
   } catch (err) {
     console.error('获取分享信件失败:', err)
     error.value = true
@@ -160,21 +188,40 @@ const formatCountdown = (unlockTime) => {
   }
 }
 
+// 计算倒计时
+const calculateCountdown = () => {
+  if (!expiresAt.value) return
+  
+  const now = new Date().getTime()
+  const expireTime = new Date(expiresAt.value).getTime()
+  const diff = expireTime - now
+  
+  if (diff <= 0) {
+    // 倒计时结束，直接显示错误页面
+    countdown.value = '00:00:00'
+    clearInterval(countdownTimer.value)
+    error.value = true
+    letter.value = null
+    return
+  }
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+  
+  countdown.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+}
+
+// 启动倒计时
 const startCountdown = () => {
-  if (letter.value?.unlockTime && !letter.value?.isRead) {
-    // 清除之前的定时器
     if (countdownTimer.value) {
       clearInterval(countdownTimer.value)
     }
-    
-    // 启动新的定时器，每秒更新一次
-    countdownTimer.value = setInterval(() => {
-      // 强制更新组件，触发倒计时重新计算
-      letter.value = { ...letter.value }
-    }, 1000)
-  }
+  calculateCountdown() // 立即计算一次
+  countdownTimer.value = setInterval(calculateCountdown, 1000)
 }
 
+// 停止倒计时
 const stopCountdown = () => {
   if (countdownTimer.value) {
     clearInterval(countdownTimer.value)
@@ -217,10 +264,12 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  stopCountdown()
   if (typingTimer) {
     clearTimeout(typingTimer) // 清理打字机定时器
   }
+  
+  // 清理倒计时定时器
+  stopCountdown()
 })
 </script>
 
@@ -244,6 +293,51 @@ onUnmounted(() => {
     background-size: 100px 100px, 150px 150px;
     opacity: 0.3;
     pointer-events: none;
+  }
+}
+
+/* 倒计时样式 */
+.countdown-section {
+  margin-bottom: 20px;
+  
+  .countdown-card {
+    background: rgba(245, 222, 179, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid rgba(245, 222, 179, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    
+    .countdown-icon {
+      font-size: 24px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .countdown-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      
+      .countdown-label {
+        color: rgba(245, 222, 179, 0.8);
+        font-size: 14px;
+        font-weight: 500;
+        font-family: 'Times New Roman', serif;
+      }
+      
+      .countdown-time {
+        color: #F5DEB3;
+        font-size: 20px;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      }
+    }
   }
 }
 
@@ -584,10 +678,14 @@ onUnmounted(() => {
   justify-content: center;
   min-height: 400px;
   padding: 20px;
+  position: relative;
+  z-index: 10;
   
   .error-content {
     text-align: center;
     max-width: 400px;
+    position: relative;
+    z-index: 11;
     
     .error-icon {
       font-size: 64px;
@@ -630,6 +728,9 @@ onUnmounted(() => {
       color: #F5DEB3;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
       font-family: 'Times New Roman', serif;
+      position: relative;
+      z-index: 12;
+      cursor: pointer;
       
       .btn-icon {
         font-size: 18px;

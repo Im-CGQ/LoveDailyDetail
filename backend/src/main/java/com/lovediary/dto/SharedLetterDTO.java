@@ -22,4 +22,7 @@ public class SharedLetterDTO {
     private Long receiverId;
     private String receiverName;
     private String receiverDisplayName;
+    
+    // 分享链接信息
+    private LocalDateTime expiresAt;
 }

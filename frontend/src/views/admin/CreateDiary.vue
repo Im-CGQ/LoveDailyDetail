@@ -171,8 +171,9 @@
           type="primary" 
           native-type="submit"
           :loading="loading"
+          :disabled="hasUploadingFiles || hasFailedFiles"
         >
-          创建回忆
+          {{ getSubmitButtonText() }}
         </van-button>
       </div>
     </van-form>
@@ -191,7 +192,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import dayjs from 'dayjs'
@@ -226,6 +227,36 @@ const currentMusicTime = ref(0)
 const musicDuration = ref(0)
 const musicProgress = ref(0)
 const musicProgressTimer = ref(null)
+
+// 计算是否有正在上传的文件
+const hasUploadingFiles = computed(() => {
+  const uploadingImages = form.value.images.some(file => file.status === 'uploading')
+  const uploadingVideos = form.value.videos.some(file => file.status === 'uploading')
+  const uploadingMusic = form.value.backgroundMusic.some(file => file.status === 'uploading')
+  return uploadingImages || uploadingVideos || uploadingMusic
+})
+
+// 计算是否有上传失败的文件
+const hasFailedFiles = computed(() => {
+  const failedImages = form.value.images.some(file => file.status === 'failed')
+  const failedVideos = form.value.videos.some(file => file.status === 'failed')
+  const failedMusic = form.value.backgroundMusic.some(file => file.status === 'failed')
+  return failedImages || failedVideos || failedMusic
+})
+
+// 获取提交按钮文本
+const getSubmitButtonText = () => {
+  if (loading.value) {
+    return '创建中...'
+  }
+  if (hasUploadingFiles.value) {
+    return '等待上传完成'
+  }
+  if (hasFailedFiles.value) {
+    return '请处理上传失败的文件'
+  }
+  return '创建回忆'
+}
 
 const onDateConfirm = (val) => {
   try {
@@ -715,6 +746,26 @@ onUnmounted(() => {
 })
 
 const onSubmit = async (values) => {
+  // 检查是否有正在上传的媒体资源
+  const uploadingImages = form.value.images.some(file => file.status === 'uploading')
+  const uploadingVideos = form.value.videos.some(file => file.status === 'uploading')
+  const uploadingMusic = form.value.backgroundMusic.some(file => file.status === 'uploading')
+  
+  if (uploadingImages || uploadingVideos || uploadingMusic) {
+    showToast('请等待媒体资源上传完成后再提交')
+    return
+  }
+  
+  // 检查是否有上传失败的媒体资源
+  const failedImages = form.value.images.some(file => file.status === 'failed')
+  const failedVideos = form.value.videos.some(file => file.status === 'failed')
+  const failedMusic = form.value.backgroundMusic.some(file => file.status === 'failed')
+  
+  if (failedImages || failedVideos || failedMusic) {
+    showToast('请处理上传失败的媒体资源后再提交')
+    return
+  }
+  
   loading.value = true
   
   try {
@@ -903,6 +954,8 @@ const onSubmit = async (values) => {
     display: block;
     cursor: pointer;
     overflow: hidden;
+    width: 100%;
+    height: auto;
     
     &:hover {
       transform: scale(1.02);
@@ -917,6 +970,19 @@ const onSubmit = async (values) => {
       background: rgba(0, 0, 0, 0.7);
     }
     
+    &::-webkit-media-controls-play-button {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+    }
+    
+    &::-webkit-media-controls-timeline {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    &::-webkit-media-controls-current-time-display,
+    &::-webkit-media-controls-time-remaining-display {
+      color: white;
+    }
   }
 }
 
@@ -1132,6 +1198,15 @@ const onSubmit = async (values) => {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(255, 107, 157, 0.3);
       background: linear-gradient(135deg, #ff5a8c 0%, #ff7a9a 100%) !important;
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      background: #ccc !important;
+      color: #666 !important;
+      transform: none !important;
+      box-shadow: none !important;
+      cursor: not-allowed;
     }
   }
 }

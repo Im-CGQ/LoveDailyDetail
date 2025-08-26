@@ -23,7 +23,7 @@
       <!-- 音乐控制面板 -->
       <div class="music-controls" v-show="showMusicControls">
         <div class="music-info">
-          <span class="music-title">背景音乐</span>
+          <span class="music-title">{{ diary.backgroundMusic[0].fileName || '背景音乐' }}</span>
           <div class="music-progress">
             <div class="progress-bar" @click="seekMusic" ref="progressBar">
               <div class="progress-fill" :style="{ width: musicProgress + '%' }"></div>
@@ -66,12 +66,12 @@
               :key="index"
               class="image-wrapper"
             >
-              <img 
-                :src="image.imageUrl" 
-                class="image" 
+            <img 
+              :src="image.imageUrl" 
+              class="image" 
                 :style="getImageStyle(image)"
-                @click="previewImage(index)"
-              />
+              @click="previewImage(index)"
+            />
             </div>
           </div>
         </div>
@@ -313,6 +313,16 @@ const getVideoStyle = (video) => {
 
 // 视频播放功能
 const playVideo = (index) => {
+  // 如果音乐正在播放，先停止音乐
+  if (isMusicPlaying.value && audioElement) {
+    audioElement.pause()
+    isMusicPlaying.value = false
+    if (progressTimer) {
+      clearInterval(progressTimer)
+      progressTimer = null
+    }
+  }
+  
   const videoElements = document.querySelectorAll('.video-player')
   const videoElement = videoElements[index]
   if (videoElement) {
@@ -377,6 +387,15 @@ const toggleMusic = () => {
       progressTimer = null
     }
   } else {
+    // 如果音乐要开始播放，先停止所有视频
+    const videoElements = document.querySelectorAll('.video-player')
+    videoElements.forEach(video => {
+      if (!video.paused) {
+        video.pause()
+      }
+    })
+    
+    // 然后播放音乐
     audioElement.play()
     isMusicPlaying.value = true
     startProgressTimer()
@@ -775,30 +794,30 @@ onUnmounted(() => {
       gap: 15px;
       
       .image-wrapper {
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
         
         &:hover {
           transform: scale(1.02);
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
-        
-        .image {
+    
+         .image {
           width: 100% !important;
           height: auto !important;
           max-height: none !important;
           display: block;
-          cursor: pointer;
-          transition: transform 0.3s ease;
-          
-          &:hover {
-            transform: scale(1.02);
+       cursor: pointer;
+       transition: transform 0.3s ease;
+       
+       &:hover {
+         transform: scale(1.02);
           }
         }
-      }
-    }
+       }
+     }
   }
   
   /* 视频播放器样式 */
@@ -845,7 +864,7 @@ onUnmounted(() => {
         }
       }
       
-            .video-player {
+      .video-player {
         border-radius: 20px;
         overflow: hidden;
         background: #000;

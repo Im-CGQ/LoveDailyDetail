@@ -99,7 +99,7 @@
         <div class="form-actions">
           <van-button 
             type="primary" 
-            native-type="submit" 
+            native-type="submit"
             :loading="loading"
             block
           >
@@ -302,7 +302,7 @@ const onTimeConfirm = (val) => {
     combineDateTime()
     
     console.log('选择的时间:', form.unlockTime)
-  } catch (error) {
+    } catch (error) {
     console.error('时间处理错误:', error)
     showTimePicker.value = false
   }
@@ -464,22 +464,22 @@ onMounted(async () => {
   padding: 20px;
   
   .header {
-    text-align: center;
+  text-align: center;
     margin-bottom: 20px;
-    
+  
     h2 {
       color: #333;
-      margin-bottom: 10px;
+    margin-bottom: 10px;
       font-size: 24px;
     }
     
     .subtitle {
       color: #666;
       font-size: 14px;
-    }
   }
-  
-  .form-container {
+}
+
+.form-container {
     border-radius: 8px;
     overflow: hidden;
     
@@ -530,11 +530,11 @@ onMounted(async () => {
       &:hover {
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(255, 107, 157, 0.2);
-      }
     }
   }
-  
-  .form-actions {
+}
+
+.form-actions {
     padding: 20px;
   }
   
@@ -548,7 +548,7 @@ onMounted(async () => {
       h3 {
         color: #333;
         margin-bottom: 10px;
-        font-size: 18px;
+    font-size: 18px;
       }
       
       .unlock-time {
