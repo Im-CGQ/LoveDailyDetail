@@ -129,6 +129,32 @@ public class SystemConfigServiceImpl implements SystemConfigService {
     }
 
     @Override
+    public Integer getShareExpireMinutes() {
+        SystemConfigDTO config = getConfigByKey("share_expire_minutes");
+        return config != null ? Integer.parseInt(config.getConfigValue()) : 60;
+    }
+
+    @Override
+    public void setShareExpireMinutes(Integer minutes) {
+        // 先检查配置是否存在
+        SystemConfigDTO existingConfig = getConfigByKey("share_expire_minutes");
+        if (existingConfig != null) {
+            // 如果存在，更新现有配置
+            existingConfig.setConfigValue(String.valueOf(minutes));
+            saveConfig(existingConfig);
+        } else {
+            // 如果不存在，创建新配置
+            SystemConfigDTO config = new SystemConfigDTO();
+            config.setConfigKey("share_expire_minutes");
+            config.setConfigValue(String.valueOf(minutes));
+            config.setConfigType("NUMBER");
+            config.setDescription("分享链接过期时间（分钟）");
+            config.setUserId(null); // 全局配置
+            saveConfig(config);
+        }
+    }
+
+    @Override
     public Map<String, Object> getConfigMap(Long userId) {
         List<SystemConfigDTO> configs = getUserConfigs(userId);
         Map<String, Object> configMap = new HashMap<>();

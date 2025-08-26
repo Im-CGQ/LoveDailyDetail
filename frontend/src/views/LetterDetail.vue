@@ -82,6 +82,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getLetterById, markAsRead } from '@/api/letter'
 import { createLetterShareLink } from '@/api/share'
+import { copyToClipboard } from '@/utils/clipboard'
+import { getShareExpireMinutes } from '@/api/systemConfig'
 import { showToast } from 'vant'
 
 const route = useRoute()
@@ -222,33 +224,7 @@ const showFullText = () => {
   }
 }
 
-// 兼容移动设备的复制功能
-const copyToClipboard = async (text) => {
-  try {
-    // 优先使用现代 Clipboard API
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text)
-      return true
-    } else {
-      // 降级方案：使用传统的 document.execCommand
-      const textArea = document.createElement('textarea')
-      textArea.value = text
-      textArea.style.position = 'fixed'
-      textArea.style.left = '-999999px'
-      textArea.style.top = '-999999px'
-      document.body.appendChild(textArea)
-      textArea.focus()
-      textArea.select()
-      
-      const successful = document.execCommand('copy')
-      document.body.removeChild(textArea)
-      return successful
-    }
-  } catch (error) {
-    console.error('复制失败:', error)
-    return false
-  }
-}
+// 复制功能移动到 utils/clipboard.js，统一使用
 
 const createShare = async () => {
   if (!letter.value) return
@@ -257,10 +233,25 @@ const createShare = async () => {
     const result = await createLetterShareLink(letter.value.id)
     const shareUrl = window.location.origin + result.shareUrl
     
+    // 获取分享过期时间配置并显示
+    const minutes = await getShareExpireMinutes()
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    let timeText = ''
+    
+    if (hours > 0) {
+      timeText = `${hours}小时`
+      if (remainingMinutes > 0) {
+        timeText += `${remainingMinutes}分钟`
+      }
+    } else {
+      timeText = `${remainingMinutes}分钟`
+    }
+    
     // 复制链接到剪贴板
     const success = await copyToClipboard(shareUrl)
     if (success) {
-      showToast('分享链接已复制到剪贴板，有效期3小时')
+      showToast(`分享链接已复制到剪贴板，将在${timeText}后过期`)
     } else {
       // 如果复制失败，显示链接让用户手动复制
       showToast('复制失败，请手动复制链接')

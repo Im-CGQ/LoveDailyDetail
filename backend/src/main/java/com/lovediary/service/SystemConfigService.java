@@ -16,5 +16,7 @@ public interface SystemConfigService {
     void setTogetherDate(String togetherDate);
     boolean getBackgroundMusicAutoplay();
     void setBackgroundMusicAutoplay(boolean autoplay);
+    Integer getShareExpireMinutes();
+    void setShareExpireMinutes(Integer minutes);
     Map<String, Object> getConfigMap(Long userId);
 }

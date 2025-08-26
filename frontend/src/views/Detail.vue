@@ -128,15 +128,15 @@
           @click="share" 
           class="action-btn btn-primary ripple"
         >
-          <span class="btn-icon">💌</span>
-          创建美好回忆
+          <span class="btn-icon">🔗</span>
+          分享美好回忆
         </van-button>
         
         <van-button 
           type="default" 
           size="large" 
           @click="goBackToCalendar" 
-          class="action-btn share-btn"
+          class="action-btn calendar-btn"
         >
           <span class="btn-icon">📅</span>
           返回日历
@@ -156,7 +156,9 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import { getDiaryById } from '@/api/diary'
-import { getBackgroundMusicAutoplay } from '@/api/systemConfig'
+import { getBackgroundMusicAutoplay, getShareExpireMinutes } from '@/api/systemConfig'
+import { createShareLink } from '@/api/share'
+import { copyToClipboard } from '@/utils/clipboard'
 import BackButton from '@/components/BackButton.vue'
 import dayjs from 'dayjs'
 
@@ -183,8 +185,51 @@ const formatDate = (date) => {
   return dayjs(date).format('YYYY年MM月DD日')
 }
 
-const share = () => {
-  router.push('/admin/diary/create')
+const share = async () => {
+  try {
+    // 获取当前日记ID
+    const diaryId = route.params.id
+    if (!diaryId) {
+      showToast('日记ID不存在')
+      return
+    }
+    
+    // 创建分享链接
+    const shareData = await createShareLink(diaryId)
+    
+    // 获取分享过期时间配置并显示
+    const minutes = await getShareExpireMinutes()
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    let timeText = ''
+    
+    if (hours > 0) {
+      timeText = `${hours}小时`
+      if (remainingMinutes > 0) {
+        timeText += `${remainingMinutes}分钟`
+      }
+    } else {
+      timeText = `${remainingMinutes}分钟`
+    }
+    
+    // 构建完整的分享链接（优先使用后端返回的 shareUrl）
+    const baseUrl = window.location.origin
+    const fullShareUrl = shareData.shareUrl
+      ? `${baseUrl}${shareData.shareUrl}`
+      : `${baseUrl}/share/diary/${shareData.shareToken}`
+    
+    // 复制分享链接到剪贴板（统一工具方法）
+    const success = await copyToClipboard(fullShareUrl)
+    if (success) {
+      showToast(`分享链接已复制到剪贴板，将在${timeText}后过期`)
+    } else {
+      showToast(`复制失败，请手动复制：${fullShareUrl}`)
+    }
+    
+  } catch (error) {
+    console.error('创建分享链接失败:', error)
+    showToast('分享功能暂时不可用')
+  }
 }
 
 // 生成视频封面URL
@@ -877,7 +922,7 @@ onUnmounted(() => {
       font-size: 20px;
     }
     
-    &.share-btn {
+    &.calendar-btn {
       background: rgba(255, 255, 255, 0.2);
       border: 2px solid rgba(255, 255, 255, 0.3);
       color: white;

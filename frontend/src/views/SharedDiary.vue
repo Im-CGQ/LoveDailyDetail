@@ -9,7 +9,7 @@
 
     
     <!-- 全局悬浮音乐播放器 -->
-    <div class="global-floating-music-player" v-if="diary && diary.backgroundMusic">
+    <div class="global-floating-music-player" v-if="diary && diary.backgroundMusic && diary.backgroundMusic.length > 0">
       <div 
         class="music-icon" 
         :class="{ 'playing': isMusicPlaying, 'show-controls': showMusicControls }"
@@ -56,7 +56,7 @@
         <div v-if="diary.images && diary.images.length > 0" class="images-section">
           <div class="images-header">
             <span class="images-emoji">📸</span>
-            <h3 class="images-title">美好瞬间</h3>
+            <h3 class="images-title">美好照片</h3>
           </div>
           <div class="images-container">
             <div 
@@ -65,10 +65,10 @@
               class="image-wrapper"
             >
               <img 
-                :src="image" 
+                :src="image.imageUrl" 
                 class="image" 
+                :style="getImageStyle(image)"
                 @click="previewImage(index)"
-                @load="onImageLoad"
               />
             </div>
           </div>
@@ -81,27 +81,24 @@
             <h3 class="video-title">美好视频</h3>
           </div>
           <div class="video-container">
-                         <div 
-               v-for="(video, index) in diary.videos" 
-               :key="index"
-               class="video-wrapper"
-             >
-                               <video 
-                  :src="video"
-                  :poster="getVideoPoster(video)"
-                  class="video-player"
-                  preload="metadata"
-                  controls
-                  @ended="onVideoEnded"
-                  @play="onVideoPlay"
-                  @pause="onVideoPause"
-                  @loadstart="onVideoLoadStart"
-                  @loadeddata="onVideoLoadedData"
-                  @loadedmetadata="onVideoLoadedMetadata"
-                >
-                 您的浏览器不支持视频播放
-               </video>
-             </div>
+            <div 
+              v-for="(video, index) in diary.videos" 
+              :key="index"
+              class="video-wrapper"
+              :style="getVideoStyle(video)"
+            >
+              <video 
+                :src="video.videoUrl"
+                class="video-player"
+                :style="getVideoStyle(video)"
+                preload="metadata"
+                :poster="generateVideoPoster(video.videoUrl, video)"
+                controls
+                @click="playVideo(index)"
+              >
+                您的浏览器不支持视频播放
+              </video>
+            </div>
           </div>
         </div>
       </div>
@@ -136,7 +133,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showToast, showImagePreview } from 'vant'
+import { showImagePreview, showToast } from 'vant'
 import { getSharedDiary } from '@/api/share'
 import { getBackgroundMusicAutoplay } from '@/api/systemConfig'
 import dayjs from 'dayjs'
@@ -169,8 +166,9 @@ const formatDate = (date) => {
 // 图片预览功能
 const previewImage = (index) => {
   if (diary.value && diary.value.images) {
+    const imageUrls = diary.value.images.map(image => image.imageUrl)
     showImagePreview({
-      images: diary.value.images,
+      images: imageUrls,
       startPosition: index,
       closeable: true,
       closeIconPosition: 'top-right',
@@ -180,6 +178,75 @@ const previewImage = (index) => {
       indicatorColor: '#ff6b9d'
     })
   }
+}
+
+// 获取图片自适应样式
+const getImageStyle = (image) => {
+  if (!image || !image.width || !image.height) {
+    return {}
+  }
+  
+  // 占满容器宽度，高度自适应
+  return {
+    width: '100%',
+    height: 'auto'
+  }
+}
+
+// 获取视频自适应样式
+const getVideoStyle = (video) => {
+  if (!video || !video.height || !video.width) {
+    return {
+      width: '100%',
+      height: '300px'
+    }
+  }
+  
+  // 计算视频容器尺寸
+  const maxWidth = 400
+  const maxHeight = 300
+  const aspectRatio = video.width / video.height
+  
+  let containerWidth = maxWidth
+  let containerHeight = maxWidth / aspectRatio
+  
+  if (containerHeight > maxHeight) {
+    containerHeight = maxHeight
+    containerWidth = maxHeight * aspectRatio
+  }
+  
+  return {
+    width: '100%',
+    height: `${containerHeight}px`
+  }
+}
+
+// 生成视频封面URL
+const generateVideoPoster = (videoUrl, video) => {
+  if (!videoUrl) return ''
+  
+  // 判断是否为阿里云OSS URL
+  if (videoUrl.includes('aliyuncs.com') || videoUrl.includes('oss-')) {
+    // 根据视频原始尺寸计算封面尺寸
+    let posterWidth = 800
+    let posterHeight = 600
+    
+    if (video && video.width && video.height) {
+      const aspectRatio = video.width / video.height
+      posterWidth = 800
+      posterHeight = Math.round(800 / aspectRatio)
+    }
+    
+    // 直接拼接视频截图参数
+    // t_1000: 在1秒处截图
+    // f_jpg: 输出JPG格式
+    // w_800,h_600: 设置宽高
+    // m_fast: 快速模式
+    return videoUrl + `?x-oss-process=video/snapshot,t_1000,f_jpg,w_${posterWidth},h_${posterHeight},m_fast`
+  }
+  
+  // 非阿里云OSS URL，返回原URL
+  return videoUrl
 }
 
 // 打字机效果
@@ -214,73 +281,7 @@ const showFullText = () => {
 
 // 视频播放相关方法
 const playVideo = (index) => {
-  // 移除全屏播放逻辑，现在视频直接播放
   console.log('视频播放，索引:', index)
-}
-
-const onVideoEnded = () => {
-  console.log('视频播放结束')
-}
-
-const onVideoPlay = (event) => {
-  console.log('视频开始播放')
-  // 停止背景音乐
-  if (audioElement && isMusicPlaying.value) {
-    audioElement.pause()
-    isMusicPlaying.value = false
-    if (progressTimer) {
-      clearInterval(progressTimer)
-      progressTimer = null
-    }
-  }
-  
-  // 停止其他视频
-  const currentVideo = event.target
-  const allVideos = document.querySelectorAll('.video-player')
-  allVideos.forEach(video => {
-    if (video !== currentVideo && !video.paused) {
-      video.pause()
-    }
-  })
-}
-
-const onVideoPause = () => {
-  console.log('视频暂停')
-}
-
-// 视频加载开始
-const onVideoLoadStart = (event) => {
-  console.log('视频开始加载')
-}
-
-// 视频数据加载完成
-const onVideoLoadedData = (event) => {
-  console.log('视频数据加载完成')
-}
-
-// 视频元数据加载完成
-const onVideoLoadedMetadata = (event) => {
-  console.log('视频元数据加载完成')
-}
-
-// 图片加载完成事件
-const onImageLoad = (event) => {
-  // 图片加载完成后的处理逻辑
-  console.log('图片加载完成')
-}
-
-// 生成视频封面
-const getVideoPoster = (videoUrl) => {
-  if (!videoUrl) return ''
-  
-  // 检查是否是OSS URL
-  if (videoUrl.includes('aliyuncs.com')) {
-    // 添加OSS视频截图参数
-    return `${videoUrl}?x-oss-process=video/snapshot,t_1000,f_jpg,w_800,h_600,m_fast`
-  }
-  
-  // 如果不是OSS URL，返回空字符串（使用视频默认封面）
-  return ''
 }
 
 // 音乐播放相关方法
@@ -330,9 +331,11 @@ const stopMusic = () => {
 }
 
 const initAudio = () => {
-  if (!diary.value?.backgroundMusic) return
+  if (!diary.value?.backgroundMusic || diary.value.backgroundMusic.length === 0) return
   
-  audioElement = new Audio(diary.value.backgroundMusic)
+  // 使用第一个背景音乐
+  const music = diary.value.backgroundMusic[0]
+  audioElement = new Audio(music.musicUrl)
   audioElement.loop = true
   
   audioElement.addEventListener('loadedmetadata', () => {
@@ -458,7 +461,7 @@ const loadDiary = async () => {
     }
     
     // 初始化音乐播放器
-    if (diary.value?.backgroundMusic) {
+    if (diary.value?.backgroundMusic && diary.value.backgroundMusic.length > 0) {
       initAudio()
     }
   } catch (error) {

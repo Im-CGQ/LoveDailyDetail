@@ -9,6 +9,7 @@ import com.lovediary.repository.ShareLinkRepository;
 import com.lovediary.repository.LetterRepository;
 import com.lovediary.repository.LetterShareLinkRepository;
 import com.lovediary.service.ShareService;
+import com.lovediary.service.SystemConfigService;
 import com.lovediary.dto.SharedDiaryDTO;
 import com.lovediary.dto.SharedLetterDTO;
 import com.lovediary.dto.ImageInfoDTO;
@@ -31,6 +32,7 @@ public class ShareServiceImpl implements ShareService {
     private final DiaryRepository diaryRepository;
     private final LetterShareLinkRepository letterShareLinkRepository;
     private final LetterRepository letterRepository;
+    private final SystemConfigService systemConfigService;
     
     @Override
     public ShareLink createShareLink(Long diaryId) {
@@ -41,8 +43,10 @@ public class ShareServiceImpl implements ShareService {
         // 生成唯一的分享token
         String shareToken = generateShareToken();
         
-        // 设置过期时间为3小时后
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(3);
+        // 从系统配置获取分享过期时间（分钟）
+        Integer expireMinutes = systemConfigService.getShareExpireMinutes();
+        // 设置过期时间
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(expireMinutes);
         
         // 创建分享链接
         ShareLink shareLink = new ShareLink();
@@ -173,8 +177,10 @@ public class ShareServiceImpl implements ShareService {
         // 生成唯一的分享token
         String shareToken = generateShareToken();
         
-        // 设置过期时间为3小时后
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(3);
+        // 从系统配置获取分享过期时间（分钟）
+        Integer expireMinutes = systemConfigService.getShareExpireMinutes();
+        // 设置过期时间
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(expireMinutes);
         
         // 创建分享链接
         LetterShareLink shareLink = new LetterShareLink();

@@ -16,6 +16,23 @@
         </van-cell>
       </van-cell-group>
       
+      <!-- 分享设置 -->
+      <van-cell-group title="分享设置">
+        <van-cell title="分享链接过期时间">
+          <template #right-icon>
+            <van-field
+              v-model="shareExpireMinutes"
+              type="number"
+              placeholder="请输入分钟数"
+              :border="false"
+              style="width: 120px; text-align: right;"
+              @blur="onExpireMinutesChange"
+            />
+            <span style="margin-left: 5px; color: #969799;">分钟</span>
+          </template>
+        </van-cell>
+      </van-cell-group>
+      
 
     </div>
     
@@ -30,6 +47,8 @@
         @cancel="showDatePicker = false"
       />
     </van-popup>
+    
+
   </div>
 </template>
 
@@ -37,13 +56,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
-import { getTogetherDate, setTogetherDate, getBackgroundMusicAutoplay, setBackgroundMusicAutoplay } from '@/api/systemConfig'
+import { getTogetherDate, setTogetherDate, getBackgroundMusicAutoplay, setBackgroundMusicAutoplay, getShareExpireMinutes, setShareExpireMinutes } from '@/api/systemConfig'
 
 const router = useRouter()
 
 // 响应式数据
 const togetherDate = ref('2024-01-01')
 const backgroundMusicAutoplay = ref(true)
+const shareExpireMinutes = ref(60)
 const showDatePicker = ref(false)
 // 初始化当前日期为数组格式，用于日期选择器
 const selectedDate = ref([
@@ -54,6 +74,8 @@ const selectedDate = ref([
 
 const minDate = new Date(2020, 0, 1)
 const maxDate = new Date()
+
+
 
 // 方法
 const goBack = () => {
@@ -81,6 +103,10 @@ const loadConfigs = async () => {
     // 加载背景音乐自动播放配置
     const autoplayValue = await getBackgroundMusicAutoplay()
     backgroundMusicAutoplay.value = autoplayValue
+    
+    // 加载分享过期时间配置
+    const expireValue = await getShareExpireMinutes()
+    shareExpireMinutes.value = expireValue
   } catch (error) {
     showToast(error.message)
   }
@@ -130,6 +156,28 @@ const onAutoplayChange = async (value) => {
     showToast(error.message)
     // 恢复原值
     backgroundMusicAutoplay.value = !value
+  }
+}
+
+const onExpireMinutesChange = async () => {
+  try {
+    const minutes = parseInt(shareExpireMinutes.value)
+    
+    // 验证输入值
+    if (isNaN(minutes) || minutes <= 0) {
+      showToast('请输入有效的分钟数（大于0）')
+      return
+    }
+    
+    if (minutes > 10080) { // 7天 = 7 * 24 * 60 = 10080分钟
+      showToast('过期时间不能超过7天')
+      return
+    }
+    
+    await setShareExpireMinutes(minutes)
+    showToast('设置成功')
+  } catch (error) {
+    showToast(error.message)
   }
 }
 

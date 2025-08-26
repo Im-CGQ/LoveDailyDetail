@@ -155,6 +155,33 @@ public class SystemConfigController {
     }
 
     /**
+     * 获取分享过期时间配置
+     */
+    @GetMapping("/share-expire-minutes")
+    public ResponseEntity<ApiResponse<Integer>> getShareExpireMinutes() {
+        try {
+            Integer minutes = systemConfigService.getShareExpireMinutes();
+            return ResponseEntity.ok(ApiResponse.success(minutes));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取分享过期时间配置失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 设置分享过期时间配置
+     */
+    @PostMapping("/share-expire-minutes")
+    public ResponseEntity<ApiResponse<String>> setShareExpireMinutes(@RequestBody Map<String, Integer> request) {
+        try {
+            Integer minutes = request.get("minutes");
+            systemConfigService.setShareExpireMinutes(minutes);
+            return ResponseEntity.ok(ApiResponse.success("设置成功"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("设置分享过期时间配置失败: " + e.getMessage()));
+        }
+    }
+
+    /**
      * 获取配置的Map形式
      */
     @GetMapping("/config-map/{userId}")

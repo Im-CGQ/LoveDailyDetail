@@ -150,6 +150,36 @@ export const setBackgroundMusicAutoplay = async (autoplay) => {
   }
 }
 
+// 获取分享过期时间配置
+export const getShareExpireMinutes = async () => {
+  try {
+    const response = await api.get('/system-config/share-expire-minutes')
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '获取分享过期时间配置失败')
+    }
+  } catch (error) {
+    console.error('获取分享过期时间配置失败:', error.message)
+    throw new Error(error.message || '获取分享过期时间配置失败，请检查网络连接')
+  }
+}
+
+// 设置分享过期时间配置
+export const setShareExpireMinutes = async (minutes) => {
+  try {
+    const response = await api.post('/system-config/share-expire-minutes', { minutes })
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '设置分享过期时间配置失败')
+    }
+  } catch (error) {
+    console.error('设置分享过期时间配置失败:', error.message)
+    throw new Error(error.message || '设置分享过期时间配置失败，请检查网络连接')
+  }
+}
+
 // 获取配置的Map形式
 export const getConfigMap = async (userId) => {
   try {
