@@ -108,6 +108,16 @@ public class DiaryServiceImpl implements DiaryService {
         diary.setDescription(diaryDTO.getDescription());
         diary.setUser(user);
         
+        // 如果用户有伴侣，设置partner_id字段
+        if (user.getPartnerId() != null) {
+            User partner = userRepository.findById(user.getPartnerId())
+                    .orElseThrow(() -> new RuntimeException("伴侣信息不存在"));
+            diary.setPartner(partner);
+        }
+        
+        // 先保存日记，获取ID
+        diary = diaryRepository.save(diary);
+        
         // 处理背景音乐信息
         if (diaryDTO.getBackgroundMusic() != null && !diaryDTO.getBackgroundMusic().isEmpty()) {
             List<DiaryBackgroundMusic> backgroundMusicList = new ArrayList<>();
@@ -123,16 +133,6 @@ public class DiaryServiceImpl implements DiaryService {
             }
             diary.setBackgroundMusic(backgroundMusicList);
         }
-        
-        // 如果用户有伴侣，设置partner_id字段
-        if (user.getPartnerId() != null) {
-            User partner = userRepository.findById(user.getPartnerId())
-                    .orElseThrow(() -> new RuntimeException("伴侣信息不存在"));
-            diary.setPartner(partner);
-        }
-        
-        // 保存日记
-        diary = diaryRepository.save(diary);
         
         // 处理图片信息
         if (diaryDTO.getImages() != null && !diaryDTO.getImages().isEmpty()) {

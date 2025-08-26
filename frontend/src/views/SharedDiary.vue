@@ -1,6 +1,7 @@
 <template>
   <div class="detail romantic-bg page-container">
-
+    <!-- 分享页面不需要返回按钮 -->
+    
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
@@ -53,12 +54,12 @@
 
       <div class="media hover-lift">
         <!-- 图片展示 -->
-        <div v-if="diary.images && diary.images.length > 0" class="images-section">
-          <div class="images-header">
-            <span class="images-emoji">📸</span>
-            <h3 class="images-title">美好照片</h3>
+        <div v-if="diary.images && diary.images.length > 0" class="image-section">
+          <div class="image-header">
+            <span class="image-emoji">📸</span>
+            <h3 class="image-title">美好照片</h3>
           </div>
-          <div class="images-container">
+          <div class="image-container">
             <div 
               v-for="(image, index) in diary.images" 
               :key="index"
@@ -121,11 +122,27 @@
 
       <!-- 分享页面不需要操作按钮 -->
     </div>
- 
 
-    <div v-else class="loading">
+    <div v-else-if="loading" class="loading">
       <div class="loading-heart heartbeat">💕</div>
       <p class="loading-text">加载中...</p>
+    </div>
+    
+    <div v-else-if="error" class="error-container">
+      <div class="error-content">
+        <div class="error-icon">⚠️</div>
+        <h2 class="error-title">分享链接已过期或不存在</h2>
+        <p class="error-message">很抱歉，您访问的分享链接已经失效，或者该内容已被删除。</p>
+        <van-button 
+          type="primary" 
+          size="large" 
+          @click="goToHome" 
+          class="home-btn"
+        >
+          <span class="btn-icon">🏠</span>
+          返回首页
+        </van-button>
+      </div>
     </div>
   </div>
 </template>
@@ -133,9 +150,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showImagePreview, showToast } from 'vant'
+import { showToast, showImagePreview } from 'vant'
 import { getSharedDiary } from '@/api/share'
-import { getBackgroundMusicAutoplay } from '@/api/systemConfig'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -143,6 +159,8 @@ const router = useRouter()
 const diary = ref(null)
 const displayText = ref('')
 const typingComplete = ref(false)
+const loading = ref(true)
+const error = ref(false)
 let typingTimer = null
 
 // 音乐播放相关
@@ -162,6 +180,34 @@ const formatDate = (date) => {
 }
 
 // 分享页面不需要分享功能
+
+// 生成视频封面URL
+const generateVideoPoster = (videoUrl, video) => {
+  if (!videoUrl) return ''
+  
+  // 判断是否为阿里云OSS URL
+  if (videoUrl.includes('aliyuncs.com') || videoUrl.includes('oss-')) {
+    // 根据视频原始尺寸计算封面尺寸
+    let posterWidth = 800
+    let posterHeight = 600
+    
+    if (video && video.width && video.height) {
+      const aspectRatio = video.width / video.height
+      posterWidth = 800
+      posterHeight = Math.round(800 / aspectRatio)
+    }
+    
+    // 直接拼接视频截图参数
+    // t_1000: 在1秒处截图
+    // f_jpg: 输出JPG格式
+    // w_800,h_600: 设置宽高
+    // m_fast: 快速模式
+    return videoUrl + `?x-oss-process=video/snapshot,t_1000,f_jpg,w_${posterWidth},h_${posterHeight},m_fast`
+  }
+  
+  // 非阿里云OSS URL，返回原URL
+  return videoUrl
+}
 
 // 图片预览功能
 const previewImage = (index) => {
@@ -202,51 +248,32 @@ const getVideoStyle = (video) => {
     }
   }
   
-  // 计算视频容器尺寸
-  const maxWidth = 400
-  const maxHeight = 300
+  // 根据视频原始宽高比计算高度，宽度占满
   const aspectRatio = video.width / video.height
-  
-  let containerWidth = maxWidth
-  let containerHeight = maxWidth / aspectRatio
-  
-  if (containerHeight > maxHeight) {
-    containerHeight = maxHeight
-    containerWidth = maxHeight * aspectRatio
-  }
+  const containerWidth = 400 // 假设容器宽度
+  const height = containerWidth / aspectRatio
   
   return {
     width: '100%',
-    height: `${containerHeight}px`
+    height: `${height}px`,
+    objectFit: 'cover' // 让视频内容完全占满容器
   }
 }
 
-// 生成视频封面URL
-const generateVideoPoster = (videoUrl, video) => {
-  if (!videoUrl) return ''
-  
-  // 判断是否为阿里云OSS URL
-  if (videoUrl.includes('aliyuncs.com') || videoUrl.includes('oss-')) {
-    // 根据视频原始尺寸计算封面尺寸
-    let posterWidth = 800
-    let posterHeight = 600
-    
-    if (video && video.width && video.height) {
-      const aspectRatio = video.width / video.height
-      posterWidth = 800
-      posterHeight = Math.round(800 / aspectRatio)
+// 视频播放功能
+const playVideo = (index) => {
+  const videoElements = document.querySelectorAll('.video-player')
+  const videoElement = videoElements[index]
+  if (videoElement) {
+    if (videoElement.paused) {
+      videoElement.play().catch(error => {
+        console.error('视频播放失败:', error)
+        showToast('视频播放失败')
+      })
+    } else {
+      videoElement.pause()
     }
-    
-    // 直接拼接视频截图参数
-    // t_1000: 在1秒处截图
-    // f_jpg: 输出JPG格式
-    // w_800,h_600: 设置宽高
-    // m_fast: 快速模式
-    return videoUrl + `?x-oss-process=video/snapshot,t_1000,f_jpg,w_${posterWidth},h_${posterHeight},m_fast`
   }
-  
-  // 非阿里云OSS URL，返回原URL
-  return videoUrl
 }
 
 // 打字机效果
@@ -279,10 +306,7 @@ const showFullText = () => {
   }
 }
 
-// 视频播放相关方法
-const playVideo = (index) => {
-  console.log('视频播放，索引:', index)
-}
+
 
 // 音乐播放相关方法
 const toggleMusicControls = () => {
@@ -302,14 +326,6 @@ const toggleMusic = () => {
       progressTimer = null
     }
   } else {
-    // 停止所有视频播放
-    const allVideos = document.querySelectorAll('.video-player')
-    allVideos.forEach(video => {
-      if (!video.paused) {
-        video.pause()
-      }
-    })
-    
     audioElement.play()
     isMusicPlaying.value = true
     startProgressTimer()
@@ -333,9 +349,7 @@ const stopMusic = () => {
 const initAudio = () => {
   if (!diary.value?.backgroundMusic || diary.value.backgroundMusic.length === 0) return
   
-  // 使用第一个背景音乐
-  const music = diary.value.backgroundMusic[0]
-  audioElement = new Audio(music.musicUrl)
+  audioElement = new Audio(diary.value.backgroundMusic[0].musicUrl)
   audioElement.loop = true
   
   audioElement.addEventListener('loadedmetadata', () => {
@@ -359,16 +373,6 @@ const initAudio = () => {
   
   audioElement.addEventListener('error', () => {
     showToast('音乐加载失败')
-  })
-  
-  // 监听音乐播放事件，停止所有视频
-  audioElement.addEventListener('play', () => {
-    const allVideos = document.querySelectorAll('.video-player')
-    allVideos.forEach(video => {
-      if (!video.paused) {
-        video.pause()
-      }
-    })
   })
 }
 
@@ -452,6 +456,12 @@ const stopDrag = () => {
 const loadDiary = async () => {
   const shareToken = route.params.shareToken
   try {
+    loading.value = true
+    error.value = false
+    
+    // 分享页面使用默认的音乐自动播放配置
+    musicAutoplay.value = true
+    
     const diaryData = await getSharedDiary(shareToken)
     diary.value = diaryData
     
@@ -464,20 +474,30 @@ const loadDiary = async () => {
     if (diary.value?.backgroundMusic && diary.value.backgroundMusic.length > 0) {
       initAudio()
     }
+  } catch (err) {
+    console.error('加载分享日记失败:', err)
+    error.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
+// 跳转到系统欢迎页
+const goToHome = () => {
+  console.log('goToHome 方法被调用')
+  try {
+    router.push('/')
+    console.log('路由跳转成功')
   } catch (error) {
-    console.error('加载分享日记失败:', error)
-    showToast('分享链接已过期或不存在')
+    console.error('路由跳转失败:', error)
+    // 备用方案：使用 window.location
+    window.location.href = '/'
   }
 }
 
 onMounted(() => {
   loadDiary()
 })
-
-// 返回上一页
-const goBack = () => {
-  router.go(-1)
-}
 
 // 分享页面不需要返回日历功能
 
@@ -507,29 +527,7 @@ onUnmounted(() => {
   position: relative;
 }
 
-.back-button {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
-  
-  .van-icon {
-    font-size: 24px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    border-radius: 50%;
-    padding: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    
-    &:hover {
-      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
-      transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
-    }
-  }
-}
+
 
 
 
@@ -705,22 +703,22 @@ onUnmounted(() => {
   margin-bottom: 25px;
   
   /* 图片展示样式 */
-  .images-section {
+  .image-section {
     margin-bottom: 20px;
     
-    .images-header {
+    .image-header {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
       margin-bottom: 15px;
       
-      .images-emoji {
+      .image-emoji {
         font-size: 24px;
         animation: heartbeat 2s ease-in-out infinite;
       }
       
-      .images-title {
+      .image-title {
         color: white;
         font-size: 20px;
         font-weight: bold;
@@ -729,7 +727,7 @@ onUnmounted(() => {
       }
     }
     
-    .images-container {
+    .image-container {
       display: flex;
       flex-direction: column;
       gap: 15px;
@@ -739,7 +737,6 @@ onUnmounted(() => {
         overflow: hidden;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
-        cursor: pointer;
         
         &:hover {
           transform: scale(1.02);
@@ -747,12 +744,16 @@ onUnmounted(() => {
         }
         
         .image {
-          width: 100%;
-          height: auto;
-          max-height: 400px;
-          object-fit: cover;
+          width: 100% !important;
+          height: auto !important;
+          max-height: none !important;
           display: block;
+          cursor: pointer;
           transition: transform 0.3s ease;
+          
+          &:hover {
+            transform: scale(1.02);
+          }
         }
       }
     }
@@ -788,34 +789,27 @@ onUnmounted(() => {
       flex-direction: column;
       gap: 15px;
       
-             .video-wrapper {
-         position: relative;
-         cursor: pointer;
-         border-radius: 20px;
-         overflow: hidden;
-         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-         transition: all 0.3s ease;
-         min-height: 200px;
-         background: #000;
-         
-         &:hover {
-           transform: scale(1.02);
-           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-         }
-       }
+      .video-wrapper {
+        position: relative;
+        cursor: pointer;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        
+        &:hover {
+          transform: scale(1.02);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+      }
       
-             .video-player {
-         width: 100%;
-         height: auto;
-         max-height: 600px;
-         min-height: 200px;
-         border-radius: 20px;
-         overflow: hidden;
-         background: #000;
-         transition: all 0.3s ease;
-         object-fit: contain;
-         display: block;
-       }
+            .video-player {
+        border-radius: 20px;
+        overflow: hidden;
+        background: #000;
+        transition: all 0.3s ease;
+        display: block;
+      }
     }
   }
 }
@@ -867,40 +861,64 @@ onUnmounted(() => {
   }
 }
 
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  
-  .action-btn {
-    height: 56px;
-    border-radius: 28px;
-    font-size: 18px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    
-    .btn-icon {
-      font-size: 20px;
-    }
-    
-    &.share-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      color: white;
-      backdrop-filter: blur(10px);
-      
-      &:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
-      }
-    }
-  }
-}
-
-.loading {
+    /* 分享页面不需要操作按钮样式 */
+ 
+ .error-container {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   height: 60vh;
+   padding: 20px;
+   
+   .error-content {
+     text-align: center;
+     max-width: 400px;
+     
+     .error-icon {
+       font-size: 64px;
+       margin-bottom: 20px;
+       animation: pulse 2s ease-in-out infinite;
+     }
+     
+     .error-title {
+       color: white;
+       font-size: 24px;
+       font-weight: bold;
+       margin-bottom: 15px;
+     }
+     
+     .error-message {
+       color: rgba(255, 255, 255, 0.8);
+       font-size: 16px;
+       line-height: 1.6;
+       margin-bottom: 30px;
+     }
+     
+     .home-btn {
+       height: 48px;
+       border-radius: 24px;
+       font-size: 16px;
+       font-weight: 500;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       gap: 8px;
+       background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+       border: none;
+       
+       .btn-icon {
+         font-size: 18px;
+       }
+       
+       &:hover {
+         transform: translateY(-2px);
+         box-shadow: 0 8px 25px rgba(255, 107, 157, 0.4);
+       }
+     }
+   }
+ }
+ 
+ .loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -920,16 +938,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .back-button {
-    top: 15px;
-    left: 15px;
-    
-    .van-icon {
-      font-size: 20px;
-      padding: 8px;
-    }
-  }
-  
   .content {
     padding: 15px;
   }
@@ -956,23 +964,13 @@ onUnmounted(() => {
     }
   }
   
-  .media .images-section .images-container .image-wrapper .image {
-    max-height: 300px;
+  .media .image-section .image-container .image-wrapper .image {
+    max-height: none !important;
   }
   
-           .media .video-section .video-container .video-wrapper {
-        min-height: 150px;
-      }
-      
-      .media .video-section .video-container .video-player {
-        max-height: 500px;
-        min-height: 150px;
-      }
+
   
-  .actions .action-btn {
-    height: 48px;
-    font-size: 16px;
-  }
+  /* 分享页面不需要操作按钮样式 */
 }
 
 /* 动画关键帧 */
@@ -985,15 +983,24 @@ onUnmounted(() => {
   }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+ @keyframes slideIn {
+   from {
+     opacity: 0;
+     transform: translateY(-10px);
+   }
+   to {
+     opacity: 1;
+     transform: translateY(0);
+   }
+ }
+ 
+ @keyframes pulse {
+   0%, 100% {
+     transform: scale(1);
+   }
+   50% {
+     transform: scale(1.1);
+   }
+ }
 
 </style> 

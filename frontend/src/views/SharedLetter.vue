@@ -47,8 +47,25 @@
     </div>
   
 
-    <div v-else class="loading-state">
+    <div v-else-if="loading" class="loading-state">
       <van-loading type="spinner" size="24px">加载中...</van-loading>
+    </div>
+    
+    <div v-else-if="error" class="error-container">
+      <div class="error-content">
+        <div class="error-icon">⚠️</div>
+        <h2 class="error-title">分享链接已过期或不存在</h2>
+        <p class="error-message">很抱歉，您访问的分享链接已经失效，或者该内容已被删除。</p>
+        <van-button 
+          type="primary" 
+          size="large" 
+          @click="goToHome" 
+          class="home-btn"
+        >
+          <span class="btn-icon">🏠</span>
+          返回首页
+        </van-button>
+      </div>
     </div>
   </div>
 </template>
@@ -66,13 +83,18 @@ const letter = ref(null)
 const countdownTimer = ref(null)
 const displayText = ref('')
 const typingComplete = ref(false)
+const loading = ref(true)
+const error = ref(false)
 let typingTimer = null
 
 const fetchLetterDetail = async () => {
   try {
+    loading.value = true
+    error.value = false
+    
     const shareToken = route.params.shareToken
     if (!shareToken) {
-      showToast('分享链接不存在')
+      error.value = true
       return
     }
     
@@ -83,10 +105,17 @@ const fetchLetterDetail = async () => {
     }
     // 获取信件详情后启动倒计时
     startCountdown()
-  } catch (error) {
-    showToast('分享链接已过期或不存在')
-    console.error('获取分享信件失败:', error)
+  } catch (err) {
+    console.error('获取分享信件失败:', err)
+    error.value = true
+  } finally {
+    loading.value = false
   }
+}
+
+// 跳转到系统欢迎页
+const goToHome = () => {
+  router.push('/')
 }
 
 // 分享页面不需要标记已读功能
@@ -549,6 +578,74 @@ onUnmounted(() => {
   }
 }
 
+.error-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 20px;
+  
+  .error-content {
+    text-align: center;
+    max-width: 400px;
+    
+    .error-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .error-title {
+      color: #F5DEB3;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      font-family: 'Times New Roman', serif;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .error-message {
+      color: rgba(245, 222, 179, 0.8);
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+      font-family: 'Times New Roman', serif;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .home-btn {
+      height: 48px;
+      border-radius: 24px;
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #8B4513, #A0522D);
+      border: 2px solid #654321;
+      box-shadow: 
+        0 6px 20px rgba(139, 69, 19, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      color: #F5DEB3;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      font-family: 'Times New Roman', serif;
+      
+      .btn-icon {
+        font-size: 18px;
+      }
+      
+      &:hover {
+        background: linear-gradient(135deg, #A0522D, #CD853F);
+        box-shadow: 
+          0 8px 25px rgba(139, 69, 19, 0.5),
+          inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .back-button {
     top: 15px;
@@ -588,6 +685,16 @@ onUnmounted(() => {
         font-size: 18px;
       }
     }
+  }
+}
+
+/* 动画关键帧 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
   }
 }
 </style>
