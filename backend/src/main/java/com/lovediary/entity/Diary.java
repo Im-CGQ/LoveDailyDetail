@@ -9,7 +9,7 @@ import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.lovediary.entity.BackgroundMusic;
+import java.util.ArrayList;
 
 @Data
 @Entity
@@ -31,15 +31,15 @@ public class Diary {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "diary_id")
-    private List<ImageInfo> images;
+    private List<ImageInfo> images = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "diary_id")
-    private List<VideoInfo> videos;
+    private List<VideoInfo> videos = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "diary_id")
-    private List<DiaryBackgroundMusic> backgroundMusic;
+    private List<DiaryBackgroundMusic> backgroundMusic = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at")

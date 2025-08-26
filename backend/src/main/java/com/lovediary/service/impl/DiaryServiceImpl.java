@@ -21,6 +21,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -37,6 +38,8 @@ public class DiaryServiceImpl implements DiaryService {
     private final UserRepository userRepository;
     private final OssService ossService;
     private final DiaryBackgroundMusicRepository diaryBackgroundMusicRepository;
+    private final ImageInfoRepository imageInfoRepository;
+    private final VideoInfoRepository videoInfoRepository;
 
     @Override
     public List<Diary> getAllDiaries() {
@@ -120,7 +123,6 @@ public class DiaryServiceImpl implements DiaryService {
         
         // 处理背景音乐信息
         if (diaryDTO.getBackgroundMusic() != null && !diaryDTO.getBackgroundMusic().isEmpty()) {
-            List<DiaryBackgroundMusic> backgroundMusicList = new ArrayList<>();
             for (DiaryBackgroundMusicDTO musicDTO : diaryDTO.getBackgroundMusic()) {
                 DiaryBackgroundMusic backgroundMusic = new DiaryBackgroundMusic();
                 backgroundMusic.setDiaryId(diary.getId());
@@ -129,14 +131,12 @@ public class DiaryServiceImpl implements DiaryService {
                 backgroundMusic.setTitle(musicDTO.getTitle());
                 backgroundMusic.setArtist(musicDTO.getArtist());
                 backgroundMusic.setDuration(musicDTO.getDuration());
-                backgroundMusicList.add(backgroundMusic);
+                diary.getBackgroundMusic().add(backgroundMusic);
             }
-            diary.setBackgroundMusic(backgroundMusicList);
         }
         
         // 处理图片信息
         if (diaryDTO.getImages() != null && !diaryDTO.getImages().isEmpty()) {
-            List<ImageInfo> imageInfos = new ArrayList<>();
             for (ImageInfoDTO imageDTO : diaryDTO.getImages()) {
                 ImageInfo imageInfo = new ImageInfo();
                 imageInfo.setDiaryId(diary.getId());
@@ -144,14 +144,12 @@ public class DiaryServiceImpl implements DiaryService {
                 imageInfo.setFileName(imageDTO.getFileName());
                 imageInfo.setWidth(imageDTO.getWidth());
                 imageInfo.setHeight(imageDTO.getHeight());
-                imageInfos.add(imageInfo);
+                diary.getImages().add(imageInfo);
             }
-            diary.setImages(imageInfos);
         }
         
         // 处理视频信息
         if (diaryDTO.getVideos() != null && !diaryDTO.getVideos().isEmpty()) {
-            List<VideoInfo> videoInfos = new ArrayList<>();
             for (VideoInfoDTO videoDTO : diaryDTO.getVideos()) {
                 VideoInfo videoInfo = new VideoInfo();
                 videoInfo.setDiaryId(diary.getId());
@@ -159,80 +157,74 @@ public class DiaryServiceImpl implements DiaryService {
                 videoInfo.setFileName(videoDTO.getFileName());
                 videoInfo.setWidth(videoDTO.getWidth());
                 videoInfo.setHeight(videoDTO.getHeight());
-                videoInfos.add(videoInfo);
+                diary.getVideos().add(videoInfo);
             }
-            diary.setVideos(videoInfos);
         }
         
         return diaryRepository.save(diary);
     }
 
     @Override
+    @Transactional
     public Diary updateDiary(Long id, DiaryDTO diaryDTO) {
-        Diary diary = getDiaryById(id);
+        // 获取现有日记
+        Diary existingDiary = getDiaryById(id);
         
-        // 更新字段，保持ID和用户信息不变
-        diary.setTitle(diaryDTO.getTitle());
-        diary.setDescription(diaryDTO.getDescription());
-        diary.setDate(diaryDTO.getDate());
+        // 更新基本字段
+        existingDiary.setTitle(diaryDTO.getTitle());
+        existingDiary.setDescription(diaryDTO.getDescription());
+        existingDiary.setDate(diaryDTO.getDate());
         
-        // 处理背景音乐信息
+        // 先保存基本信息
+        existingDiary = diaryRepository.save(existingDiary);
+        
+        // 删除所有现有的关联数据
+        diaryBackgroundMusicRepository.deleteByDiaryId(existingDiary.getId());
+        imageInfoRepository.deleteByDiaryId(existingDiary.getId());
+        videoInfoRepository.deleteByDiaryId(existingDiary.getId());
+        
+        // 重新创建背景音乐数据
         if (diaryDTO.getBackgroundMusic() != null && !diaryDTO.getBackgroundMusic().isEmpty()) {
-            List<DiaryBackgroundMusic> backgroundMusicList = new ArrayList<>();
             for (DiaryBackgroundMusicDTO musicDTO : diaryDTO.getBackgroundMusic()) {
                 DiaryBackgroundMusic backgroundMusic = new DiaryBackgroundMusic();
-                backgroundMusic.setDiaryId(diary.getId());
+                backgroundMusic.setDiaryId(existingDiary.getId());
                 backgroundMusic.setMusicUrl(musicDTO.getMusicUrl());
                 backgroundMusic.setFileName(musicDTO.getFileName());
                 backgroundMusic.setTitle(musicDTO.getTitle());
                 backgroundMusic.setArtist(musicDTO.getArtist());
                 backgroundMusic.setDuration(musicDTO.getDuration());
-                backgroundMusicList.add(backgroundMusic);
+                diaryBackgroundMusicRepository.save(backgroundMusic);
             }
-            diary.setBackgroundMusic(backgroundMusicList);
-        } else {
-            diary.setBackgroundMusic(null);
         }
         
-        // 清除现有的图片和视频信息
-        if (diary.getImages() != null) {
-            diary.getImages().clear();
-        }
-        if (diary.getVideos() != null) {
-            diary.getVideos().clear();
-        }
-        
-        // 处理图片信息
+        // 重新创建图片数据
         if (diaryDTO.getImages() != null && !diaryDTO.getImages().isEmpty()) {
-            List<ImageInfo> imageInfos = new ArrayList<>();
             for (ImageInfoDTO imageDTO : diaryDTO.getImages()) {
                 ImageInfo imageInfo = new ImageInfo();
-                imageInfo.setDiaryId(diary.getId());
+                imageInfo.setDiaryId(existingDiary.getId());
                 imageInfo.setImageUrl(imageDTO.getImageUrl());
                 imageInfo.setFileName(imageDTO.getFileName());
                 imageInfo.setWidth(imageDTO.getWidth());
                 imageInfo.setHeight(imageDTO.getHeight());
-                imageInfos.add(imageInfo);
+                imageInfoRepository.save(imageInfo);
             }
-            diary.setImages(imageInfos);
         }
         
-        // 处理视频信息
+        // 重新创建视频数据
         if (diaryDTO.getVideos() != null && !diaryDTO.getVideos().isEmpty()) {
-            List<VideoInfo> videoInfos = new ArrayList<>();
             for (VideoInfoDTO videoDTO : diaryDTO.getVideos()) {
                 VideoInfo videoInfo = new VideoInfo();
-                videoInfo.setDiaryId(diary.getId());
+                videoInfo.setDiaryId(existingDiary.getId());
                 videoInfo.setVideoUrl(videoDTO.getVideoUrl());
                 videoInfo.setFileName(videoDTO.getFileName());
                 videoInfo.setWidth(videoDTO.getWidth());
                 videoInfo.setHeight(videoDTO.getHeight());
-                videoInfos.add(videoInfo);
+                videoInfoRepository.save(videoInfo);
             }
-            diary.setVideos(videoInfos);
         }
         
-        return diaryRepository.save(diary);
+        // 重新加载并返回完整的日记
+        return getDiaryById(id);
     }
 
     @Override
@@ -333,7 +325,6 @@ public class DiaryServiceImpl implements DiaryService {
         
         // 处理背景音乐信息
         if (diaryDTO.getBackgroundMusic() != null && !diaryDTO.getBackgroundMusic().isEmpty()) {
-            List<DiaryBackgroundMusic> backgroundMusicList = new ArrayList<>();
             for (DiaryBackgroundMusicDTO musicDTO : diaryDTO.getBackgroundMusic()) {
                 DiaryBackgroundMusic backgroundMusic = new DiaryBackgroundMusic();
                 backgroundMusic.setDiaryId(diary.getId());
@@ -342,9 +333,8 @@ public class DiaryServiceImpl implements DiaryService {
                 backgroundMusic.setTitle(musicDTO.getTitle());
                 backgroundMusic.setArtist(musicDTO.getArtist());
                 backgroundMusic.setDuration(musicDTO.getDuration());
-                backgroundMusicList.add(backgroundMusic);
+                diary.getBackgroundMusic().add(backgroundMusic);
             }
-            diary.setBackgroundMusic(backgroundMusicList);
         }
         
         return diaryRepository.save(diary);

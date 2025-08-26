@@ -14,7 +14,6 @@ DROP TABLE IF EXISTS diaries;
 DROP TABLE IF EXISTS letters;
 DROP TABLE IF EXISTS partner_invitations;
 DROP TABLE IF EXISTS system_configs;
-DROP TABLE IF EXISTS background_music;
 DROP TABLE IF EXISTS users;
 
 -- 创建用户表
@@ -55,17 +54,7 @@ CREATE TABLE partner_invitations (
     UNIQUE KEY unique_invitation (from_user_id, to_user_id)
 );
 
--- 创建背景音乐表
-CREATE TABLE background_music (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    music_url VARCHAR(500) NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    title VARCHAR(255) NULL COMMENT '音乐标题',
-    artist VARCHAR(255) NULL COMMENT '艺术家',
-    duration INT NULL COMMENT '时长（秒）',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+
 
 -- 创建日记表
 CREATE TABLE diaries (
@@ -184,7 +173,6 @@ CREATE INDEX idx_diaries_user_partner ON diaries(user_id, partner_id);
 CREATE INDEX idx_diary_images_diary_id ON diary_images(diary_id);
 CREATE INDEX idx_diary_videos_diary_id ON diary_videos(diary_id);
 CREATE INDEX idx_diary_background_music_diary_id ON diary_background_music(diary_id);
-CREATE INDEX idx_background_music_file_name ON background_music(file_name);
 CREATE INDEX idx_partner_invitations_from_user ON partner_invitations(from_user_id);
 CREATE INDEX idx_partner_invitations_to_user ON partner_invitations(to_user_id);
 CREATE INDEX idx_partner_invitations_status ON partner_invitations(status);
