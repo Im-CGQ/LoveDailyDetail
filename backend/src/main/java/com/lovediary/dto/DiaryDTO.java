@@ -19,9 +19,9 @@ public class DiaryDTO {
     @NotBlank(message = "描述不能为空")
     private String description;
 
-    private List<String> images;
+    private List<ImageInfoDTO> images;
 
-    private List<String> videos;
+    private List<VideoInfoDTO> videos;
 
-    private String backgroundMusic;
+    private List<DiaryBackgroundMusicDTO> backgroundMusic;
 } 

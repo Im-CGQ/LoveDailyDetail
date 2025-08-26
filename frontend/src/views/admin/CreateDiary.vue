@@ -304,8 +304,14 @@ const processSingleFile = async (file) => {
     file.status = 'uploading'
     file.message = '上传中...'
     
+    // 获取图片尺寸
+    const dimensions = await getImageDimensions(file.file)
+    
     const url = await uploadImage(file.file)
     file.url = url
+    file.fileName = file.file.name
+    file.width = dimensions.width
+    file.height = dimensions.height
     file.status = 'done'
     file.message = '上传成功'
     showToast('图片上传成功')
@@ -540,8 +546,14 @@ const processSingleVideo = async (file) => {
     file.status = 'uploading'
     file.message = '上传中...'
     
+    // 获取视频尺寸
+    const dimensions = await getVideoDimensions(file.file)
+    
     const url = await uploadVideo(file.file)
     file.url = url
+    file.fileName = file.file.name
+    file.width = dimensions.width
+    file.height = dimensions.height
     file.status = 'done'
     file.message = '上传成功'
     showToast('视频上传成功')
@@ -564,8 +576,13 @@ const afterMusicRead = async (file) => {
     file.status = 'uploading'
     file.message = '上传中...'
     
+    // 获取音乐时长
+    const duration = await getMusicDuration(file.file)
+    
     const url = await uploadMusic(file.file)
     file.url = url
+    file.fileName = file.file.name
+    file.duration = duration
     file.status = 'done'
     file.message = '上传成功'
     showToast('音乐上传成功')
@@ -639,6 +656,56 @@ const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// 获取图片尺寸
+const getImageDimensions = (file) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      resolve({
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      })
+    }
+    img.onerror = () => {
+      reject(new Error('无法获取图片尺寸'))
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+// 获取视频尺寸
+const getVideoDimensions = (file) => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    video.onloadedmetadata = () => {
+      resolve({
+        width: video.videoWidth,
+        height: video.videoHeight
+      })
+      URL.revokeObjectURL(video.src)
+    }
+    video.onerror = () => {
+      reject(new Error('无法获取视频尺寸'))
+    }
+    video.src = URL.createObjectURL(file)
+  })
+}
+
+// 获取音乐时长
+const getMusicDuration = (file) => {
+  return new Promise((resolve, reject) => {
+    const audio = document.createElement('audio')
+    audio.onloadedmetadata = () => {
+      resolve(Math.floor(audio.duration))
+      URL.revokeObjectURL(audio.src)
+    }
+    audio.onerror = () => {
+      reject(new Error('无法获取音乐时长'))
+    }
+    audio.src = URL.createObjectURL(file)
+  })
 }
 
 const seekMusic = (event) => {
@@ -716,9 +783,25 @@ const onSubmit = async (values) => {
       title: form.value.title,
       date: form.value.date,
       description: form.value.description,
-      images: form.value.images.map(file => file.url),
-      videos: form.value.videos.map(file => file.url),
-      backgroundMusic: form.value.backgroundMusic.length > 0 ? form.value.backgroundMusic[0].url : null
+      images: form.value.images.map(file => ({
+        imageUrl: file.url,
+        fileName: file.fileName,
+        width: file.width,
+        height: file.height
+      })),
+      videos: form.value.videos.map(file => ({
+        videoUrl: file.url,
+        fileName: file.fileName,
+        width: file.width,
+        height: file.height
+      })),
+      backgroundMusic: form.value.backgroundMusic.length > 0 ? [{
+        musicUrl: form.value.backgroundMusic[0].url,
+        fileName: form.value.backgroundMusic[0].fileName,
+        title: form.value.backgroundMusic[0].file?.name || '背景音乐',
+        artist: null,
+        duration: form.value.backgroundMusic[0].duration
+      }] : []
     }
     
     await createDiary(diaryData)

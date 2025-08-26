@@ -218,6 +218,54 @@ const musicDuration = ref(0)
 const musicProgress = ref(0)
 const musicProgressTimer = ref(null)
 
+// 获取图片尺寸
+const getImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      resolve({
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      })
+    }
+    img.onerror = () => {
+      resolve({ width: 0, height: 0 })
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+// 获取视频尺寸
+const getVideoDimensions = (file) => {
+  return new Promise((resolve) => {
+    const video = document.createElement('video')
+    video.onloadedmetadata = () => {
+      resolve({
+        width: video.videoWidth,
+        height: video.videoHeight
+      })
+    }
+    video.onerror = () => {
+      resolve({ width: 0, height: 0 })
+    }
+    video.src = URL.createObjectURL(file)
+  })
+}
+
+// 获取音乐时长
+const getMusicDuration = (file) => {
+  return new Promise((resolve) => {
+    const audio = new Audio()
+    audio.onloadedmetadata = () => {
+      resolve(Math.floor(audio.duration))
+    }
+    audio.onerror = () => {
+      resolve(0)
+    }
+    audio.src = URL.createObjectURL(file)
+  })
+}
+
 const onDateConfirm = (value) => {
   try {
     console.log('日期确认值:', value, '类型:', typeof value, '是否为数组:', Array.isArray(value))
@@ -296,8 +344,14 @@ const processSingleFile = async (file) => {
     file.status = 'uploading'
     file.message = '上传中...'
     
+    // 获取图片尺寸
+    const dimensions = await getImageDimensions(file.file)
+    
     const url = await uploadImage(file.file)
     file.url = url
+    file.fileName = file.file.name
+    file.width = dimensions.width
+    file.height = dimensions.height
     file.status = 'done'
     file.message = '上传成功'
     showToast('图片上传成功')
@@ -532,8 +586,14 @@ const processSingleVideo = async (file) => {
     file.status = 'uploading'
     file.message = '上传中...'
     
+    // 获取视频尺寸
+    const dimensions = await getVideoDimensions(file.file)
+    
     const url = await uploadVideo(file.file)
     file.url = url
+    file.fileName = file.file.name
+    file.width = dimensions.width
+    file.height = dimensions.height
     file.status = 'done'
     file.message = '上传成功'
     showToast('视频上传成功')
@@ -556,8 +616,13 @@ const afterMusicRead = async (file) => {
     file.status = 'uploading'
     file.message = '上传中...'
     
+    // 获取音乐时长
+    const duration = await getMusicDuration(file.file)
+    
     const url = await uploadMusic(file.file)
     file.url = url
+    file.fileName = file.file.name
+    file.duration = duration
     file.status = 'done'
     file.message = '上传成功'
     showToast('音乐上传成功')
@@ -697,9 +762,25 @@ const onSubmit = async (values) => {
       title: form.value.title,
       date: form.value.date,
       description: form.value.description,
-      images: form.value.images.map(file => file.url || file),
-      videos: form.value.videos.map(file => file.url || file),
-      backgroundMusic: form.value.backgroundMusic.length > 0 ? (form.value.backgroundMusic[0].url || form.value.backgroundMusic[0]) : null
+      images: form.value.images.map(file => ({
+        imageUrl: file.url,
+        fileName: file.fileName || file.file?.name || 'image.jpg',
+        width: file.width || 0,
+        height: file.height || 0
+      })),
+      videos: form.value.videos.map(file => ({
+        videoUrl: file.url,
+        fileName: file.fileName || file.file?.name || 'video.mp4',
+        width: file.width || 0,
+        height: file.height || 0
+      })),
+      backgroundMusic: form.value.backgroundMusic.length > 0 ? [{
+        musicUrl: form.value.backgroundMusic[0].url,
+        fileName: form.value.backgroundMusic[0].fileName || form.value.backgroundMusic[0].file?.name || 'background_music.mp3',
+        title: form.value.backgroundMusic[0].file?.name || '背景音乐',
+        artist: null,
+        duration: form.value.backgroundMusic[0].duration || 0
+      }] : []
     }
     
     await updateDiary(form.value.id, diaryData)
@@ -722,9 +803,29 @@ const loadDiary = async () => {
         title: diary.title,
         date: diary.date,
         description: diary.description,
-        images: diary.images ? diary.images.map(url => ({ url })) : [],
-        videos: diary.videos ? diary.videos.map(url => ({ url, status: 'done' })) : [],
-        backgroundMusic: diary.backgroundMusic ? [{ url: diary.backgroundMusic, status: 'done', message: '已加载' }] : []
+        images: diary.images ? diary.images.map(image => ({ 
+          url: image.imageUrl, 
+          fileName: image.fileName,
+          width: image.width,
+          height: image.height,
+          status: 'done' 
+        })) : [],
+        videos: diary.videos ? diary.videos.map(video => ({ 
+          url: video.videoUrl, 
+          fileName: video.fileName,
+          width: video.width,
+          height: video.height,
+          status: 'done' 
+        })) : [],
+        backgroundMusic: diary.backgroundMusic && diary.backgroundMusic.length > 0 ? [{
+          url: diary.backgroundMusic[0].musicUrl,
+          fileName: diary.backgroundMusic[0].fileName,
+          title: diary.backgroundMusic[0].title,
+          artist: diary.backgroundMusic[0].artist,
+          duration: diary.backgroundMusic[0].duration,
+          status: 'done',
+          message: '已加载'
+        }] : []
       }
       // 将日期字符串（如"2024-06-08"）转换为['2024', '06', '08']格式
       if (diary.date) {

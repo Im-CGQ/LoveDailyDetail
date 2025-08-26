@@ -1,10 +1,19 @@
 package com.lovediary.service.impl;
 
 import com.lovediary.dto.DiaryDTO;
+import com.lovediary.dto.ImageInfoDTO;
+import com.lovediary.dto.VideoInfoDTO;
+import com.lovediary.dto.DiaryBackgroundMusicDTO;
 import com.lovediary.entity.Diary;
+import com.lovediary.entity.ImageInfo;
 import com.lovediary.entity.User;
+import com.lovediary.entity.VideoInfo;
+import com.lovediary.entity.DiaryBackgroundMusic;
 import com.lovediary.repository.DiaryRepository;
+import com.lovediary.repository.ImageInfoRepository;
 import com.lovediary.repository.UserRepository;
+import com.lovediary.repository.VideoInfoRepository;
+import com.lovediary.repository.DiaryBackgroundMusicRepository;
 import com.lovediary.service.DiaryService;
 import com.lovediary.service.OssService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +36,7 @@ public class DiaryServiceImpl implements DiaryService {
     private final DiaryRepository diaryRepository;
     private final UserRepository userRepository;
     private final OssService ossService;
+    private final DiaryBackgroundMusicRepository diaryBackgroundMusicRepository;
 
     @Override
     public List<Diary> getAllDiaries() {
@@ -54,7 +65,7 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public List<Diary> getViewableDiariesByUserId(Long userId) {
         // 直接使用新的查询方法，基于partner_id字段
-        return diaryRepository.findViewableDiariesByUserId(userId);
+        return diaryRepository.findViewableDiariesByUserIdWithPartnerId(userId);
     }
 
     @Override
@@ -92,14 +103,65 @@ public class DiaryServiceImpl implements DiaryService {
         // 移除日期唯一性检查，允许同一天创建多条日记
 
         Diary diary = new Diary();
-        BeanUtils.copyProperties(diaryDTO, diary);
+        diary.setTitle(diaryDTO.getTitle());
+        diary.setDate(diaryDTO.getDate());
+        diary.setDescription(diaryDTO.getDescription());
         diary.setUser(user);
+        
+        // 处理背景音乐信息
+        if (diaryDTO.getBackgroundMusic() != null && !diaryDTO.getBackgroundMusic().isEmpty()) {
+            List<DiaryBackgroundMusic> backgroundMusicList = new ArrayList<>();
+            for (DiaryBackgroundMusicDTO musicDTO : diaryDTO.getBackgroundMusic()) {
+                DiaryBackgroundMusic backgroundMusic = new DiaryBackgroundMusic();
+                backgroundMusic.setDiaryId(diary.getId());
+                backgroundMusic.setMusicUrl(musicDTO.getMusicUrl());
+                backgroundMusic.setFileName(musicDTO.getFileName());
+                backgroundMusic.setTitle(musicDTO.getTitle());
+                backgroundMusic.setArtist(musicDTO.getArtist());
+                backgroundMusic.setDuration(musicDTO.getDuration());
+                backgroundMusicList.add(backgroundMusic);
+            }
+            diary.setBackgroundMusic(backgroundMusicList);
+        }
         
         // 如果用户有伴侣，设置partner_id字段
         if (user.getPartnerId() != null) {
             User partner = userRepository.findById(user.getPartnerId())
                     .orElseThrow(() -> new RuntimeException("伴侣信息不存在"));
             diary.setPartner(partner);
+        }
+        
+        // 保存日记
+        diary = diaryRepository.save(diary);
+        
+        // 处理图片信息
+        if (diaryDTO.getImages() != null && !diaryDTO.getImages().isEmpty()) {
+            List<ImageInfo> imageInfos = new ArrayList<>();
+            for (ImageInfoDTO imageDTO : diaryDTO.getImages()) {
+                ImageInfo imageInfo = new ImageInfo();
+                imageInfo.setDiaryId(diary.getId());
+                imageInfo.setImageUrl(imageDTO.getImageUrl());
+                imageInfo.setFileName(imageDTO.getFileName());
+                imageInfo.setWidth(imageDTO.getWidth());
+                imageInfo.setHeight(imageDTO.getHeight());
+                imageInfos.add(imageInfo);
+            }
+            diary.setImages(imageInfos);
+        }
+        
+        // 处理视频信息
+        if (diaryDTO.getVideos() != null && !diaryDTO.getVideos().isEmpty()) {
+            List<VideoInfo> videoInfos = new ArrayList<>();
+            for (VideoInfoDTO videoDTO : diaryDTO.getVideos()) {
+                VideoInfo videoInfo = new VideoInfo();
+                videoInfo.setDiaryId(diary.getId());
+                videoInfo.setVideoUrl(videoDTO.getVideoUrl());
+                videoInfo.setFileName(videoDTO.getFileName());
+                videoInfo.setWidth(videoDTO.getWidth());
+                videoInfo.setHeight(videoDTO.getHeight());
+                videoInfos.add(videoInfo);
+            }
+            diary.setVideos(videoInfos);
         }
         
         return diaryRepository.save(diary);
@@ -113,9 +175,62 @@ public class DiaryServiceImpl implements DiaryService {
         diary.setTitle(diaryDTO.getTitle());
         diary.setDescription(diaryDTO.getDescription());
         diary.setDate(diaryDTO.getDate());
-        diary.setImages(diaryDTO.getImages());
-        diary.setVideos(diaryDTO.getVideos());
-        diary.setBackgroundMusic(diaryDTO.getBackgroundMusic());
+        
+        // 处理背景音乐信息
+        if (diaryDTO.getBackgroundMusic() != null && !diaryDTO.getBackgroundMusic().isEmpty()) {
+            List<DiaryBackgroundMusic> backgroundMusicList = new ArrayList<>();
+            for (DiaryBackgroundMusicDTO musicDTO : diaryDTO.getBackgroundMusic()) {
+                DiaryBackgroundMusic backgroundMusic = new DiaryBackgroundMusic();
+                backgroundMusic.setDiaryId(diary.getId());
+                backgroundMusic.setMusicUrl(musicDTO.getMusicUrl());
+                backgroundMusic.setFileName(musicDTO.getFileName());
+                backgroundMusic.setTitle(musicDTO.getTitle());
+                backgroundMusic.setArtist(musicDTO.getArtist());
+                backgroundMusic.setDuration(musicDTO.getDuration());
+                backgroundMusicList.add(backgroundMusic);
+            }
+            diary.setBackgroundMusic(backgroundMusicList);
+        } else {
+            diary.setBackgroundMusic(null);
+        }
+        
+        // 清除现有的图片和视频信息
+        if (diary.getImages() != null) {
+            diary.getImages().clear();
+        }
+        if (diary.getVideos() != null) {
+            diary.getVideos().clear();
+        }
+        
+        // 处理图片信息
+        if (diaryDTO.getImages() != null && !diaryDTO.getImages().isEmpty()) {
+            List<ImageInfo> imageInfos = new ArrayList<>();
+            for (ImageInfoDTO imageDTO : diaryDTO.getImages()) {
+                ImageInfo imageInfo = new ImageInfo();
+                imageInfo.setDiaryId(diary.getId());
+                imageInfo.setImageUrl(imageDTO.getImageUrl());
+                imageInfo.setFileName(imageDTO.getFileName());
+                imageInfo.setWidth(imageDTO.getWidth());
+                imageInfo.setHeight(imageDTO.getHeight());
+                imageInfos.add(imageInfo);
+            }
+            diary.setImages(imageInfos);
+        }
+        
+        // 处理视频信息
+        if (diaryDTO.getVideos() != null && !diaryDTO.getVideos().isEmpty()) {
+            List<VideoInfo> videoInfos = new ArrayList<>();
+            for (VideoInfoDTO videoDTO : diaryDTO.getVideos()) {
+                VideoInfo videoInfo = new VideoInfo();
+                videoInfo.setDiaryId(diary.getId());
+                videoInfo.setVideoUrl(videoDTO.getVideoUrl());
+                videoInfo.setFileName(videoDTO.getFileName());
+                videoInfo.setWidth(videoDTO.getWidth());
+                videoInfo.setHeight(videoDTO.getHeight());
+                videoInfos.add(videoInfo);
+            }
+            diary.setVideos(videoInfos);
+        }
         
         return diaryRepository.save(diary);
     }
@@ -211,8 +326,27 @@ public class DiaryServiceImpl implements DiaryService {
         }
 
         Diary diary = new Diary();
-        BeanUtils.copyProperties(diaryDTO, diary);
+        diary.setTitle(diaryDTO.getTitle());
+        diary.setDate(diaryDTO.getDate());
+        diary.setDescription(diaryDTO.getDescription());
         diary.setUser(user);
+        
+        // 处理背景音乐信息
+        if (diaryDTO.getBackgroundMusic() != null && !diaryDTO.getBackgroundMusic().isEmpty()) {
+            List<DiaryBackgroundMusic> backgroundMusicList = new ArrayList<>();
+            for (DiaryBackgroundMusicDTO musicDTO : diaryDTO.getBackgroundMusic()) {
+                DiaryBackgroundMusic backgroundMusic = new DiaryBackgroundMusic();
+                backgroundMusic.setDiaryId(diary.getId());
+                backgroundMusic.setMusicUrl(musicDTO.getMusicUrl());
+                backgroundMusic.setFileName(musicDTO.getFileName());
+                backgroundMusic.setTitle(musicDTO.getTitle());
+                backgroundMusic.setArtist(musicDTO.getArtist());
+                backgroundMusic.setDuration(musicDTO.getDuration());
+                backgroundMusicList.add(backgroundMusic);
+            }
+            diary.setBackgroundMusic(backgroundMusicList);
+        }
+        
         return diaryRepository.save(diary);
     }
     
@@ -227,40 +361,24 @@ public class DiaryServiceImpl implements DiaryService {
         diary1.setTitle("我们的第一次约会");
         diary1.setDate(LocalDate.of(2024, 1, 15));
         diary1.setDescription("今天是我们第一次约会，一起去看了电影，吃了火锅，度过了美好的一天。我们聊了很多，发现彼此有很多共同话题，感觉时间过得特别快。");
-        diary1.setImages(Arrays.asList(
-            "https://picsum.photos/400/300?random=1",
-            "https://picsum.photos/400/300?random=2"
-        ));
         diaryRepository.save(diary1);
 
         Diary diary2 = new Diary();
         diary2.setTitle("春天的野餐");
         diary2.setDate(LocalDate.of(2024, 3, 20));
         diary2.setDescription("今天天气很好，我们一起去公园野餐。准备了水果、三明治和饮料，在草地上铺了毯子，一边吃东西一边聊天，非常惬意。");
-        diary2.setImages(Arrays.asList(
-            "https://picsum.photos/400/300?random=3",
-            "https://picsum.photos/400/300?random=4"
-        ));
         diaryRepository.save(diary2);
 
         Diary diary3 = new Diary();
         diary3.setTitle("夏日海滩之旅");
         diary3.setDate(LocalDate.of(2024, 6, 15));
         diary3.setDescription("今天去了海边，阳光明媚，海风轻拂。我们一起在沙滩上散步，捡贝壳，拍照留念。海水很蓝，天空也很蓝，一切都那么美好。");
-        diary3.setImages(Arrays.asList(
-            "https://picsum.photos/400/300?random=5",
-            "https://picsum.photos/400/300?random=6"
-        ));
         diaryRepository.save(diary3);
 
         Diary diary4 = new Diary();
         diary4.setTitle("秋日枫叶之旅");
         diary4.setDate(LocalDate.of(2024, 10, 20));
         diary4.setDescription("秋天到了，枫叶红了。我们一起去山里看枫叶，漫山遍野的红叶美不胜收。拍了很多照片，留下了美好的回忆。");
-        diary4.setImages(Arrays.asList(
-            "https://picsum.photos/400/300?random=7",
-            "https://picsum.photos/400/300?random=8"
-        ));
         diaryRepository.save(diary4);
     }
 } 

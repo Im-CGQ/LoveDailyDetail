@@ -11,9 +11,9 @@ public class SharedDiaryDTO {
     private String title;
     private String description;
     private LocalDate date;
-    private List<String> images;
-    private List<String> videos;
-    private String backgroundMusic;
+    private List<ImageInfoDTO> images;
+    private List<VideoInfoDTO> videos;
+    private List<DiaryBackgroundMusicDTO> backgroundMusic;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     

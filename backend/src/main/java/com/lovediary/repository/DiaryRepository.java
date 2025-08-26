@@ -56,6 +56,10 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
     @Query("SELECT d FROM Diary d WHERE d.user.id = ?1 OR d.partner.id = ?1 ORDER BY d.date DESC")
     List<Diary> findViewableDiariesByUserId(Long userId);
     
+    // 查询用户或伴侣的日记（基于partner_id字段）
+    @Query("SELECT d FROM Diary d WHERE d.user.id = ?1 OR d.user.id = (SELECT u.partnerId FROM User u WHERE u.id = ?1) ORDER BY d.date DESC")
+    List<Diary> findViewableDiariesByUserIdWithPartnerId(Long userId);
+    
     // 查询用户自己创建的日记（用于后台管理）
     @Query("SELECT d FROM Diary d WHERE d.user.id = ?1 ORDER BY d.date DESC")
     List<Diary> findOwnDiariesByUserId(Long userId);

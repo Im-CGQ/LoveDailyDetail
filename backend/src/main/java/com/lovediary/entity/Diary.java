@@ -9,6 +9,7 @@ import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.lovediary.entity.BackgroundMusic;
 
 @Data
 @Entity
@@ -28,18 +29,17 @@ public class Diary {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @ElementCollection
-    @CollectionTable(name = "diary_images", joinColumns = @JoinColumn(name = "diary_id"))
-    @Column(name = "image_url")
-    private List<String> images;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "diary_id")
+    private List<ImageInfo> images;
 
-    @ElementCollection
-    @CollectionTable(name = "diary_videos", joinColumns = @JoinColumn(name = "diary_id"))
-    @Column(name = "video_url")
-    private List<String> videos;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "diary_id")
+    private List<VideoInfo> videos;
 
-    @Column(name = "background_music_url")
-    private String backgroundMusic;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "diary_id")
+    private List<DiaryBackgroundMusic> backgroundMusic;
 
     @CreationTimestamp
     @Column(name = "created_at")

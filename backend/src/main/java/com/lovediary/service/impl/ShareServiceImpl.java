@@ -11,6 +11,9 @@ import com.lovediary.repository.LetterShareLinkRepository;
 import com.lovediary.service.ShareService;
 import com.lovediary.dto.SharedDiaryDTO;
 import com.lovediary.dto.SharedLetterDTO;
+import com.lovediary.dto.ImageInfoDTO;
+import com.lovediary.dto.VideoInfoDTO;
+import com.lovediary.dto.DiaryBackgroundMusicDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -70,9 +74,51 @@ public class ShareServiceImpl implements ShareService {
         dto.setTitle(diary.getTitle());
         dto.setDescription(diary.getDescription());
         dto.setDate(diary.getDate());
-        dto.setImages(diary.getImages());
-        dto.setVideos(diary.getVideos());
-        dto.setBackgroundMusic(diary.getBackgroundMusic());
+        // 转换图片信息
+        if (diary.getImages() != null) {
+            List<ImageInfoDTO> imageDTOs = diary.getImages().stream()
+                .map(image -> {
+                    ImageInfoDTO imageDTO = new ImageInfoDTO();
+                    imageDTO.setImageUrl(image.getImageUrl());
+                    imageDTO.setFileName(image.getFileName());
+                    imageDTO.setWidth(image.getWidth());
+                    imageDTO.setHeight(image.getHeight());
+                    return imageDTO;
+                })
+                .collect(Collectors.toList());
+            dto.setImages(imageDTOs);
+        }
+        
+        // 转换视频信息
+        if (diary.getVideos() != null) {
+            List<VideoInfoDTO> videoDTOs = diary.getVideos().stream()
+                .map(video -> {
+                    VideoInfoDTO videoDTO = new VideoInfoDTO();
+                    videoDTO.setVideoUrl(video.getVideoUrl());
+                    videoDTO.setFileName(video.getFileName());
+                    videoDTO.setWidth(video.getWidth());
+                    videoDTO.setHeight(video.getHeight());
+                    return videoDTO;
+                })
+                .collect(Collectors.toList());
+            dto.setVideos(videoDTOs);
+        }
+        
+        // 转换背景音乐信息
+        if (diary.getBackgroundMusic() != null) {
+            List<DiaryBackgroundMusicDTO> musicDTOs = diary.getBackgroundMusic().stream()
+                .map(music -> {
+                    DiaryBackgroundMusicDTO musicDTO = new DiaryBackgroundMusicDTO();
+                    musicDTO.setMusicUrl(music.getMusicUrl());
+                    musicDTO.setFileName(music.getFileName());
+                    musicDTO.setTitle(music.getTitle());
+                    musicDTO.setArtist(music.getArtist());
+                    musicDTO.setDuration(music.getDuration());
+                    return musicDTO;
+                })
+                .collect(Collectors.toList());
+            dto.setBackgroundMusic(musicDTOs);
+        }
         dto.setCreatedAt(diary.getCreatedAt());
         dto.setUpdatedAt(diary.getUpdatedAt());
         

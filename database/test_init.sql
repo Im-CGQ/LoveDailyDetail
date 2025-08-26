@@ -1,7 +1,10 @@
--- 创建数据库
-CREATE DATABASE IF NOT EXISTS love_diary DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- 测试init.sql语法
+-- 这个脚本用于验证init.sql文件的语法是否正确
 
-USE love_diary;
+-- 创建测试数据库
+CREATE DATABASE IF NOT EXISTS test_love_diary DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE test_love_diary;
 
 -- 删除已存在的表（如果存在）
 DROP TABLE IF EXISTS letter_share_links;
@@ -199,9 +202,9 @@ CREATE INDEX idx_chat_records_date ON chat_records(date);
 CREATE INDEX idx_chat_records_chat_type ON chat_records(chat_type);
 CREATE INDEX idx_system_configs_key ON system_configs(config_key);
 CREATE INDEX idx_system_configs_user_id ON system_configs(user_id);
-CREATE INDEX idx_diary_share_links_token ON diary_share_links(share_token);
-CREATE INDEX idx_diary_share_links_diary_id ON diary_share_links(diary_id);
-CREATE INDEX idx_diary_share_links_expires_at ON diary_share_links(expires_at);
-CREATE INDEX idx_letter_share_links_token ON letter_share_links(share_token);
-CREATE INDEX idx_letter_share_links_letter_id ON letter_share_links(letter_id);
-CREATE INDEX idx_letter_share_links_expires_at ON letter_share_links(expires_at); 
+
+-- 验证表结构
+SHOW TABLES;
+
+-- 清理测试数据库
+DROP DATABASE test_love_diary;

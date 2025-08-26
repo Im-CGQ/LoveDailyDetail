@@ -30,7 +30,7 @@
           </div>
           
           <div class="diary-media" v-if="diary.images && diary.images.length > 0">
-            <img :src="diary.images[0]" :alt="diary.title" class="diary-image" />
+            <img :src="diary.images[0].imageUrl" :alt="diary.title" class="diary-image" />
           </div>
         </div>
         

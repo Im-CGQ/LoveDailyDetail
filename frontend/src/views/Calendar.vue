@@ -67,7 +67,7 @@
                   <van-icon name="video-o" />
                   <span>{{ diary.videos.length }} 个视频</span>
                 </div>
-                <div v-if="diary.backgroundMusic" class="media-badge music-badge" title="包含音乐">
+                <div v-if="diary.backgroundMusic && diary.backgroundMusic.length > 0" class="media-badge music-badge" title="包含音乐">
                   <van-icon name="music-o" />
                   <span>音乐</span>
                 </div>
@@ -76,7 +76,7 @@
             
             <div class="diary-media" v-if="diary.images && diary.images.length > 0">
               <img 
-                :src="diary.images[0]" 
+                :src="diary.images[0].imageUrl" 
                 :alt="diary.title" 
                 class="diary-image" 
                 @click="previewImage(diary.images)"
@@ -315,7 +315,7 @@ const hasVideoOnDate = (date) => {
 // 检查指定日期的所有日记是否有背景音乐
 const hasBackgroundMusicOnDate = (date) => {
   const diariesOnDate = getDiariesOnDate(date)
-  return diariesOnDate.some(diary => diary.backgroundMusic && diary.backgroundMusic.trim() !== '')
+  return diariesOnDate.some(diary => diary.backgroundMusic && diary.backgroundMusic.length > 0)
 }
 
 // 检查单个日记是否有图片（兼容旧代码）
@@ -330,7 +330,7 @@ const hasVideo = (diary) => {
 
 // 检查单个日记是否有背景音乐（兼容旧代码）
 const hasBackgroundMusic = (diary) => {
-  return diary.backgroundMusic && diary.backgroundMusic.trim() !== ''
+  return diary.backgroundMusic && diary.backgroundMusic.length > 0
 }
 
 // 切换视图模式
@@ -374,8 +374,9 @@ const viewDetail = (diary) => {
 // 图片预览功能
 const previewImage = (images) => {
   if (images && images.length > 0) {
+    const imageUrls = images.map(image => image.imageUrl)
     showImagePreview({
-      images: images,
+      images: imageUrls,
       startPosition: 0,
       closeable: true,
       closeIconPosition: 'top-right',

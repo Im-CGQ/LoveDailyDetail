@@ -1,10 +1,5 @@
 <template>
   <div class="home romantic-bg page-container">
-    <!-- 返回按钮 -->
-    <div class="back-button">
-      <van-icon name="arrow-left" @click="goBack" />
-    </div>
-    
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
@@ -13,7 +8,7 @@
 
 
     <!-- 全局悬浮音乐播放器 -->
-    <div class="global-floating-music-player" v-if="currentDiary && currentDiary.backgroundMusic">
+    <div class="global-floating-music-player" v-if="currentDiary && currentDiary.backgroundMusic && currentDiary.backgroundMusic.length > 0">
       <div 
         class="music-icon" 
         :class="{ 'playing': isMusicPlaying, 'show-controls': showMusicControls }"
@@ -61,28 +56,22 @@
       </div>
 
       <div class="media-section hover-lift">
-        <!-- 图片展示 -->
-        <div v-if="currentDiary.images && currentDiary.images.length > 0" class="images-section">
-          <div class="images-header">
-            <span class="images-emoji">📸</span>
-            <h3 class="images-title">美好瞬间</h3>
-          </div>
-          <div class="images-container">
-            <div 
-              v-for="(image, index) in currentDiary.images" 
-              :key="index"
-              class="image-wrapper"
-            >
-              <img 
-                :src="image" 
-                :alt="`回忆图片 ${index + 1}`" 
-                class="memory-image" 
-                @click="previewImage(index)"
-                @load="onImageLoad"
-              />
-            </div>
-          </div>
-        </div>
+        <!-- 图片轮播 -->
+        <van-swipe 
+          v-if="currentDiary.images && currentDiary.images.length > 0"
+          class="image-swipe glow"
+          :autoplay="4000"
+          indicator-color="#ff6b9d"
+        >
+          <van-swipe-item v-for="(image, index) in currentDiary.images" :key="index">
+            <img 
+              :src="image.imageUrl" 
+              :alt="`回忆图片 ${index + 1}`" 
+              class="memory-image" 
+              @click="previewImage(index)"
+            />
+          </van-swipe-item>
+        </van-swipe>
         
         <!-- 视频播放器 -->
         <div v-if="currentDiary.videos && currentDiary.videos.length > 0" class="video-section">
@@ -97,20 +86,19 @@
               class="video-wrapper"
             >
               <video 
-                :src="video"
-                :poster="getVideoPoster(video)"
+                :src="video.videoUrl"
                 class="video-player"
                 preload="metadata"
-                controls
+                poster=""
                 @ended="onVideoEnded"
                 @play="onVideoPlay"
                 @pause="onVideoPause"
-                @loadstart="onVideoLoadStart"
-                @loadeddata="onVideoLoadedData"
-                @loadedmetadata="onVideoLoadedMetadata"
               >
                 您的浏览器不支持视频播放
               </video>
+              <div class="play-overlay" @click="playVideo(index)">
+                <div class="play-button">▶</div>
+              </div>
             </div>
           </div>
         </div>
@@ -257,10 +245,6 @@ const formatDate = (date) => {
   return dayjs(date).format('YYYY年MM月DD日')
 }
 
-const goBack = () => {
-  router.go(-1)
-}
-
 const goToCalendar = () => {
   router.push('/calendar')
 }
@@ -306,8 +290,9 @@ const showFullText = () => {
 // 图片预览功能
 const previewImage = (index) => {
   if (currentDiary.value && currentDiary.value.images) {
+    const imageUrls = currentDiary.value.images.map(image => image.imageUrl)
     showImagePreview({
-      images: currentDiary.value.images,
+      images: imageUrls,
       startPosition: index,
       closeable: true,
       closeIconPosition: 'top-right',
@@ -321,73 +306,154 @@ const previewImage = (index) => {
 
 // 视频播放相关方法
 const playVideo = (index) => {
-  // 移除全屏播放逻辑，现在视频直接播放
-  console.log('视频播放，索引:', index)
+  console.log('点击视频，索引:', index)
+  if (currentDiary.value && currentDiary.value.videos && currentDiary.value.videos[index]) {
+    // 创建全屏视频播放器
+    const videoUrl = currentDiary.value.videos[index].videoUrl
+    const videoElement = document.createElement('video')
+    videoElement.src = videoUrl
+    videoElement.controls = true
+    videoElement.autoplay = true
+    videoElement.muted = true // 先静音播放，满足浏览器策略
+    videoElement.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 9999;
+      object-fit: contain;
+    `
+    
+    // 添加关闭按钮
+    const closeButton = document.createElement('div')
+    closeButton.innerHTML = '✕'
+    closeButton.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 10000;
+      transition: all 0.3s ease;
+      user-select: none;
+    `
+    
+    // 添加悬停效果
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = 'rgba(255, 107, 157, 0.8)'
+      closeButton.style.transform = 'scale(1.1)'
+    })
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.7)'
+      closeButton.style.transform = 'scale(1)'
+    })
+    
+    // 事件监听器
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape') {
+        closeVideo()
+        document.removeEventListener('keydown', handleEscKey)
+      }
+    }
+    
+    const loadedmetadataHandler = () => {
+      console.log('Video metadata loaded, attempting to play')
+      videoElement.play().then(() => {
+        console.log('Video started playing successfully')
+        // 播放成功后立即取消静音
+        videoElement.muted = false
+        console.log('Video unmuted')
+      }).catch(error => {
+        console.error('Failed to autoplay video:', error)
+        // 如果自动播放失败，显示提示
+        showToast('点击播放按钮开始播放')
+      })
+    }
+    
+    const errorHandler = (error) => {
+      console.error('Video load error:', error)
+      showToast('视频加载失败')
+    }
+    
+    // 添加用户交互事件来确保取消静音
+    const unmuteOnInteraction = () => {
+      if (videoElement.muted) {
+        videoElement.muted = false
+        console.log('Video unmuted on user interaction')
+      }
+      // 移除事件监听器，避免重复触发
+      videoElement.removeEventListener('click', unmuteOnInteraction)
+      videoElement.removeEventListener('play', unmuteOnInteraction)
+    }
+    
+    videoElement._unmuteOnInteraction = unmuteOnInteraction
+    videoElement.addEventListener('click', unmuteOnInteraction)
+    videoElement.addEventListener('play', unmuteOnInteraction)
+    
+    // 保存事件监听器引用以便清理
+    videoElement._loadedmetadataHandler = loadedmetadataHandler
+    videoElement._errorHandler = errorHandler
+    
+    videoElement.addEventListener('loadedmetadata', loadedmetadataHandler)
+    videoElement.addEventListener('error', errorHandler)
+    
+    // 关闭功能
+    const closeVideo = () => {
+      videoElement.pause()
+      // 清理事件监听器
+      videoElement.removeEventListener('loadedmetadata', videoElement._loadedmetadataHandler)
+      videoElement.removeEventListener('error', videoElement._errorHandler)
+      videoElement.removeEventListener('click', videoElement._unmuteOnInteraction)
+      videoElement.removeEventListener('play', videoElement._unmuteOnInteraction)
+      document.removeEventListener('keydown', handleEscKey)
+      // 移除元素
+      document.body.removeChild(videoElement)
+      document.body.removeChild(closeButton)
+      document.body.style.overflow = 'auto'
+    }
+    
+    closeButton.addEventListener('click', closeVideo)
+    
+    // 点击视频背景关闭
+    videoElement.addEventListener('click', (event) => {
+      if (event.target === videoElement) {
+        closeVideo()
+        document.removeEventListener('keydown', handleEscKey)
+      }
+    })
+    
+    // 添加键盘事件监听
+    document.addEventListener('keydown', handleEscKey)
+    
+    // 添加到页面并禁止滚动
+    document.body.style.overflow = 'hidden'
+    document.body.appendChild(videoElement)
+    document.body.appendChild(closeButton)
+  }
 }
 
 const onVideoEnded = () => {
   console.log('视频播放结束')
+  showToast('视频播放完成')
 }
 
-const onVideoPlay = (event) => {
+const onVideoPlay = () => {
   console.log('视频开始播放')
-  // 停止背景音乐
-  if (audioElement.value && isMusicPlaying.value) {
-    audioElement.value.pause()
-    isMusicPlaying.value = false
-    if (progressTimer.value) {
-      clearInterval(progressTimer.value)
-      progressTimer.value = null
-    }
-  }
-  
-  // 停止其他视频
-  const currentVideo = event.target
-  const allVideos = document.querySelectorAll('.video-player')
-  allVideos.forEach(video => {
-    if (video !== currentVideo && !video.paused) {
-      video.pause()
-    }
-  })
 }
 
 const onVideoPause = () => {
   console.log('视频暂停')
-}
-
-// 图片加载完成事件
-const onImageLoad = (event) => {
-  // 图片加载完成后的处理逻辑
-  console.log('图片加载完成')
-}
-
-// 视频加载开始
-const onVideoLoadStart = (event) => {
-  console.log('视频开始加载')
-}
-
-// 视频数据加载完成
-const onVideoLoadedData = (event) => {
-  console.log('视频数据加载完成')
-}
-
-// 视频元数据加载完成
-const onVideoLoadedMetadata = (event) => {
-  console.log('视频元数据加载完成')
-}
-
-// 生成视频封面
-const getVideoPoster = (videoUrl) => {
-  if (!videoUrl) return ''
-  
-  // 检查是否是OSS URL
-  if (videoUrl.includes('aliyuncs.com')) {
-    // 添加OSS视频截图参数
-    return `${videoUrl}?x-oss-process=video/snapshot,t_1000,f_jpg,w_800,h_600,m_fast`
-  }
-  
-  // 如果不是OSS URL，返回空字符串（使用视频默认封面）
-  return ''
 }
 
 
@@ -454,14 +520,6 @@ const toggleMusic = () => {
   if (isMusicPlaying.value) {
     audioElement.value.pause()
   } else {
-    // 停止所有视频播放
-    const allVideos = document.querySelectorAll('.video-player')
-    allVideos.forEach(video => {
-      if (!video.paused) {
-        video.pause()
-      }
-    })
-    
     audioElement.value.play()
   }
 }
@@ -476,9 +534,9 @@ const stopMusic = () => {
 }
 
 const initAudio = () => {
-  if (!currentDiary.value?.backgroundMusic) return
+  if (!currentDiary.value?.backgroundMusic || currentDiary.value.backgroundMusic.length === 0) return
   
-  audioElement.value = new Audio(currentDiary.value.backgroundMusic)
+  audioElement.value = new Audio(currentDiary.value.backgroundMusic[0].musicUrl)
   audioElement.value.loop = true
   
   audioElement.value.addEventListener('loadedmetadata', () => {
@@ -495,14 +553,6 @@ const initAudio = () => {
   audioElement.value.addEventListener('play', () => {
     isMusicPlaying.value = true
     startProgressTimer()
-    
-    // 停止所有视频播放
-    const allVideos = document.querySelectorAll('.video-player')
-    allVideos.forEach(video => {
-      if (!video.paused) {
-        video.pause()
-      }
-    })
   })
   
   audioElement.value.addEventListener('pause', () => {
@@ -637,30 +687,6 @@ onUnmounted(() => {
   position: relative;
 }
 
-.back-button {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
-  
-  .van-icon {
-    font-size: 24px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    border-radius: 50%;
-    padding: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    
-    &:hover {
-      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
-      transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
-    }
-  }
-}
-
 .content {
   max-width: 600px;
   margin: 0 auto;
@@ -744,56 +770,20 @@ onUnmounted(() => {
 .media-section {
   margin-bottom: 30px;
   
-  /* 图片展示样式 */
-  .images-section {
-    margin-bottom: 20px;
+  .image-swipe {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     
-    .images-header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 15px;
+    .memory-image {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      cursor: pointer;
+      transition: transform 0.3s ease;
       
-      .images-emoji {
-        font-size: 24px;
-        animation: heartbeat 2s ease-in-out infinite;
-      }
-      
-      .images-title {
-        color: white;
-        font-size: 20px;
-        font-weight: bold;
-        margin: 0;
-        text-align: center;
-      }
-    }
-    
-    .images-container {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      
-      .image-wrapper {
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-        cursor: pointer;
-        
-        &:hover {
-          transform: scale(1.02);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-        }
-        
-        .memory-image {
-          width: 100%;
-          height: auto;
-          max-height: 400px;
-          object-fit: cover;
-          display: block;
-          transition: transform 0.3s ease;
-        }
+      &:hover {
+        transform: scale(1.02);
       }
     }
   }
@@ -823,45 +813,78 @@ onUnmounted(() => {
       }
     }
     
-       .video-container {
-         display: flex;
-         flex-direction: column;
-         gap: 15px;
-         
-         .video-wrapper {
-           position: relative;
-           cursor: pointer;
+         .video-container {
+       display: flex;
+       flex-direction: column;
+       gap: 15px;
+       
+               .video-wrapper {
+          position: relative;
+          cursor: pointer;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+          transition: all 0.3s ease;
+          
+          &:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+          }
+        }
+        
+        .video-player {
+          width: 100%;
+          height: 300px;
+          border-radius: 20px;
+          overflow: hidden;
+          background: #000;
+          transition: all 0.3s ease;
+          pointer-events: none;
+        }
+        
+                 .play-overlay {
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           bottom: 0;
+           background: rgba(0, 0, 0, 0.3);
+           display: flex;
+           align-items: center;
+           justify-content: center;
            border-radius: 20px;
-           overflow: hidden;
-           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+           cursor: pointer;
            transition: all 0.3s ease;
-           min-height: 200px;
-           background: #000;
+           pointer-events: auto;
            
            &:hover {
-             transform: scale(1.02);
-             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+             background: rgba(0, 0, 0, 0.5);
+             
+             .play-button {
+               transform: scale(1.2);
+               background: rgba(255, 107, 157, 0.9);
+             }
            }
          }
          
-         .video-player {
-           width: 100%;
-           height: auto;
-           max-height: 600px;
-           min-height: 200px;
-           border-radius: 20px;
-           overflow: hidden;
-           background: #000;
+         .play-button {
+           width: 60px;
+           height: 60px;
+           background: rgba(255, 107, 157, 0.8);
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           color: white;
+           font-size: 24px;
            transition: all 0.3s ease;
-           object-fit: contain;
-           display: block;
+           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
          }
-       }
      }
-   }
- 
+  }
+}
 
- .description-section {
+.description-section {
   margin-bottom: 30px;
   
   .description-card {
@@ -904,9 +927,11 @@ onUnmounted(() => {
          padding: 8px;
          margin: -8px;
        }
+       
+       
      }
-   }
- }
+  }
+}
 
 .action-section {
   display: flex;
@@ -938,6 +963,8 @@ onUnmounted(() => {
         transform: translateY(-2px);
       }
     }
+    
+
   }
 }
 
@@ -1220,31 +1247,16 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .back-button {
-    top: 15px;
-    left: 15px;
-    
-    .van-icon {
-      font-size: 20px;
-      padding: 8px;
-    }
-  }
-  
   .title-section .main-title {
     font-size: 28px;
   }
   
-  .media-section .images-section .images-container .image-wrapper .memory-image {
-    max-height: 300px;
-  }
-  
-  .media-section .video-section .video-container .video-wrapper {
-    min-height: 150px;
+  .media-section .image-swipe .memory-image {
+    height: 250px;
   }
   
   .media-section .video-section .video-container .video-player {
-    max-height: 500px;
-    min-height: 150px;
+    height: 200px;
   }
   
   .action-section .action-btn {
