@@ -51,16 +51,27 @@
       </div>
 
       <div class="media hover-lift">
-        <!-- 图片轮播 -->
-        <van-swipe v-if="diary.images && diary.images.length > 0" class="swipe glow">
-          <van-swipe-item v-for="(image, index) in diary.images" :key="index">
-            <img 
-              :src="image.imageUrl" 
-              class="image" 
-              @click="previewImage(index)"
-            />
-          </van-swipe-item>
-        </van-swipe>
+        <!-- 图片展示 -->
+        <div v-if="diary.images && diary.images.length > 0" class="image-section">
+          <div class="image-header">
+            <span class="image-emoji">📸</span>
+            <h3 class="image-title">美好照片</h3>
+          </div>
+          <div class="image-container">
+            <div 
+              v-for="(image, index) in diary.images" 
+              :key="index"
+              class="image-wrapper"
+            >
+              <img 
+                :src="image.imageUrl" 
+                class="image" 
+                :style="getImageStyle(image)"
+                @click="previewImage(index)"
+              />
+            </div>
+          </div>
+        </div>
         
         <!-- 视频播放器 -->
         <div v-if="diary.videos && diary.videos.length > 0" class="video-section">
@@ -73,21 +84,19 @@
               v-for="(video, index) in diary.videos" 
               :key="index"
               class="video-wrapper"
+              :style="getVideoStyle(video)"
             >
               <video 
                 :src="video.videoUrl"
                 class="video-player"
+                :style="getVideoStyle(video)"
                 preload="metadata"
-                poster=""
-                @ended="onVideoEnded"
-                @play="onVideoPlay"
-                @pause="onVideoPause"
+                :poster="generateVideoPoster(video.videoUrl, video)"
+                controls
+                @click="playVideo(index)"
               >
                 您的浏览器不支持视频播放
               </video>
-              <div class="play-overlay" @click="playVideo(index)">
-                <div class="play-button">▶</div>
-              </div>
             </div>
           </div>
         </div>
@@ -174,6 +183,34 @@ const share = () => {
   router.push('/admin/diary/create')
 }
 
+// 生成视频封面URL
+const generateVideoPoster = (videoUrl, video) => {
+  if (!videoUrl) return ''
+  
+  // 判断是否为阿里云OSS URL
+  if (videoUrl.includes('aliyuncs.com') || videoUrl.includes('oss-')) {
+    // 根据视频原始尺寸计算封面尺寸
+    let posterWidth = 800
+    let posterHeight = 600
+    
+    if (video && video.width && video.height) {
+      const aspectRatio = video.width / video.height
+      posterWidth = 800
+      posterHeight = Math.round(800 / aspectRatio)
+    }
+    
+    // 直接拼接视频截图参数
+    // t_1000: 在1秒处截图
+    // f_jpg: 输出JPG格式
+    // w_800,h_600: 设置宽高
+    // m_fast: 快速模式
+    return videoUrl + `?x-oss-process=video/snapshot,t_1000,f_jpg,w_${posterWidth},h_${posterHeight},m_fast`
+  }
+  
+  // 非阿里云OSS URL，返回原URL
+  return videoUrl
+}
+
 // 图片预览功能
 const previewImage = (index) => {
   if (diary.value && diary.value.images) {
@@ -188,6 +225,56 @@ const previewImage = (index) => {
       showIndicators: true,
       indicatorColor: '#ff6b9d'
     })
+  }
+}
+
+// 获取图片自适应样式
+const getImageStyle = (image) => {
+  if (!image || !image.width || !image.height) {
+    return {}
+  }
+  
+  // 占满容器宽度，高度自适应
+  return {
+    width: '100%',
+    height: 'auto'
+  }
+}
+
+// 获取视频自适应样式
+const getVideoStyle = (video) => {
+  if (!video || !video.height || !video.width) {
+    return {
+      width: '100%',
+      height: '300px'
+    }
+  }
+  
+  // 根据视频原始宽高比计算高度，宽度占满
+  const aspectRatio = video.width / video.height
+  const containerWidth = 400 // 假设容器宽度
+  const height = containerWidth / aspectRatio
+  
+  return {
+    width: '100%',
+    height: `${height}px`,
+    objectFit: 'cover' // 让视频内容完全占满容器
+  }
+}
+
+// 视频播放功能
+const playVideo = (index) => {
+  const videoElements = document.querySelectorAll('.video-player')
+  const videoElement = videoElements[index]
+  if (videoElement) {
+    if (videoElement.paused) {
+      videoElement.play().catch(error => {
+        console.error('视频播放失败:', error)
+        showToast('视频播放失败')
+      })
+    } else {
+      videoElement.pause()
+    }
   }
 }
 
@@ -221,157 +308,7 @@ const showFullText = () => {
   }
 }
 
-// 视频播放相关方法
-const playVideo = (index) => {
-  console.log('点击视频，索引:', index)
-  if (diary.value && diary.value.videos && diary.value.videos[index]) {
-    // 创建全屏视频播放器
-    const videoUrl = diary.value.videos[index].videoUrl
-    const videoElement = document.createElement('video')
-    videoElement.src = videoUrl
-    videoElement.controls = true
-    videoElement.autoplay = true
-    videoElement.muted = true // 先静音播放，满足浏览器策略
-    videoElement.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-      z-index: 9999;
-      object-fit: contain;
-    `
-    
-    // 添加关闭按钮
-    const closeButton = document.createElement('div')
-    closeButton.innerHTML = '✕'
-    closeButton.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      cursor: pointer;
-      z-index: 10000;
-      transition: all 0.3s ease;
-      user-select: none;
-    `
-    
-    // 添加悬停效果
-    closeButton.addEventListener('mouseenter', () => {
-      closeButton.style.background = 'rgba(255, 107, 157, 0.8)'
-      closeButton.style.transform = 'scale(1.1)'
-    })
-    
-    closeButton.addEventListener('mouseleave', () => {
-      closeButton.style.background = 'rgba(0, 0, 0, 0.7)'
-      closeButton.style.transform = 'scale(1)'
-    })
-    
-    // 事件监听器
-    const handleEscKey = (event) => {
-      if (event.key === 'Escape') {
-        closeVideo()
-        document.removeEventListener('keydown', handleEscKey)
-      }
-    }
-    
-    const loadedmetadataHandler = () => {
-      console.log('Video metadata loaded, attempting to play')
-      videoElement.play().then(() => {
-        console.log('Video started playing successfully')
-        // 播放成功后立即取消静音
-        videoElement.muted = false
-        console.log('Video unmuted')
-      }).catch(error => {
-        console.error('Failed to autoplay video:', error)
-        // 如果自动播放失败，显示提示
-        showToast('点击播放按钮开始播放')
-      })
-    }
-    
-    const errorHandler = (error) => {
-      console.error('Video load error:', error)
-      showToast('视频加载失败')
-    }
-    
-    // 添加用户交互事件来确保取消静音
-    const unmuteOnInteraction = () => {
-      if (videoElement.muted) {
-        videoElement.muted = false
-        console.log('Video unmuted on user interaction')
-      }
-      // 移除事件监听器，避免重复触发
-      videoElement.removeEventListener('click', unmuteOnInteraction)
-      videoElement.removeEventListener('play', unmuteOnInteraction)
-    }
-    
-    videoElement._unmuteOnInteraction = unmuteOnInteraction
-    videoElement.addEventListener('click', unmuteOnInteraction)
-    videoElement.addEventListener('play', unmuteOnInteraction)
-    
-    // 保存事件监听器引用以便清理
-    videoElement._loadedmetadataHandler = loadedmetadataHandler
-    videoElement._errorHandler = errorHandler
-    
-    videoElement.addEventListener('loadedmetadata', loadedmetadataHandler)
-    videoElement.addEventListener('error', errorHandler)
-    
-    // 关闭功能
-    const closeVideo = () => {
-      videoElement.pause()
-      // 清理事件监听器
-      videoElement.removeEventListener('loadedmetadata', videoElement._loadedmetadataHandler)
-      videoElement.removeEventListener('error', videoElement._errorHandler)
-      videoElement.removeEventListener('click', videoElement._unmuteOnInteraction)
-      videoElement.removeEventListener('play', videoElement._unmuteOnInteraction)
-      document.removeEventListener('keydown', handleEscKey)
-      // 移除元素
-      document.body.removeChild(videoElement)
-      document.body.removeChild(closeButton)
-      document.body.style.overflow = 'auto'
-    }
-    
-    closeButton.addEventListener('click', closeVideo)
-    
-    // 点击视频背景关闭
-    videoElement.addEventListener('click', (event) => {
-      if (event.target === videoElement) {
-        closeVideo()
-        document.removeEventListener('keydown', handleEscKey)
-      }
-    })
-    
-    // 添加键盘事件监听
-    document.addEventListener('keydown', handleEscKey)
-    
-    // 添加到页面并禁止滚动
-    document.body.style.overflow = 'hidden'
-    document.body.appendChild(videoElement)
-    document.body.appendChild(closeButton)
-  }
-}
 
-const onVideoEnded = () => {
-  console.log('视频播放结束')
-  showToast('视频播放完成')
-}
-
-const onVideoPlay = () => {
-  console.log('视频开始播放')
-}
-
-const onVideoPause = () => {
-  console.log('视频暂停')
-}
 
 // 音乐播放相关方法
 const toggleMusicControls = () => {
@@ -756,22 +693,61 @@ onUnmounted(() => {
 .media {
   margin-bottom: 25px;
   
-  .swipe {
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  /* 图片展示样式 */
+  .image-section {
+    margin-bottom: 20px;
     
-         .image {
-       width: 100%;
-       height: 280px;
-       object-fit: cover;
-       cursor: pointer;
-       transition: transform 0.3s ease;
-       
-       &:hover {
-         transform: scale(1.02);
-       }
-     }
+    .image-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      
+      .image-emoji {
+        font-size: 24px;
+        animation: heartbeat 2s ease-in-out infinite;
+      }
+      
+      .image-title {
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        margin: 0;
+        text-align: center;
+      }
+    }
+    
+    .image-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      
+      .image-wrapper {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        
+        &:hover {
+          transform: scale(1.02);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .image {
+          width: 100% !important;
+          height: auto !important;
+          max-height: none !important;
+          display: block;
+          cursor: pointer;
+          transition: transform 0.3s ease;
+          
+          &:hover {
+            transform: scale(1.02);
+          }
+        }
+      }
+    }
   }
   
   /* 视频播放器样式 */
@@ -818,53 +794,12 @@ onUnmounted(() => {
         }
       }
       
-      .video-player {
-        width: 100%;
-        height: 280px;
+            .video-player {
         border-radius: 20px;
         overflow: hidden;
         background: #000;
         transition: all 0.3s ease;
-        pointer-events: none;
-      }
-      
-      .play-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 20px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        pointer-events: auto;
-        
-        &:hover {
-          background: rgba(0, 0, 0, 0.5);
-          
-          .play-button {
-            transform: scale(1.2);
-            background: rgba(255, 107, 157, 0.9);
-          }
-        }
-      }
-      
-      .play-button {
-        width: 60px;
-        height: 60px;
-        background: rgba(255, 107, 157, 0.8);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 24px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: block;
       }
     }
   }
@@ -996,13 +931,11 @@ onUnmounted(() => {
     }
   }
   
-  .media .swipe .image {
-    height: 240px;
+  .media .image-section .image-container .image-wrapper .image {
+    max-height: none !important;
   }
   
-  .media .video-section .video-container .video-player {
-    height: 200px;
-  }
+
   
   .actions .action-btn {
     height: 48px;

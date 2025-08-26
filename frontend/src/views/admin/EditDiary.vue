@@ -78,17 +78,18 @@
                   {{ getVideoStatusText(video.status) }}
                 </span>
               </div>
-              <div class="video-player-container" v-if="video.url">
+              <div class="video-player-container" v-if="video.url" :style="getVideoStyle(video)">
                 <video 
                   :src="video.url" 
+                  :poster="generateVideoPoster(video.url, video)"
                   class="video-preview-player"
-                  preload="metadata"
+                  :style="getVideoStyle(video)"
+                  preload="none"
+                  controls
+                  @click="playVideo(index)"
                 >
                   您的浏览器不支持视频播放
                 </video>
-                <div class="play-overlay" @click.stop="playVideo(index)">
-                  <div class="play-button">▶</div>
-                </div>
               </div>
               <div class="video-placeholder" v-else>
                 <div class="uploading-indicator" v-if="video.status === 'uploading'">
@@ -252,6 +253,55 @@ const getVideoDimensions = (file) => {
   })
 }
 
+// 生成视频封面URL
+const generateVideoPoster = (videoUrl, video) => {
+  if (!videoUrl) return ''
+  
+  // 判断是否为阿里云OSS URL
+  if (videoUrl.includes('aliyuncs.com') || videoUrl.includes('oss-')) {
+    // 根据视频原始尺寸计算封面尺寸
+    let posterWidth = 800
+    let posterHeight = 600
+    
+    if (video && video.width && video.height) {
+      const aspectRatio = video.width / video.height
+      posterWidth = 800
+      posterHeight = Math.round(800 / aspectRatio)
+    }
+    
+    // 直接拼接视频截图参数
+    // t_1000: 在1秒处截图
+    // f_jpg: 输出JPG格式
+    // w_800,h_600: 设置宽高
+    // m_fast: 快速模式
+    return videoUrl + `?x-oss-process=video/snapshot,t_1000,f_jpg,w_${posterWidth},h_${posterHeight},m_fast`
+  }
+  
+  // 非阿里云OSS URL，返回原URL
+  return videoUrl
+}
+
+// 获取视频自适应样式
+const getVideoStyle = (video) => {
+  if (!video.width || !video.height) {
+    return {
+      width: '100%',
+      height: '300px'
+    }
+  }
+  
+  // 根据视频原始宽高比计算高度，宽度占满
+  const aspectRatio = video.width / video.height
+  const containerWidth = 400 // 假设容器宽度
+  const height = containerWidth / aspectRatio
+  
+  return {
+    width: '100%',
+    height: `${height}px`,
+    objectFit: 'cover' // 让视频内容完全占满容器
+  }
+}
+
 // 获取音乐时长
 const getMusicDuration = (file) => {
   return new Promise((resolve) => {
@@ -405,144 +455,29 @@ const getVideoStatusText = (status) => {
   }
 }
 
+
+
+// 简化的视频播放方法
 const playVideo = (index) => {
-  console.log('playVideo called with index:', index)
   const video = form.value.videos[index]
-  console.log('video object:', video)
   if (!video || !video.url) {
-    console.log('No video or URL found')
     return
   }
   
-  // 创建全屏视频播放器
-  const videoElement = document.createElement('video')
-  videoElement.src = video.url
-  videoElement.controls = true
-  videoElement.autoplay = true
-  videoElement.muted = true // 静音播放，避免自动播放策略限制
-  videoElement.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    z-index: 9999;
-    object-fit: contain;
-  `
+  // 获取视频元素
+  const videoElements = document.querySelectorAll('.video-preview-player')
+  const videoElement = videoElements[index]
   
-  // 添加加载事件监听
-  const loadedmetadataHandler = () => {
-    console.log('Video metadata loaded, attempting to play')
-    videoElement.play().then(() => {
-      console.log('Video started playing successfully')
-      // 播放成功后立即取消静音
-      videoElement.muted = false
-      console.log('Video unmuted')
-    }).catch(error => {
-      console.error('Failed to autoplay video:', error)
-      // 如果自动播放失败，显示提示
-      showToast('点击播放按钮开始播放')
-    })
-  }
-  
-  const errorHandler = (e) => {
-    console.error('Video error:', e)
-    showToast('视频加载失败')
-  }
-  
-  videoElement._loadedmetadataHandler = loadedmetadataHandler
-  videoElement._errorHandler = errorHandler
-  
-  videoElement.addEventListener('loadedmetadata', loadedmetadataHandler)
-  videoElement.addEventListener('error', errorHandler)
-  
-  // 添加关闭按钮
-  const closeButton = document.createElement('div')
-  closeButton.innerHTML = '✕'
-  closeButton.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 20px;
-    z-index: 10000;
-    transition: all 0.3s ease;
-  `
-  
-  // 关闭按钮悬停效果
-  closeButton.addEventListener('mouseenter', () => {
-    closeButton.style.background = 'rgba(255, 255, 255, 0.2)'
-    closeButton.style.transform = 'scale(1.1)'
-  })
-  
-  closeButton.addEventListener('mouseleave', () => {
-    closeButton.style.background = 'rgba(0, 0, 0, 0.7)'
-    closeButton.style.transform = 'scale(1)'
-  })
-  
-  // 关闭功能
-  const closeVideo = () => {
-    videoElement.pause()
-    // 清理事件监听器
-    videoElement.removeEventListener('loadedmetadata', videoElement._loadedmetadataHandler)
-    videoElement.removeEventListener('error', videoElement._errorHandler)
-    videoElement.removeEventListener('click', videoElement._unmuteOnInteraction)
-    videoElement.removeEventListener('play', videoElement._unmuteOnInteraction)
-    document.removeEventListener('keydown', handleEscKey)
-    // 移除元素
-    document.body.removeChild(videoElement)
-    document.body.removeChild(closeButton)
-    document.body.style.overflow = 'auto'
-  }
-  
-  closeButton.addEventListener('click', closeVideo)
-  
-  // ESC键关闭
-  const handleEscKey = (event) => {
-    if (event.key === 'Escape') {
-      closeVideo()
-      document.removeEventListener('keydown', handleEscKey)
+  if (videoElement) {
+    if (videoElement.paused) {
+      videoElement.play().catch(error => {
+        console.error('视频播放失败:', error)
+        showToast('视频播放失败')
+      })
+    } else {
+      videoElement.pause()
     }
   }
-  
-  document.addEventListener('keydown', handleEscKey)
-  
-  // 点击视频背景关闭
-  videoElement.addEventListener('click', (event) => {
-    if (event.target === videoElement) {
-      closeVideo()
-      document.removeEventListener('keydown', handleEscKey)
-    }
-  })
-  
-  // 添加用户交互事件来确保取消静音
-  const unmuteOnInteraction = () => {
-    if (videoElement.muted) {
-      videoElement.muted = false
-      console.log('Video unmuted on user interaction')
-    }
-    // 移除事件监听器，避免重复触发
-    videoElement.removeEventListener('click', unmuteOnInteraction)
-    videoElement.removeEventListener('play', unmuteOnInteraction)
-  }
-  
-  videoElement._unmuteOnInteraction = unmuteOnInteraction
-  videoElement.addEventListener('click', unmuteOnInteraction)
-  videoElement.addEventListener('play', unmuteOnInteraction)
-  
-  // 添加到页面并禁止滚动
-  document.body.appendChild(videoElement)
-  document.body.appendChild(closeButton)
-  document.body.style.overflow = 'hidden'
 }
 
 const afterVideoRead = async (file) => {
@@ -1015,16 +950,15 @@ onUnmounted(() => {
   position: relative;
   
   .video-preview-player {
-    width: 100%;
-    height: 200px;
     border-radius: 6px;
     background: #000;
+    display: block;
     cursor: pointer;
-    transition: transform 0.2s ease;
-    pointer-events: none;
+    overflow: hidden;
     
     &:hover {
       transform: scale(1.02);
+      transition: transform 0.2s ease;
     }
     
     &::-webkit-media-controls {
@@ -1033,45 +967,6 @@ onUnmounted(() => {
     
     &::-webkit-media-controls-panel {
       background: rgba(0, 0, 0, 0.7);
-    }
-  }
-  
-  .play-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    pointer-events: auto;
-    
-    &:hover {
-      background: rgba(0, 0, 0, 0.5);
-      
-      .play-button {
-        transform: scale(1.2);
-        background: rgba(255, 107, 157, 0.9);
-      }
-    }
-    
-    .play-button {
-      width: 60px;
-      height: 60px;
-      background: rgba(255, 107, 157, 0.8);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 24px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
   }
 }

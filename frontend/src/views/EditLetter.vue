@@ -157,7 +157,8 @@ const minDate = computed(() => {
 // 获取当前用户信息
 const fetchCurrentUser = async () => {
   try {
-    currentUser.value = await getCurrentUser()
+    const response = await getUserInfo()
+    currentUser.value = response.data
     await loadReceivers()
   } catch (error) {
     console.error('获取用户信息失败:', error)
