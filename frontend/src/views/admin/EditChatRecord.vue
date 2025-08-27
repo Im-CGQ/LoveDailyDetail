@@ -2,7 +2,7 @@
   <div class="edit-chat-record-page">
     <div class="page-header">
       <h2>编辑聊天记录</h2>
-      <van-button type="default" @click="goBack">返回</van-button>
+      <van-button type="default" @click="goBack" class="back-btn">返回</van-button>
     </div>
 
     <div class="content" v-if="!loading">
@@ -50,8 +50,8 @@
         />
         
         <div class="form-actions">
-          <van-button @click="goBack" type="default" size="large">取消</van-button>
-          <van-button type="primary" native-type="submit" size="large" :loading="submitting">保存</van-button>
+          <van-button @click="goBack" type="default" size="large" class="cancel-btn">取消</van-button>
+          <van-button type="primary" native-type="submit" size="large" :loading="submitting" class="save-btn">保存</van-button>
         </div>
       </van-form>
     </div>
@@ -129,12 +129,34 @@ const loadChatRecord = async () => {
   try {
     const record = await getChatRecordById(id)
     if (record) {
+      // 检查是否为自定义类型
+      const presetTypes = ['微信语音', '微信聊天', '小红书聊天']
+      const isCustomType = !presetTypes.includes(record.chatType)
+      
+      // 处理自定义类型的回显
+      let chatTypeToShow = record.chatType
+      let customTypeToShow = ''
+      
+      if (isCustomType) {
+        // 如果是自定义类型，显示"自定义"，并将实际值放到customType字段
+        chatTypeToShow = '自定义'
+        customTypeToShow = record.chatType
+      } else if (record.chatType === '自定义' && record.customType) {
+        // 如果chatType是"自定义"且有customType，保持"自定义"，customType显示实际值
+        chatTypeToShow = '自定义'
+        customTypeToShow = record.customType
+      } else {
+        // 预设类型，直接显示
+        chatTypeToShow = record.chatType
+        customTypeToShow = record.customType || ''
+      }
+      
       form.value = {
-        chatType: record.chatType,
+        chatType: chatTypeToShow,
         durationMinutes: record.durationMinutes.toString(),
         date: record.date,
         description: record.description || '',
-        customType: record.customType || ''
+        customType: customTypeToShow
       }
       // 将日期字符串（如"2024-06-08"）转换为['2024', '06', '08']格式
       if (record.date) {
@@ -227,8 +249,11 @@ const handleSubmit = async () => {
   
   submitting.value = true
   try {
+    // 如果是自定义类型，使用自定义类型的值作为chatType
+    const chatTypeToSubmit = form.value.chatType === '自定义' ? form.value.customType : form.value.chatType
+    
     await updateChatRecord(route.params.id, {
-      chatType: form.value.chatType,
+      chatType: chatTypeToSubmit,
       durationMinutes: parseInt(form.value.durationMinutes),
       date: form.value.date,
       description: form.value.description,
@@ -258,7 +283,6 @@ onMounted(() => {
 <style lang="scss" scoped>
 .edit-chat-record-page {
   padding: 20px;
-  background: #f5f5f5;
   min-height: 100vh;
 }
 
@@ -271,15 +295,23 @@ onMounted(() => {
   h2 {
     margin: 0;
     color: #333;
-    font-size: 24px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .back-btn {
+    height: 32px;
+    padding: 0 16px;
+    font-size: 14px;
+    border-radius: 16px;
   }
 }
 
 .content {
-  background: white;
+  background: #ffffff;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   
   :deep(.van-cell) {
     padding: 8px 0;
@@ -317,9 +349,9 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 200px;
-  background: white;
+  background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .form-actions {
@@ -329,6 +361,31 @@ onMounted(() => {
   
   .van-button {
     flex: 1;
+    height: 44px;
+    border-radius: 22px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .cancel-btn {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    color: #6c757d;
+    
+    &:hover {
+      background: #e9ecef;
+      border-color: #dee2e6;
+    }
+  }
+  
+  .save-btn {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    }
   }
 }
 </style>

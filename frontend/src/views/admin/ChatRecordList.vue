@@ -1,10 +1,9 @@
 <template>
   <div class="chat-record-list-page">
     <div class="page-header">
-      <h2>聊天记录管理</h2>
+      <h2>聊天记录</h2>
       <van-button type="primary" @click="goToCreate" class="create-btn">
-        <span class="btn-icon">📝</span>
-        添加聊天记录
+        添加
       </van-button>
     </div>
 
@@ -19,8 +18,7 @@
           <div class="record-header">
             <div class="chat-type">
               <span class="type-icon">{{ getChatTypeIcon(record.chatType) }}</span>
-              <span class="type-text">{{ record.chatType }}</span>
-              <span v-if="record.customType" class="custom-type">({{ record.customType }})</span>
+              <span class="type-text" :class="{ 'custom-type': isCustomType(record) }">{{ getDisplayChatType(record) }}</span>
             </div>
             <div class="duration">
               <span class="duration-number">{{ record.durationMinutes }}</span>
@@ -45,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { getChatRecordsWithPagination, deleteChatRecord } from '@/api/admin'
 import { showToast, showConfirmDialog } from 'vant'
@@ -62,10 +60,31 @@ const getChatTypeIcon = (type) => {
   const iconMap = {
     '微信语音': '🎤',
     '微信聊天': '💬',
-    '小红书聊天': '📱',
-    '自定义': '💭'
+    '小红书聊天': '📱'
   }
-  return iconMap[type] || '💬'
+  // 如果是预设类型，返回对应图标；否则返回默认图标
+  return iconMap[type] || '💭'
+}
+
+// 获取显示的聊天类型
+const getDisplayChatType = (record) => {
+  // 如果chatType是"自定义"且有customType，显示customType
+  if (record.chatType === '自定义' && record.customType) {
+    return record.customType
+  }
+  // 如果chatType不是预设类型，说明是自定义类型，直接显示
+  const presetTypes = ['微信语音', '微信聊天', '小红书聊天']
+  if (!presetTypes.includes(record.chatType)) {
+    return record.chatType
+  }
+  // 否则直接显示chatType
+  return record.chatType
+}
+
+// 判断是否为自定义类型
+const isCustomType = (record) => {
+  const presetTypes = ['微信语音', '微信聊天', '小红书聊天']
+  return !presetTypes.includes(record.chatType) || (record.chatType === '自定义' && record.customType)
 }
 
 // 格式化日期
@@ -130,6 +149,11 @@ const handleDelete = async (id) => {
     
     await deleteChatRecord(id)
     showToast('删除成功')
+    
+    // 重置分页状态并重新加载
+    page.value = 1
+    finished.value = false
+    chatRecords.value = []
     await loadChatRecords()
   } catch (error) {
     if (error !== 'cancel') {
@@ -142,12 +166,20 @@ const handleDelete = async (id) => {
 onMounted(() => {
   loadChatRecords()
 })
+
+// 当页面被激活时（从其他页面返回）重新加载数据
+onActivated(() => {
+  // 重置分页状态并重新加载
+  page.value = 1
+  finished.value = false
+  chatRecords.value = []
+  loadChatRecords()
+})
 </script>
 
 <style lang="scss" scoped>
 .chat-record-list-page {
   padding: 20px;
-  background: #f5f5f5;
   min-height: 100vh;
 }
 
@@ -160,21 +192,23 @@ onMounted(() => {
   h2 {
     margin: 0;
     color: #333;
-    font-size: 24px;
+    font-size: 18px;
+    font-weight: 600;
   }
   
   .create-btn {
-    .btn-icon {
-      margin-right: 8px;
-    }
+    height: 32px;
+    padding: 0 16px;
+    font-size: 14px;
+    border-radius: 16px;
   }
 }
 
 .content {
-  background: white;
+  background: #ffffff;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .chat-record-item {

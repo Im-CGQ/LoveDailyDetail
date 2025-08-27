@@ -29,8 +29,7 @@
           <div class="record-header">
             <div class="chat-type">
               <span class="type-icon">{{ getChatTypeIcon(record.chatType) }}</span>
-              <span class="type-text">{{ record.chatType }}</span>
-              <span v-if="record.customType" class="custom-type">({{ record.customType }})</span>
+              <span class="type-text" :class="{ 'custom-type': isCustomType(record) }">{{ getDisplayChatType(record) }}</span>
             </div>
             <div class="duration">
               <span class="duration-number">{{ record.durationMinutes }}</span>
@@ -197,10 +196,25 @@ const getChatTypeIcon = (type) => {
   const iconMap = {
     '微信语音': '🎤',
     '微信聊天': '💬',
-    '小红书聊天': '📱',
-    '自定义': '💭'
+    '小红书聊天': '📱'
   }
-  return iconMap[type] || '💬'
+  // 如果是预设类型，返回对应图标；否则返回默认图标
+  return iconMap[type] || '💭'
+}
+
+// 获取显示的聊天类型
+const getDisplayChatType = (record) => {
+  // 如果chatType是"自定义"且有customType，显示customType
+  if (record.chatType === '自定义' && record.customType) {
+    return record.customType
+  }
+  // 如果chatType不是预设类型，说明是自定义类型，直接显示
+  const presetTypes = ['微信语音', '微信聊天', '小红书聊天']
+  if (!presetTypes.includes(record.chatType)) {
+    return record.chatType
+  }
+  // 否则直接显示chatType
+  return record.chatType
 }
 
 // 格式化日期
@@ -304,8 +318,11 @@ const handleSubmit = async () => {
   
   submitting.value = true
   try {
+    // 如果是自定义类型，使用自定义类型的值作为chatType
+    const chatTypeToSubmit = form.value.chatType === '自定义' ? form.value.customType : form.value.chatType
+    
     await createChatRecord({
-      chatType: form.value.chatType,
+      chatType: chatTypeToSubmit,
       durationMinutes: parseInt(form.value.durationMinutes),
       date: form.value.date,
       description: form.value.description,

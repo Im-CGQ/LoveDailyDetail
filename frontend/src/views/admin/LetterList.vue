@@ -266,6 +266,7 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .letter-list {
   padding: 20px;
+  min-height: 100vh;
   
   .header {
     display: flex;
@@ -274,40 +275,105 @@ onBeforeUnmount(() => {
     margin-bottom: 20px;
     
     h2 {
-      color: #333;
+      color: #2c3e50;
       margin: 0;
-      font-size: 20px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .van-button {
+      height: 36px;
+      padding: 0 20px;
+      font-size: 14px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+      
+      .van-icon {
+        margin-right: 6px;
+      }
     }
   }
   
   .letters-container {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    
     .empty-state {
       text-align: center;
       padding: 60px 20px;
-      color: #999;
+      color: #7f8c8d;
+      
+      .van-icon {
+        color: #bdc3c7;
+        margin-bottom: 20px;
+      }
       
       p {
         margin: 20px 0;
         font-size: 16px;
+        color: #34495e;
         
         &.empty-tip {
           font-size: 14px;
-          color: #999;
+          color: #7f8c8d;
           margin-top: 10px;
+        }
+      }
+      
+      .van-button {
+        margin-top: 20px;
+        height: 36px;
+        padding: 0 20px;
+        font-size: 14px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
       }
     }
     
-    .letters-list {
-      .van-cell {
+         .letters-list {
+       .van-cell {
+         margin-bottom: 8px;
+         border-radius: 12px;
+         background: #f8f9fa;
+         border: 1px solid #e9ecef;
+         transition: all 0.3s ease;
+         
+         &:hover {
+           transform: translateY(-2px);
+           box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+           background: #ffffff;
+         }
+        
         &.locked {
-          opacity: 0.8;
+          opacity: 0.7;
+          background: rgba(255, 193, 7, 0.1);
+          border-color: rgba(255, 193, 7, 0.3);
         }
         
         &.unread {
           .van-cell__title {
-            font-weight: bold;
+            font-weight: 600;
+            color: #2c3e50;
           }
+          
+          background: rgba(52, 152, 219, 0.1);
+          border-color: rgba(52, 152, 219, 0.3);
         }
         
         .action-buttons {
@@ -318,95 +384,170 @@ onBeforeUnmount(() => {
           .van-button {
             min-width: 50px;
             font-size: 12px;
+            height: 28px;
+            border-radius: 14px;
+            
+            &.van-button--primary {
+              background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+              border: none;
+            }
+            
+            &.van-button--danger {
+              background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+              border: none;
+            }
           }
         }
       }
     }
   }
   
-  .letter-detail {
-    padding: 20px;
+     .letter-detail {
+     padding: 24px;
+     background: #ffffff;
+     border-radius: 16px;
     
     .detail-header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       
       h3 {
-        color: #333;
+        color: #2c3e50;
         margin: 0;
-        font-size: 18px;
+        font-size: 20px;
+        font-weight: 600;
       }
     }
     
-    .detail-meta {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+         .detail-meta {
+       background: #f8f9fa;
+       padding: 20px;
+       border-radius: 12px;
+       margin-bottom: 20px;
+       border: 1px solid #e9ecef;
       
       p {
-        margin: 8px 0;
-        color: #666;
+        margin: 10px 0;
+        color: #34495e;
         font-size: 14px;
+        line-height: 1.6;
         
         strong {
-          color: #333;
+          color: #2c3e50;
+          font-weight: 600;
         }
         
         &.self-letter-tip {
-          background: #e3f2fd;
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
           color: #1976d2;
-          padding: 8px 12px;
-          border-radius: 6px;
-          margin-top: 10px;
+          padding: 12px 16px;
+          border-radius: 8px;
+          margin-top: 15px;
           border-left: 4px solid #1976d2;
+          font-weight: 500;
           
           .van-icon {
-            margin-right: 5px;
+            margin-right: 8px;
           }
         }
       }
     }
     
-    .detail-content {
-      line-height: 1.8;
-      color: #333;
-      max-height: 300px;
-      overflow-y: auto;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
+         .detail-content {
+       line-height: 1.8;
+       color: #2c3e50;
+       max-height: 300px;
+       overflow-y: auto;
+       padding: 20px;
+       background: #f8f9fa;
+       border-radius: 12px;
+       margin-bottom: 20px;
+       border: 1px solid #e9ecef;
+       font-size: 15px;
+     }
     
     .detail-actions {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       justify-content: center;
+      
+      .van-button {
+        height: 40px;
+        padding: 0 24px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        
+        &.van-button--primary {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border: none;
+        }
+        
+                 &.van-button--default {
+           background: #ffffff;
+           border: 1px solid #dee2e6;
+           color: #6c757d;
+         }
+      }
     }
   }
 }
 
 :deep(.van-tabs__nav) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+:deep(.van-tab) {
+  color: #6c757d;
+  font-weight: 500;
 }
 
 :deep(.van-tab--active) {
-  color: white !important;
+  color: #007bff !important;
+  font-weight: 600;
 }
 
 :deep(.van-tabs__line) {
-  background-color: white;
+  background-color: #007bff;
+  height: 3px;
+  border-radius: 2px;
 }
 
 :deep(.van-button--primary) {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
 }
 
 :deep(.van-tag) {
-  padding: 2px 6px;
+  padding: 4px 8px;
   font-size: 12px;
   line-height: 1.2;
+  border-radius: 12px;
+  font-weight: 500;
+  
+  &.van-tag--warning {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+  }
+  
+  &.van-tag--primary {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+  }
+  
+  &.van-tag--success {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    color: white;
+  }
 }
 </style>

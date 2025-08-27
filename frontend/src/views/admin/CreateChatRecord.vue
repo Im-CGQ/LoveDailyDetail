@@ -2,7 +2,7 @@
   <div class="create-chat-record-page">
     <div class="page-header">
       <h2>添加聊天记录</h2>
-      <van-button type="default" @click="goBack">返回</van-button>
+      <van-button type="default" @click="goBack" class="back-btn">返回</van-button>
     </div>
 
     <div class="content">
@@ -50,8 +50,8 @@
         />
         
         <div class="form-actions">
-          <van-button @click="goBack" type="default" size="large">取消</van-button>
-          <van-button type="primary" native-type="submit" size="large" :loading="submitting">保存</van-button>
+          <van-button @click="goBack" type="default" size="large" class="cancel-btn">取消</van-button>
+          <van-button type="primary" native-type="submit" size="large" :loading="submitting" class="save-btn">保存</van-button>
         </div>
       </van-form>
     </div>
@@ -181,8 +181,11 @@ const handleSubmit = async () => {
   
   submitting.value = true
   try {
+    // 如果是自定义类型，使用自定义类型的值作为chatType
+    const chatTypeToSubmit = form.value.chatType === '自定义' ? form.value.customType : form.value.chatType
+    
     await createChatRecord({
-      chatType: form.value.chatType,
+      chatType: chatTypeToSubmit,
       durationMinutes: parseInt(form.value.durationMinutes),
       date: form.value.date,
       description: form.value.description,
@@ -208,7 +211,6 @@ const goBack = () => {
 <style lang="scss" scoped>
 .create-chat-record-page {
   padding: 20px;
-  background: #f5f5f5;
   min-height: 100vh;
 }
 
@@ -221,15 +223,23 @@ const goBack = () => {
   h2 {
     margin: 0;
     color: #333;
-    font-size: 24px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .back-btn {
+    height: 32px;
+    padding: 0 16px;
+    font-size: 14px;
+    border-radius: 16px;
   }
 }
 
 .content {
-  background: white;
+  background: #ffffff;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   
   :deep(.van-cell) {
     padding: 8px 0;
@@ -269,6 +279,31 @@ const goBack = () => {
   
   .van-button {
     flex: 1;
+    height: 44px;
+    border-radius: 22px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .cancel-btn {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    color: #6c757d;
+    
+    &:hover {
+      background: #e9ecef;
+      border-color: #dee2e6;
+    }
+  }
+  
+  .save-btn {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    }
   }
 }
 </style>
