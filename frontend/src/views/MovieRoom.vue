@@ -44,6 +44,35 @@
                  <span class="play-icon">▶</span>
                </div>
              </div>
+             
+             <!-- 全屏按钮 -->
+             <div class="fullscreen-btn" @click="toggleFullscreen" title="全屏">
+               <span class="fullscreen-icon">{{ isFullscreen ? '⛶' : '⛶' }}</span>
+             </div>
+             
+             <!-- 全屏控制界面 -->
+             <div v-if="isFullscreen" class="fullscreen-controls">
+               <div class="fullscreen-progress-bar" 
+                    @click="seekToFullscreen"
+                    title="点击调整播放进度">
+                 <div class="fullscreen-progress-fill" :style="{ width: progressPercent + '%' }"></div>
+               </div>
+               
+               <div class="fullscreen-control-row">
+                 <div class="fullscreen-control-left">
+                   <button class="fullscreen-sync-btn" @click="syncVideoProgress" title="同步视频进度">
+                     ⚡ 同步进度
+                   </button>
+                   <span class="fullscreen-time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+                 </div>
+                 
+                 <div class="fullscreen-control-right">
+                   <button class="fullscreen-play-btn" @click="togglePlay" title="播放/暂停">
+                     {{ isPlaying ? '⏸️' : '▶️' }}
+                   </button>
+                 </div>
+               </div>
+             </div>
           </div>
           
           <!-- 播放控制 -->
@@ -136,6 +165,7 @@ const syncing = ref(false)
 const currentUser = ref(null)
 const lastSyncTime = ref(0) // 记录最后同步时间，避免自己同步自己
 const isVideoPlaying = ref(false) // 跟踪视频是否正在播放
+const isFullscreen = ref(false) // 跟踪全屏状态
 
 const progressPercent = computed(() => {
   if (duration.value === 0) return 0
@@ -365,12 +395,89 @@ const formatTime = (seconds) => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
+// 全屏功能
+const toggleFullscreen = () => {
+  if (!document.fullscreenElement) {
+    // 进入全屏
+    const videoContainer = document.querySelector('.video-container')
+    if (videoContainer) {
+      videoContainer.requestFullscreen().then(() => {
+        isFullscreen.value = true
+      }).catch(err => {
+        console.error('全屏失败:', err)
+        showToast('全屏失败')
+      })
+    }
+  } else {
+    // 退出全屏
+    document.exitFullscreen().then(() => {
+      isFullscreen.value = false
+    }).catch(err => {
+      console.error('退出全屏失败:', err)
+    })
+  }
+}
+
+// 监听全屏状态变化
+const handleFullscreenChange = () => {
+  isFullscreen.value = !!document.fullscreenElement
+}
+
+// 监听键盘事件
+const handleKeydown = (event) => {
+  if (isFullscreen.value) {
+    switch (event.key) {
+      case 'Escape':
+        toggleFullscreen()
+        break
+      case ' ':
+        event.preventDefault()
+        togglePlay()
+        break
+      case 'ArrowLeft':
+        event.preventDefault()
+        if (videoPlayer.value) {
+          videoPlayer.value.currentTime = Math.max(0, videoPlayer.value.currentTime - 10)
+        }
+        break
+      case 'ArrowRight':
+        event.preventDefault()
+        if (videoPlayer.value) {
+          videoPlayer.value.currentTime = Math.min(videoPlayer.value.duration, videoPlayer.value.currentTime + 10)
+        }
+        break
+    }
+  }
+}
+
+// 全屏模式下的进度条点击
+const seekToFullscreen = (event) => {
+  if (!videoPlayer.value) return
+  
+  const rect = event.currentTarget.getBoundingClientRect()
+  const clickX = event.clientX - rect.left
+  const percent = clickX / rect.width
+  const newTime = percent * duration.value
+  
+  videoPlayer.value.currentTime = newTime
+  currentTime.value = newTime
+  updateRemotePlayback()
+}
+
 onMounted(() => {
   loadRoom()
+  
+  // 添加事件监听器
+  document.addEventListener('fullscreenchange', handleFullscreenChange)
+  document.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
   // 移除自动离开房间的逻辑，只有手动点击离开房间按钮才会离开
+  
+  // 移除事件监听器
+  document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  document.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
@@ -508,6 +615,133 @@ onUnmounted(() => {
   font-size: 32px;
   margin-left: 4px;
   color: #333;
+}
+
+.fullscreen-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.fullscreen-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+.fullscreen-icon {
+  font-size: 18px;
+  color: white;
+}
+
+/* 全屏控制界面样式 */
+.fullscreen-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.fullscreen-controls:hover {
+  opacity: 1;
+}
+
+.fullscreen-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  cursor: pointer;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.fullscreen-progress-bar:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.fullscreen-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+  transition: width 0.1s ease;
+}
+
+.fullscreen-control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fullscreen-control-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.fullscreen-control-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.fullscreen-sync-btn {
+  padding: 8px 12px;
+  background: transparent;
+  color: #28a745;
+  border: 1px solid #28a745;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.fullscreen-sync-btn:hover {
+  background: #28a745;
+  color: white;
+}
+
+.fullscreen-time-display {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  color: white;
+  font-weight: 500;
+  min-width: 120px;
+  text-align: center;
+}
+
+.fullscreen-play-btn {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fullscreen-play-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: scale(1.1);
 }
 
 .video-controls {
@@ -753,7 +987,7 @@ onUnmounted(() => {
    }
    
    .leave-section {
-     justify-content: center;
+     justify-content: flex-end;
    }
 
   .control-btn {
@@ -775,6 +1009,35 @@ onUnmounted(() => {
 
   .play-icon {
     font-size: 26px;
+  }
+  
+  .fullscreen-btn {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .fullscreen-icon {
+    font-size: 16px;
+  }
+  
+  .fullscreen-controls {
+    padding: 15px;
+  }
+  
+  .fullscreen-sync-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .fullscreen-time-display {
+    font-size: 14px;
+    min-width: 100px;
+  }
+  
+  .fullscreen-play-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 
   .members-list {
