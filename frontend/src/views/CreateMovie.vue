@@ -473,7 +473,7 @@ const handleCreateMovie = async () => {
       fileSize: movieFile.fileSize,
       width: movieFile.width,
       height: movieFile.height,
-      durationMinutes: movieFile.duration ? Math.round(movieFile.duration / 60) : null, // 将秒转换为分钟
+      durationMinutes: movieFile.duration ? (movieFile.duration < 60 ? movieFile.duration : Math.round(movieFile.duration / 60)) : null, // 小于60秒时发送秒数，否则发送分钟数
       isPublic: newMovie.isPublic
     }
     

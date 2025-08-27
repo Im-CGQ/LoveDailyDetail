@@ -150,17 +150,17 @@ const joinRoom = async () => {
   }
 }
 
-const formatDuration = (minutes) => {
-  if (!minutes || minutes <= 0) return '未知'
+const formatDuration = (duration) => {
+  if (!duration || duration <= 0) return '未知'
   
-  // 如果分钟数小于1，显示秒数
-  if (minutes < 1) {
-    const seconds = Math.round(minutes * 60)
-    return `${seconds}秒`
+  // 如果数值小于60，认为是秒数
+  if (duration < 60) {
+    return `${Math.round(duration)}秒`
   }
   
-  const hours = Math.floor(minutes / 60)
-  const mins = Math.floor(minutes % 60)
+  // 如果数值大于等于60，认为是分钟数
+  const hours = Math.floor(duration / 60)
+  const mins = Math.floor(duration % 60)
   
   if (hours > 0) {
     if (mins > 0) {

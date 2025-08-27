@@ -528,14 +528,14 @@ const handleEditMovie = async () => {
           movieData.fileSize = movieFile.fileSize
           movieData.width = movieFile.width
           movieData.height = movieFile.height
-          movieData.durationMinutes = movieFile.duration ? Math.round(movieFile.duration / 60) : null
+          movieData.durationMinutes = movieFile.duration ? (movieFile.duration < 60 ? movieFile.duration : Math.round(movieFile.duration / 60)) : null
         } else {
           movieData.movieUrl = movieFile.url
           movieData.fileName = movieFile.fileName
           movieData.fileSize = movieFile.fileSize
           movieData.width = movieFile.width
           movieData.height = movieFile.height
-          movieData.durationMinutes = movieFile.duration ? Math.round(movieFile.duration / 60) : null
+          movieData.durationMinutes = movieFile.duration ? (movieFile.duration < 60 ? movieFile.duration : Math.round(movieFile.duration / 60)) : null
         }
       }
     }
