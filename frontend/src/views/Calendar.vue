@@ -409,6 +409,7 @@ onMounted(() => {
 
 .content {
   padding: 20px;
+  padding-top: 80px;
   position: relative;
   z-index: 2;
   padding-bottom: 40px;

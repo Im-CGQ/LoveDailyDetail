@@ -438,11 +438,11 @@ const handleLogout = () => {
 
 .welcome-container {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 25px;
-  padding: 35px;
+  border-radius: 20px;
+  padding: 25px;
   width: 100%;
-  max-width: 500px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 480px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   position: relative;
@@ -452,27 +452,27 @@ const handleLogout = () => {
 .admin-actions {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   margin-top: 0px;
   
   .van-button {
-    height: 40px;
-    padding: 0 16px;
-    font-size: 13px;
-    border-radius: 20px;
+    height: 36px;
+    padding: 0 14px;
+    font-size: 12px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     border: none;
     transition: all 0.3s ease;
     
     .btn-icon {
-      font-size: 16px;
+      font-size: 14px;
     }
     
     .btn-text {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
     }
   }
@@ -502,45 +502,45 @@ const handleLogout = () => {
 
 .welcome-header {
   text-align: center;
-  margin-bottom: 20px;
-  margin-top: 15px;
+  margin-bottom: 15px;
+  margin-top: 10px;
   
   .logo {
-    font-size: 48px;
-    margin-bottom: 15px;
+    font-size: 40px;
+    margin-bottom: 10px;
     display: block;
   }
   
   .title {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   
   .subtitle {
     color: #666;
-    font-size: 16px;
+    font-size: 14px;
     opacity: 0.8;
   }
 }
 
 .welcome-content {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .feature-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   background: rgba(255, 107, 157, 0.05);
-  border-radius: 15px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 107, 157, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
@@ -556,14 +556,14 @@ const handleLogout = () => {
   }
   
   .feature-icon {
-    font-size: 32px;
-    width: 50px;
-    height: 50px;
+    font-size: 28px;
+    width: 45px;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255, 107, 157, 0.1);
-    border-radius: 12px;
+    border-radius: 10px;
   }
   
   .feature-text {
@@ -571,14 +571,14 @@ const handleLogout = () => {
     
     h3 {
       color: #333;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
-      margin: 0 0 5px 0;
+      margin: 0 0 3px 0;
     }
     
     p {
       color: #666;
-      font-size: 14px;
+      font-size: 13px;
       margin: 0;
     }
   }
@@ -631,10 +631,10 @@ const handleLogout = () => {
 
 // 伴侣状态区域样式
 .partner-status-section {
-  margin-bottom: 20px;
-  padding: 15px;
+  margin-bottom: 15px;
+  padding: 12px;
   background: rgba(255, 107, 157, 0.05);
-  border-radius: 15px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 107, 157, 0.1);
 }
 
@@ -644,10 +644,10 @@ const handleLogout = () => {
 .partner-sent-invitation-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 10px;
+  border-radius: 10px;
   transition: all 0.3s ease;
   
   &:hover {
@@ -659,14 +659,14 @@ const handleLogout = () => {
 .partner-invite-icon,
 .partner-avatar,
 .invitation-icon {
-  font-size: 32px;
-  width: 50px;
-  height: 50px;
+  font-size: 28px;
+  width: 45px;
+  height: 45px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 107, 157, 0.1);
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .partner-invite-text,
@@ -676,14 +676,14 @@ const handleLogout = () => {
   
   h3 {
     color: #333;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    margin: 0 0 5px 0;
+    margin: 0 0 3px 0;
   }
   
   p {
     color: #666;
-    font-size: 14px;
+    font-size: 13px;
     margin: 0;
   }
   
@@ -691,7 +691,7 @@ const handleLogout = () => {
     color: #667eea;
     font-size: 12px;
     font-style: italic;
-    margin-top: 5px;
+    margin-top: 3px;
   }
 }
 

@@ -217,6 +217,12 @@ const getDisplayChatType = (record) => {
   return record.chatType
 }
 
+// 判断是否为自定义类型
+const isCustomType = (record) => {
+  const presetTypes = ['微信语音', '微信聊天', '小红书聊天']
+  return !presetTypes.includes(record.chatType) || (record.chatType === '自定义' && record.customType)
+}
+
 // 格式化日期
 const formatDate = (date) => {
   if (!date) return ''
@@ -378,7 +384,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   padding: 15px 20px;
   z-index: 100;

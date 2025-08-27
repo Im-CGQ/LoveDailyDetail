@@ -599,20 +599,20 @@ onMounted(() => {
 /* 按钮区域样式 */
 .movie-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin-top: 15px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .action-btn {
-  padding: 8px 12px;
+  padding: 10px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   transition: all 0.3s ease;
-  flex: 1;
   min-width: 0;
   white-space: nowrap;
 }
@@ -710,12 +710,12 @@ onMounted(() => {
   }
   
   .movie-actions {
-    gap: 6px;
+    gap: 8px;
   }
   
   .action-btn {
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 8px 14px;
+    font-size: 13px;
   }
 }
 </style>
