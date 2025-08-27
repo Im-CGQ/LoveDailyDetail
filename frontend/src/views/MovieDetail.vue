@@ -10,7 +10,7 @@
         <button @click="$router.push('/movies')">返回电影列表</button>
       </div>
       
-      <div v-else class="movie-content">
+             <div v-else class="movie-content" ref="movieContentRef">
         <div class="movie-header">
           <div class="movie-cover">
             <img 
@@ -54,12 +54,12 @@
         </div>
         
         <div class="movie-player">
-          <div class="video-player-container" :style="getVideoStyle(movie)">
+          <div class="video-player-container" :style="getVideoStyle">
             <video 
               :src="movie.movieUrl"
               :poster="generateVideoPoster(movie.movieUrl, movie)"
               class="video-player"
-              :style="getVideoStyle(movie)"
+              :style="getVideoStyle"
               controls
               preload="metadata"
             ></video>
@@ -71,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import BackButton from '@/components/BackButton.vue'
@@ -83,6 +83,8 @@ const router = useRouter()
 
 const loading = ref(false)
 const movie = ref(null)
+const movieContentRef = ref(null)
+const containerWidth = ref(400) // 默认宽度
 
 const loadMovie = async () => {
   loading.value = true
@@ -94,6 +96,13 @@ const loadMovie = async () => {
     showToast(error.message)
   } finally {
     loading.value = false
+  }
+}
+
+// 更新容器宽度
+const updateContainerWidth = () => {
+  if (movieContentRef.value) {
+    containerWidth.value = movieContentRef.value.offsetWidth
   }
 }
 
@@ -196,8 +205,8 @@ const generateVideoPoster = (videoUrl, movie) => {
 }
 
 // 获取视频自适应样式
-const getVideoStyle = (movie) => {
-  if (!movie.width || !movie.height) {
+const getVideoStyle = computed(() => {
+  if (!movie.value || !movie.value.width || !movie.value.height) {
     return {
       width: '100%',
       height: '600px'
@@ -205,16 +214,24 @@ const getVideoStyle = (movie) => {
   }
   
   // 根据视频原始宽高比计算高度，宽度占满
-  const aspectRatio = movie.width / movie.height
-  const containerWidth = 800 // 假设容器宽度
-  const height = containerWidth / aspectRatio
+  const aspectRatio = movie.value.width / movie.value.height
+  const height = containerWidth.value / aspectRatio
   
   return {
     width: '100%',
     height: `${height}px`,
     objectFit: 'cover' // 让视频内容完全占满容器
   }
-}
+})
+
+// 监听movie变化，在DOM更新后更新容器宽度
+watch(movie, () => {
+  if (movie.value) {
+    nextTick(() => {
+      updateContainerWidth()
+    })
+  }
+}, { immediate: true })
 
 onMounted(() => {
   loadMovie()
