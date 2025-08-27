@@ -631,7 +631,6 @@ const getVideoStyle = computed(() => {
     const aspectRatio = movie.width / movie.height
     
     const height = Math.max(200, Math.min(currentContainerWidth / aspectRatio, 600)) // 确保高度在合理范围内
-    console.log(height);
     result = {
       width: '100%',
       height: `${height}px`,

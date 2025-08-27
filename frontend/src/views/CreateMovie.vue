@@ -44,7 +44,7 @@
             <!-- 视频预览区域 -->
             <div class="video-preview-section" v-if="movieFiles.length > 0">
               <h4>视频预览</h4>
-              <div class="video-preview-item">
+              <div class="video-preview-item" ref="videoPreviewSectionRef">
                 <div class="video-info">
                   <span class="video-name">{{ movieFiles[0].file?.name || '电影文件' }}</span>
                   <span class="video-status" :class="movieFiles[0].status">
@@ -120,7 +120,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import BackButton from '@/components/BackButton.vue'
@@ -132,12 +132,23 @@ const router = useRouter()
 const creating = ref(false)
 const movieFiles = ref([])
 const coverFiles = ref([])
+const videoPreviewSectionRef = ref(null) // 视频预览区域容器引用
+const containerWidth = ref(400) // 默认容器宽度
 
 const newMovie = reactive({
   title: '',
   description: '',
   isPublic: false
 })
+
+// 更新容器宽度
+const updateContainerWidth = () => {
+  if (videoPreviewSectionRef.value) {
+    containerWidth.value = videoPreviewSectionRef.value.offsetWidth
+    // 确保容器宽度在合理范围内
+    containerWidth.value = Math.max(300, Math.min(containerWidth.value, 800))
+  }
+}
 
 // 表单验证
 const isFormValid = computed(() => {
@@ -332,8 +343,7 @@ const getVideoStyle = (video) => {
   
   // 根据视频原始宽高比计算高度，宽度占满
   const aspectRatio = video.width / video.height
-  const containerWidth = 400 // 假设容器宽度
-  const height = containerWidth / aspectRatio
+  const height = containerWidth.value / aspectRatio
   
   return {
     width: '100%',
@@ -451,6 +461,18 @@ const handleCreateMovie = async () => {
   }
 }
 
+// 监听movieFiles变化，在DOM更新后更新容器宽度
+watch(movieFiles, () => {
+  if (movieFiles.value.length > 0) {
+    nextTick(() => {
+      updateContainerWidth()
+    })
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  updateContainerWidth()
+})
 
 </script>
 

@@ -88,7 +88,7 @@
             <span class="video-emoji">🎬</span>
             <h3 class="video-title">美好视频</h3>
           </div>
-          <div class="video-container">
+          <div class="video-container" ref="videoSectionRef">
             <div 
               v-for="(video, index) in currentDiary.videos" 
               :key="index"
@@ -194,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import dayjs from 'dayjs'
@@ -223,9 +223,20 @@ const progressTimer = ref(null)
 const musicAutoplay = ref(true) // 音乐自动播放配置
 const playingVideoIndex = ref(-1) // 当前播放的视频索引
 const togetherDate = ref('2025-05-30 14:30:00') // 在一起的时间，从后台配置读取
+const videoSectionRef = ref(null) // 视频区域容器引用
+const containerWidth = ref(400) // 默认容器宽度
 
 let timer = null
 let typingTimer = null
+
+// 更新容器宽度
+const updateContainerWidth = () => {
+  if (videoSectionRef.value) {
+    containerWidth.value = videoSectionRef.value.offsetWidth
+    // 确保容器宽度在合理范围内
+    containerWidth.value = Math.max(300, Math.min(containerWidth.value, 800))
+  }
+}
 
 // 计算在一起的时间
 const calculateLoveTime = () => {
@@ -371,8 +382,7 @@ const getVideoStyle = (video) => {
   
   // 根据视频原始宽高比计算高度，宽度占满
   const aspectRatio = video.width / video.height
-  const containerWidth = 400 // 假设容器宽度
-  const height = containerWidth / aspectRatio
+  const height = containerWidth.value / aspectRatio
   
   return {
     width: '100%',
@@ -678,9 +688,19 @@ const stopDrag = () => {
   document.removeEventListener('touchend', stopDrag)
 }
 
+// 监听currentDiary变化，在DOM更新后更新容器宽度
+watch(currentDiary, () => {
+  if (currentDiary.value && currentDiary.value.videos && currentDiary.value.videos.length > 0) {
+    nextTick(() => {
+      updateContainerWidth()
+    })
+  }
+}, { immediate: true })
+
 onMounted(() => {
   loadLatestDiary()
   startTimer() // 启动计时器
+  updateContainerWidth()
   
   // 监听页面可见性变化
   document.addEventListener('visibilitychange', handleVisibilityChange)

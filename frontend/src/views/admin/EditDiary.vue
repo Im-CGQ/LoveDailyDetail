@@ -66,7 +66,7 @@
         <!-- 视频预览区域 -->
         <div class="video-preview-section" v-if="form.videos.length > 0">
           <h4>视频预览</h4>
-          <div class="video-preview-list">
+          <div class="video-preview-list" ref="videoPreviewSectionRef">
             <div 
               v-for="(video, index) in form.videos" 
               :key="index" 
@@ -218,6 +218,8 @@ const currentMusicTime = ref(0)
 const musicDuration = ref(0)
 const musicProgress = ref(0)
 const musicProgressTimer = ref(null)
+const videoPreviewSectionRef = ref(null) // 视频预览区域容器引用
+const containerWidth = ref(400) // 默认容器宽度
 
 // 获取图片尺寸
 const getImageDimensions = (file) => {
@@ -234,6 +236,15 @@ const getImageDimensions = (file) => {
     }
     img.src = URL.createObjectURL(file)
   })
+}
+
+// 更新容器宽度
+const updateContainerWidth = () => {
+  if (videoPreviewSectionRef.value) {
+    containerWidth.value = videoPreviewSectionRef.value.offsetWidth
+    // 确保容器宽度在合理范围内
+    containerWidth.value = Math.max(300, Math.min(containerWidth.value, 800))
+  }
 }
 
 // 获取视频尺寸
@@ -292,8 +303,7 @@ const getVideoStyle = (video) => {
   
   // 根据视频原始宽高比计算高度，宽度占满
   const aspectRatio = video.width / video.height
-  const containerWidth = 400 // 假设容器宽度
-  const height = containerWidth / aspectRatio
+  const height = containerWidth.value / aspectRatio
   
   return {
     width: '100%',
@@ -805,8 +815,18 @@ const loadDiary = async () => {
   }
 }
 
+// 监听videos变化，在DOM更新后更新容器宽度
+watch(() => form.value.videos, () => {
+  if (form.value.videos.length > 0) {
+    nextTick(() => {
+      updateContainerWidth()
+    })
+  }
+}, { immediate: true })
+
 onMounted(() => {
   loadDiary()
+  updateContainerWidth()
 })
 
 onUnmounted(() => {
