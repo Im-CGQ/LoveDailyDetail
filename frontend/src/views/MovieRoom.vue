@@ -22,19 +22,29 @@
 
         <!-- 电影播放器 -->
         <div class="video-section">
-          <video 
-            ref="videoPlayer"
-            :src="room.movie.movieUrl"
-            class="video-player"
-            @loadedmetadata="onVideoLoaded"
-            @timeupdate="onTimeUpdate"
-            @play="onPlay"
-            @pause="onPause"
-            @seeking="onSeeking"
-            @seeked="onSeeked"
-            @error="onVideoError"
-            @canplay="onVideoCanPlay"
-          ></video>
+          <div class="video-container">
+            <video 
+              ref="videoPlayer"
+              :src="room.movie.movieUrl"
+              class="video-player"
+              @loadedmetadata="onVideoLoaded"
+              @timeupdate="onTimeUpdate"
+              @play="onPlay"
+              @pause="onPause"
+              @seeking="onSeeking"
+              @seeked="onSeeked"
+              @error="onVideoError"
+              @canplay="onVideoCanPlay"
+              @click="togglePlay"
+            ></video>
+            
+                         <!-- 视频中心的播放按钮 -->
+             <div class="video-overlay" v-if="!isPlaying" @click="togglePlay">
+               <div class="play-button">
+                 <span class="play-icon">▶</span>
+               </div>
+             </div>
+          </div>
           
           <!-- 播放控制 -->
           <div class="video-controls">
@@ -49,32 +59,35 @@
               <div class="progress-handle" :style="{ left: progressPercent + '%' }"></div>
             </div>
             
-                         <div class="control-buttons">
-               <button class="control-btn" 
-                       @click="togglePlay"
-                       title="播放/暂停">
-                 {{ isPlaying ? '⏸️' : '▶️' }}
-               </button>
-               <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
-               <button class="control-btn sync-progress-btn" @click="syncVideoProgress" title="同步视频进度">
-                 🔄 同步进度
-               </button>
-               <button class="control-btn" @click="leaveRoom">离开房间</button>
+                                      <div class="control-row">
+               <div class="control-left">
+                                   <button class="member-sync-btn" @click="syncVideoProgress" title="同步视频进度">
+                    ⚡ 同步进度
+                  </button>
+                 <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+               </div>
              </div>
+             
              <div class="sync-tip">
-               💡 提示：拖拽进度条或点击同步按钮可同步进度给其他用户，其他用户需要手动点击同步按钮接收更新
+               💡 提示：拖拽进度条或点击同步按钮可同步进度给其他用户
+             </div>
+             
+             <div class="leave-section">
+               <button class="control-btn leave-btn" @click="leaveRoom">离开房间</button>
              </div>
           </div>
         </div>
 
-        <!-- 房间成员 -->
-        <div class="members-section">
-          <div class="members-header">
-            <h3>房间成员 ({{ members.length }})</h3>
-            <button class="sync-btn" @click="manualSyncMembers" :disabled="syncing">
-              {{ syncing ? '同步中...' : '🔄 同步' }}
-            </button>
-          </div>
+                 <!-- 房间成员 -->
+         <div class="members-section">
+           <div class="members-header">
+             <h3>房间成员 ({{ members.length }})</h3>
+           </div>
+           <div class="members-controls">
+                           <button class="member-sync-btn" @click="manualSyncMembers" :disabled="syncing">
+                {{ syncing ? '同步中...' : '⚡ 同步成员' }}
+              </button>
+           </div>
           <div class="members-list">
             <div 
               v-for="member in members" 
@@ -118,7 +131,7 @@ const duration = ref(0)
 const isPlaying = ref(false)
 const isSeeking = ref(false)
 const isDragging = ref(false)
-const membersSyncInterval = ref(null)
+
 const syncing = ref(false)
 const currentUser = ref(null)
 const lastSyncTime = ref(0) // 记录最后同步时间，避免自己同步自己
@@ -177,17 +190,8 @@ const manualSyncMembers = async () => {
 }
 
 const startSync = () => {
-  // 定期同步成员列表 - 每10秒同步一次
-  membersSyncInterval.value = setInterval(async () => {
-    try {
-      await loadMembers()
-    } catch (error) {
-      console.error('同步成员列表失败:', error)
-    }
-  }, 10000)
-  
-  // 移除自动同步播放状态，只保留手动同步功能
-  // 避免频繁的自动同步导致播放中断
+  // 移除自动同步逻辑，只保留手动同步功能
+  // 让用户自己控制何时同步成员列表
 }
 
 const onVideoLoaded = () => {
@@ -366,11 +370,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // 清理定时器
-  if (membersSyncInterval.value) {
-    clearInterval(membersSyncInterval.value)
-  }
-  
   // 移除自动离开房间的逻辑，只有手动点击离开房间按钮才会离开
 })
 </script>
@@ -453,95 +452,189 @@ onUnmounted(() => {
   margin-bottom: 30px;
 }
 
-.video-player {
+.video-container {
+  position: relative;
   width: 100%;
   max-height: 500px;
   border-radius: 10px;
   background: #000;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.play-button {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.play-button:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.play-icon {
+  font-size: 32px;
+  margin-left: 4px;
+  color: #333;
 }
 
 .video-controls {
   margin-top: 15px;
 }
 
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.control-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.control-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
 .progress-bar {
   position: relative;
-  height: 8px;
-  background: #ddd;
-  border-radius: 4px;
+  height: 10px;
+  background: #e9ecef;
+  border-radius: 5px;
   cursor: pointer;
   margin-bottom: 15px;
-  transition: opacity 0.3s;
+  transition: all 0.3s;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .progress-bar:hover {
-  opacity: 0.8;
+  background: #dee2e6;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .progress-fill {
   height: 100%;
-  background: #667eea;
-  border-radius: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 5px;
   transition: width 0.1s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .progress-handle {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 16px;
-  height: 16px;
-  background: #667eea;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
 }
 
-.control-buttons {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
+.progress-handle:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 .control-btn {
-  padding: 10px 15px;
+  padding: 8px 12px;
   background: #667eea;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 16px;
-  transition: background 0.3s;
+  font-size: 14px;
+  transition: all 0.3s;
+  min-width: 40px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .control-btn:hover {
   background: #5a6fd8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.sync-progress-btn {
-  background: #28a745;
+
+
+
+
+.leave-btn {
+  background: #dc3545;
 }
 
-.sync-progress-btn:hover {
-  background: #218838;
+.leave-btn:hover {
+  background: #c82333;
 }
 
 .time-display {
-  font-family: monospace;
+  font-family: 'Courier New', monospace;
   font-size: 14px;
   color: #666;
+  font-weight: 500;
+  min-width: 120px;
+  text-align: center;
 }
 
 .sync-tip {
   text-align: center;
-  font-size: 12px;
-  color: #999;
-  margin-top: 10px;
-  padding: 8px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border-left: 3px solid #28a745;
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  border-left: 3px solid #17a2b8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.leave-section {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 
 .members-section {
@@ -561,24 +654,34 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.sync-btn {
-  padding: 8px 12px;
-  background: #28a745;
-  color: white;
+.members-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 15px;
+}
+
+.member-sync-btn {
+  padding: 6px 12px;
+  background: transparent;
+  color: #28a745;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
+  font-size: 12px;
+  transition: all 0.3s;
+  font-weight: 500;
 }
 
-.sync-btn:hover:not(:disabled) {
-  background: #218838;
+.member-sync-btn:hover:not(:disabled) {
+  color: #218838;
+  transform: scale(1.02);
 }
 
-.sync-btn:disabled {
+.member-sync-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .members-list {
@@ -638,11 +741,42 @@ onUnmounted(() => {
     font-size: 1.5rem;
   }
   
-  .control-buttons {
+  .control-row {
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    align-items: stretch;
   }
   
+     .control-left {
+     width: 100%;
+     justify-content: space-between;
+   }
+   
+   .leave-section {
+     justify-content: center;
+   }
+
+  .control-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 36px;
+    height: 32px;
+  }
+  
+                 .time-display {
+      font-size: 12px;
+      min-width: 100px;
+    }
+
+  .play-button {
+    width: 60px;
+    height: 60px;
+  }
+
+  .play-icon {
+    font-size: 26px;
+  }
+
   .members-list {
     grid-template-columns: 1fr;
   }
@@ -651,6 +785,11 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 10px;
     align-items: flex-start;
+  }
+
+  .member-sync-btn {
+    font-size: 11px;
+    padding: 5px 10px;
   }
 }
 </style>
