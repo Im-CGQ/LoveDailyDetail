@@ -17,10 +17,8 @@
         :class="{ 'playing': isMusicPlaying, 'show-controls': showMusicControls }"
         @click="toggleMusicControls"
       >
-        <span class="music-emoji">🎵</span>
-        <div v-if="isMusicPlaying" class="music-playing-indicator">
-          <span class="music-playing-dot"></span>
-        </div>
+                 <span class="music-emoji">🎶</span>
+        
       </div>
       
       <!-- 音乐控制面板 -->
@@ -713,6 +711,7 @@ onUnmounted(() => {
 
 .content {
   padding: 20px;
+  padding-top: 100px;
   position: relative;
   z-index: 2;
   padding-bottom: 40px;
@@ -742,23 +741,23 @@ onUnmounted(() => {
   transform: translateY(-50%);
   z-index: 1000;
   
-  .music-icon {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, rgba(255, 107, 157, 0.7) 0%, rgba(255, 143, 171, 0.7) 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(255, 107, 157, 0.3);
-    transition: all 0.3s ease;
-    position: relative;
+     .music-icon {
+     width: 40px;
+     height: 40px;
+     background: linear-gradient(135deg, rgba(255, 107, 157, 0.7) 0%, rgba(255, 143, 171, 0.7) 100%);
+     border-radius: 50%;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     cursor: pointer;
+     box-shadow: 0 4px 20px rgba(255, 107, 157, 0.3);
+     transition: all 0.3s ease;
+     position: relative;
     
-    &:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 25px rgba(255, 107, 157, 0.4);
-    }
+         &:hover {
+       transform: scale(1.1);
+       box-shadow: 0 6px 25px rgba(255, 107, 157, 0.4);
+     }
     
     &.playing {
       animation: rotate 3s linear infinite;
@@ -769,20 +768,7 @@ onUnmounted(() => {
       color: white;
     }
     
-    .music-playing-indicator {
-      position: absolute;
-      top: -2px;
-      right: -2px;
-      
-      .music-playing-dot {
-        width: 8px;
-        height: 8px;
-        background: #ff6b9d;
-        border-radius: 50%;
-        animation: pulse 1.5s ease-in-out infinite;
-        border: 2px solid white;
-      }
-    }
+    
   }
   
   .music-controls {
@@ -896,6 +882,7 @@ onUnmounted(() => {
 
 .media {
   margin-bottom: 25px;
+  padding-top: 20px;
   
 
   
@@ -1122,6 +1109,7 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .content {
     padding: 15px;
+    padding-top: 80px;
   }
   
   .header .title {
@@ -1144,6 +1132,10 @@ onUnmounted(() => {
       width: 240px;
       right: -20px;
     }
+  }
+  
+  .media {
+    padding-top: 15px;
   }
   
   .media .image-section .image-container .image-wrapper .image {

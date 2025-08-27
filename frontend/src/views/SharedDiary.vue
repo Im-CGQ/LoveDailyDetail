@@ -947,8 +947,9 @@ onUnmounted(() => {
   }
 }
 
-.media {
-  margin-bottom: 25px;
+ .media {
+   margin-bottom: 25px;
+   padding-top: 20px;
   
 
   
@@ -1230,9 +1231,15 @@ onUnmounted(() => {
     }
   }
   
-  .media .image-section .image-container .image-wrapper .image {
-    max-height: none !important;
-  }
+
+  
+     .media {
+     padding-top: 15px;
+   }
+   
+   .media .image-section .image-container .image-wrapper .image {
+     max-height: none !important;
+   }
   
 
   

@@ -475,10 +475,10 @@ onUnmounted(() => {
   margin-bottom: 50px;
   
   .content {
-    font-family: 'SimSun', '宋体', 'STSong', '华文宋体', 'FangSong', '仿宋', 'STFangsong', serif;
+    font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', 'FangSong', '仿宋', serif;
     font-size: 18px;
     line-height: 2.4;
-    color: #1a0f0a;
+    color: #2c1810;
     text-align: justify;
     letter-spacing: 0.3px;
     white-space: pre-wrap;
@@ -506,7 +506,7 @@ onUnmounted(() => {
     }
     
     :deep(h1, h2, h3, h4, h5, h6) {
-      font-family: 'SimSun', '宋体', 'STSong', '华文宋体', serif;
+      font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
       font-weight: bold;
       color: #8B4513;
       margin: 2em 0 1em 0;
@@ -518,13 +518,13 @@ onUnmounted(() => {
     :deep(strong, b) {
       font-weight: bold;
       color: #8B4513;
-      font-family: 'SimSun', '宋体', 'STSong', '华文宋体', serif;
+      font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
     }
     
     :deep(em, i) {
       font-style: italic;
       color: #A0522D;
-      font-family: 'SimSun', '宋体', 'STSong', '华文宋体', serif;
+      font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
     }
     
     :deep(u) {
@@ -696,23 +696,33 @@ onUnmounted(() => {
   }
   
   .letter-title h1 {
+    font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
     font-size: 26px;
+    color: #8B4513;
   }
   
   .letter-body .content {
+    font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', 'FangSong', '仿宋', serif;
     font-size: 16px;
     line-height: 2.2;
     letter-spacing: 0.2px;
+    color: #2c1810;
   }
   
   .letter-address {
+    font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
+    
     .to-section {
       .label {
+        font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
         font-size: 16px;
+        color: #8B4513;
       }
       
       .name {
+        font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
         font-size: 18px;
+        color: #654321;
       }
     }
   }

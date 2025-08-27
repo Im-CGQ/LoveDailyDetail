@@ -244,6 +244,7 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .letter-box-page {
   padding: 20px;
+  padding-top: 100px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
 }
@@ -416,6 +417,9 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .letter-box-page {
+    padding-top: 80px;
+  }
   
   .content {
     padding: 15px;

@@ -281,8 +281,14 @@ const handleDeleteMovie = async (movie) => {
 const formatDuration = (minutes) => {
   if (!minutes || minutes <= 0) return '未知'
   
+  // 如果分钟数小于1，显示秒数
+  if (minutes < 1) {
+    const seconds = Math.round(minutes * 60)
+    return `${seconds}秒`
+  }
+  
   const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
+  const mins = Math.floor(minutes % 60)
   
   if (hours > 0) {
     if (mins > 0) {
