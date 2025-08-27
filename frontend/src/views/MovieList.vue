@@ -119,6 +119,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
 import BackButton from '@/components/BackButton.vue'
+
 import { getAllMovies, getMyMovies, getPublicMovies, deleteMovie } from '@/api/movie.js'
 import { createRoom, checkUserInMovieRoom } from '@/api/movieRoom.js'
 
@@ -247,6 +248,8 @@ const goToCreateMovie = () => {
   router.push('/create-movie')
 }
 
+
+
 const editMovie = (movie) => {
   router.push(`/edit-movie/${movie.id}`)
 }
@@ -335,6 +338,8 @@ onMounted(() => {
   padding: 15px 20px;
   z-index: 100;
 }
+
+
 
 .content {
   max-width: 1200px;

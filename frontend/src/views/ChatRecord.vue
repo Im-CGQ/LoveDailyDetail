@@ -1,24 +1,22 @@
 <template>
   <div class="chat-record-page page-container">
-    <!-- 返回按钮 -->
-    <div class="back-button">
-      <van-icon name="arrow-left" @click="goBack" />
-    </div>
-    
     <!-- 爱心装饰 -->
     <div class="heart-decoration heart-1">💕</div>
     <div class="heart-decoration heart-2">💖</div>
     <div class="heart-decoration heart-3">💝</div>
     
-                                                                                                   <div class="page-header">
-                  <div class="placeholder"></div>
-                  <div class="total-duration-display">
-                    <span class="duration-text" v-html="formattedTotalDurationHtml"></span>
-                  </div>
-                  <van-button type="primary" @click="showAddDialog = true" class="create-btn">
-            <span class="btn-icon">📝</span>
-          </van-button>
-       </div>
+    <div class="top-bar">
+      <BackButton />
+      <button class="create-btn" @click="showAddDialog = true">
+        📝 添加记录
+      </button>
+    </div>
+
+    <div class="page-header">
+      <div class="total-duration-display">
+        <span class="duration-text" v-html="formattedTotalDurationHtml"></span>
+      </div>
+    </div>
 
     <div class="content">
       <van-list
@@ -128,11 +126,9 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { getAllChatRecords, createChatRecord } from '@/api/chatRecord'
 import { showToast } from 'vant'
-
-const router = useRouter()
+import BackButton from '@/components/BackButton.vue'
 
 const chatRecords = ref([])
 const loading = ref(false)
@@ -141,10 +137,6 @@ const showAddDialog = ref(false)
 const showTypePicker = ref(false)
 const showDatePicker = ref(false)
 const submitting = ref(false)
-
-const goBack = () => {
-  router.go(-1)
-}
 // 初始化当前日期为数组格式，用于日期选择器
 const selectedDate = ref([
   new Date().getFullYear().toString(),
@@ -363,35 +355,47 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.back-button {
+.top-bar {
   position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
-  
-  .van-icon {
-    font-size: 24px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    border-radius: 50%;
-    padding: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    
-    &:hover {
-      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
-      transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
-    }
-  }
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  z-index: 100;
+  background: rgba(102, 126, 234, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.create-btn {
+  height: 40px;
+  padding: 0 20px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8e9e 100%);
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-btn:hover {
+  background: linear-gradient(135deg, #ff5a8c 0%, #ff7d8e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
 }
 
 .page-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 20px;
+  margin: 80px 0 20px 0;
   
   .total-duration-display {
     display: flex;
@@ -413,33 +417,6 @@ onMounted(() => {
         color: white;
         font-weight: normal;
       }
-    }
-  }
-  
-  .placeholder {
-    width: 40px;
-  }
-  
-  .create-btn {
-    height: 40px;
-    width: 40px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 50%;
-    padding: 0;
-    background: transparent;
-    border: none;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .btn-icon {
-      margin: 0;
     }
   }
 }
@@ -607,16 +584,6 @@ onMounted(() => {
 
 // 响应式设计
 @media (max-width: 768px) {
-  .back-button {
-    top: 15px;
-    left: 15px;
-    
-    .van-icon {
-      font-size: 20px;
-      padding: 8px;
-    }
-  }
-  
   .chat-record-page {
     padding: 15px;
   }

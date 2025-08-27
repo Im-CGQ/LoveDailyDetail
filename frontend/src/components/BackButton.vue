@@ -9,18 +9,15 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 返回上一页
+// 智能返回逻辑
 const goBack = () => {
-  router.back()
+  // 统一跳转到欢迎页面
+  router.push('/')
 }
 </script>
 
 <style scoped>
 .back-button {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
   width: 40px;
   height: 40px;
   background: rgba(255, 255, 255, 0.2);
