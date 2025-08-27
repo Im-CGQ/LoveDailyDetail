@@ -193,8 +193,10 @@ import { useRouter } from 'vue-router'
 import { checkLoginState, clearLoginState } from '@/utils/auth'
 import { getPartnerInfo, invitePartner, acceptInvitation, rejectInvitation, unbindPartner, cancelInvitation } from '@/api/partner'
 import { showToast, showDialog } from 'vant'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // 响应式数据
 const partnerInfo = ref({
@@ -300,8 +302,19 @@ const loadPartnerInfo = async () => {
   try {
     const response = await getPartnerInfo()
     partnerInfo.value = response.data
+    
+    // 更新用户store中的伴侣信息
+    if (partnerInfo.value.hasPartner && partnerInfo.value.partnerId) {
+      userStore.updatePartnerRelationship(partnerInfo.value.partnerId)
+    } else {
+      // 如果没有伴侣，清除partnerId
+      userStore.updatePartnerRelationship(null)
+    }
   } catch (error) {
-    console.error('获取伴侣信息失败:', error)
+    // 获取后端返回的错误信息
+    const errorMessage = error.response?.data?.message || error.message || '获取伴侣信息失败'
+    console.error('获取伴侣信息失败:', errorMessage, error)
+    // 不显示toast，因为这是后台静默加载
   }
 }
 
@@ -320,7 +333,9 @@ const sendInvite = async () => {
     inviteUsername.value = ''
     await loadPartnerInfo()
   } catch (error) {
-    showToast('邀请发送失败')
+    // 获取后端返回的错误信息
+    const errorMessage = error.response?.data?.message || error.message || '邀请发送失败'
+    showToast(errorMessage)
     console.error('发送邀请失败:', error)
   } finally {
     inviteLoading.value = false
@@ -336,9 +351,16 @@ const handleAcceptInvitation = async () => {
     await acceptInvitation(partnerInfo.value.pendingInvitation.id)
     showToast('伴侣关系建立成功')
     showInvitationDialog.value = false
+    
+    // 重新加载伴侣信息并更新store
     await loadPartnerInfo()
+    
+    // 强制刷新用户信息以确保store同步
+    await userStore.initUserState()
   } catch (error) {
-    showToast('接受邀请失败')
+    // 获取后端返回的错误信息
+    const errorMessage = error.response?.data?.message || error.message || '接受邀请失败'
+    showToast(errorMessage)
     console.error('接受邀请失败:', error)
   } finally {
     acceptLoading.value = false
@@ -356,7 +378,9 @@ const handleRejectInvitation = async () => {
     showInvitationDialog.value = false
     await loadPartnerInfo()
   } catch (error) {
-    showToast('拒绝邀请失败')
+    // 获取后端返回的错误信息
+    const errorMessage = error.response?.data?.message || error.message || '拒绝邀请失败'
+    showToast(errorMessage)
     console.error('拒绝邀请失败:', error)
   } finally {
     rejectLoading.value = false
@@ -386,9 +410,16 @@ const handleUnbindPartner = async () => {
     await unbindPartner()
     showToast('伴侣关系已解除')
     showPartnerDialog.value = false
+    
+    // 重新加载伴侣信息并更新store
     await loadPartnerInfo()
+    
+    // 强制刷新用户信息以确保store同步
+    await userStore.initUserState()
   } catch (error) {
-    showToast('解除关系失败')
+    // 获取后端返回的错误信息
+    const errorMessage = error.response?.data?.message || error.message || '解除关系失败'
+    showToast(errorMessage)
     console.error('解除关系失败:', error)
   } finally {
     unbindLoading.value = false
@@ -406,7 +437,9 @@ const handleCancelInvitation = async () => {
     showSentInvitationDialog.value = false
     await loadPartnerInfo()
   } catch (error) {
-    showToast('取消邀请失败')
+    // 获取后端返回的错误信息
+    const errorMessage = error.response?.data?.message || error.message || '取消邀请失败'
+    showToast(errorMessage)
     console.error('取消邀请失败:', error)
   } finally {
     cancelLoading.value = false
@@ -414,15 +447,27 @@ const handleCancelInvitation = async () => {
 }
 
 // 生命周期
-onMounted(() => {
-  loadPartnerInfo()
+onMounted(async () => {
+  // 初始化用户状态
+  await userStore.initUserState()
+  // 加载伴侣信息
+  await loadPartnerInfo()
 })
 
 // 退出登录
-const handleLogout = () => {
-  clearLoginState()
-  showToast('已退出登录')
-  router.push('/login?mode=user')
+const handleLogout = async () => {
+  try {
+    // 调用store的登出方法
+    await userStore.userLogout()
+    showToast('已退出登录')
+    router.push('/login?mode=user')
+  } catch (error) {
+    console.error('退出登录失败:', error)
+    // 即使后端调用失败，也清除本地状态
+    userStore.clearUserState()
+    showToast('已退出登录')
+    router.push('/login?mode=user')
+  }
 }
 </script>
 

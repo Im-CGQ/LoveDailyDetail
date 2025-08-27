@@ -493,7 +493,6 @@ onUnmounted(() => {
     line-height: 2.4;
     color: #654321;
     text-align: justify;
-    text-indent: 2em;
     letter-spacing: 1px;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -514,7 +513,7 @@ onUnmounted(() => {
     
     :deep(p) {
       margin-bottom: 1.8em;
-      text-indent: 2em;
+      // text-indent: 2em;
     }
     
     :deep(h1, h2, h3, h4, h5, h6) {

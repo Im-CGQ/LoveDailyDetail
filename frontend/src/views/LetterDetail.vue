@@ -352,7 +352,6 @@ onUnmounted(() => {
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     
     &:hover {
-      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 50%, #e085e8 100%);
       transform: scale(1.1);
       box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
     }
@@ -460,6 +459,7 @@ onUnmounted(() => {
       color: #8B4513;
       text-transform: uppercase;
       letter-spacing: 1px;
+      font-style: italic;
     }
     
     .name {
@@ -475,18 +475,19 @@ onUnmounted(() => {
   margin-bottom: 50px;
   
   .content {
-    font-family: 'Times New Roman', serif;
+    font-family: 'SimSun', '宋体', 'STSong', '华文宋体', 'FangSong', '仿宋', 'STFangsong', serif;
     font-size: 18px;
     line-height: 2.4;
-    color: #654321;
+    color: #1a0f0a;
     text-align: justify;
-    text-indent: 2em;
-    letter-spacing: 1px;
+    letter-spacing: 0.3px;
     white-space: pre-wrap;
     word-wrap: break-word;
     cursor: pointer;
     position: relative;
     transition: all 0.3s ease;
+    font-weight: normal;
+    text-shadow: 0 1px 1px rgba(139, 69, 19, 0.05);
     
     &:hover {
       // background: rgba(139, 69, 19, 0.05);
@@ -501,26 +502,29 @@ onUnmounted(() => {
     
     :deep(p) {
       margin-bottom: 1.8em;
-      text-indent: 2em;
+      // text-indent: 2em;
     }
     
     :deep(h1, h2, h3, h4, h5, h6) {
-      font-family: 'Times New Roman', serif;
+      font-family: 'SimSun', '宋体', 'STSong', '华文宋体', serif;
       font-weight: bold;
       color: #8B4513;
       margin: 2em 0 1em 0;
       text-indent: 0;
       text-align: center;
+      letter-spacing: 1px;
     }
     
     :deep(strong, b) {
       font-weight: bold;
       color: #8B4513;
+      font-family: 'SimSun', '宋体', 'STSong', '华文宋体', serif;
     }
     
     :deep(em, i) {
       font-style: italic;
       color: #A0522D;
+      font-family: 'SimSun', '宋体', 'STSong', '华文宋体', serif;
     }
     
     :deep(u) {
@@ -551,6 +555,7 @@ onUnmounted(() => {
     
     .author {
       font-family: 'Times New Roman', serif;
+      font-style: italic;
       font-size: 18px;
       font-weight: 600;
       color: #8B4513;
@@ -697,6 +702,7 @@ onUnmounted(() => {
   .letter-body .content {
     font-size: 16px;
     line-height: 2.2;
+    letter-spacing: 0.2px;
   }
   
   .letter-address {
