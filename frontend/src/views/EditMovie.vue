@@ -1,16 +1,21 @@
 <template>
-  <div class="create-movie">
+  <div class="edit-movie">
     <BackButton />
     
     <div class="content">
-      <h1 class="title">🎬 上传电影</h1>
+      <h1 class="title">🎬 编辑电影</h1>
       
-      <div class="form-container">
-        <form @submit.prevent="handleCreateMovie">
+      <!-- Loading状态 -->
+      <div v-if="loading" class="loading-container">
+        <van-loading size="24px" color="#667eea">加载中...</van-loading>
+      </div>
+      
+      <div class="form-container" v-if="!loading">
+        <form @submit.prevent="handleEditMovie">
           <div class="form-group">
             <label>电影标题 *</label>
             <input 
-              v-model="newMovie.title" 
+              v-model="editMovie.title" 
               type="text" 
               placeholder="请输入电影标题"
               required 
@@ -20,7 +25,7 @@
           <div class="form-group">
             <label>电影描述</label>
             <textarea 
-              v-model="newMovie.description" 
+              v-model="editMovie.description" 
               rows="4"
               placeholder="请输入电影描述（可选）"
             ></textarea>
@@ -39,6 +44,7 @@
             <div class="upload-tips">
               <p>支持上传视频文件，大小不超过1.5GB</p>
               <p>支持格式：MP4, AVI, MOV, MKV等</p>
+              <p>如果不重新上传视频，将保持原有视频文件</p>
             </div>
             
             <!-- 视频预览区域 -->
@@ -46,17 +52,17 @@
               <h4>视频预览</h4>
               <div class="video-preview-item" ref="videoPreviewSectionRef">
                 <div class="video-info">
-                  <span class="video-name">{{ movieFiles[0].file?.name || '电影文件' }}</span>
-                  <span class="video-status" :class="movieFiles[0].status">
-                    {{ getVideoStatusText(movieFiles[0].status) }}
+                  <span class="video-name">{{ getVideoName() }}</span>
+                  <span class="video-status" :class="getVideoStatus()">
+                    {{ getVideoStatusText() }}
                   </span>
                 </div>
-                <div class="video-player-container" v-if="movieFiles[0].url" :style="getVideoStyle(movieFiles[0])">
+                <div class="video-player-container" v-if="getVideoUrl()" :style="getVideoStyle()">
                   <video 
-                    :src="movieFiles[0].url" 
-                    :poster="generateVideoPoster(movieFiles[0].url, movieFiles[0])"
+                    :src="getVideoUrl()" 
+                    :poster="generateVideoPoster(getVideoUrl(), getVideoData())"
                     class="video-preview-player"
-                    :style="getVideoStyle(movieFiles[0])"
+                    :style="getVideoStyle()"
                     preload="none"
                     controls
                     @click="playVideo"
@@ -65,10 +71,10 @@
                   </video>
                 </div>
                 <div class="video-placeholder" v-else>
-                  <div class="uploading-indicator" v-if="movieFiles[0].status === 'uploading'">
+                  <div class="uploading-indicator" v-if="getVideoStatus() === 'uploading'">
                     <van-loading size="24px" color="#667eea">上传中...</van-loading>
                   </div>
-                  <div class="error-indicator" v-else-if="movieFiles[0].status === 'failed'">
+                  <div class="error-indicator" v-else-if="getVideoStatus() === 'failed'">
                     <van-icon name="warning-o" color="#ff4444" size="24px" />
                     <span>上传失败</span>
                   </div>
@@ -91,16 +97,17 @@
             <div class="upload-tips">
               <p>支持上传图片文件，大小不超过20MB</p>
               <p>支持格式：JPG, PNG, GIF等</p>
+              <p>如果不重新上传封面，将保持原有封面</p>
             </div>
           </div>
           
           <div class="form-group">
             <label class="checkbox-label">
-              <input v-model="newMovie.isPublic" type="checkbox" />
+              <input v-model="editMovie.isPublic" type="checkbox" />
               <span>公开（所有人都可以观看）</span>
             </label>
             <div class="privacy-tips">
-              <p v-if="newMovie.isPublic">✅ 公开电影：所有用户都可以观看</p>
+              <p v-if="editMovie.isPublic">✅ 公开电影：所有用户都可以观看</p>
               <p v-else>🔒 私密电影：只有你和伴侣可以观看</p>
             </div>
           </div>
@@ -109,7 +116,7 @@
             <button 
               type="submit" 
               class="submit-btn"
-              :disabled="creating || hasUploadingFiles || !isFormValid"
+              :disabled="updating || hasUploadingFiles || !isFormValid"
             >
               {{ getSubmitButtonText() }}
             </button>
@@ -122,21 +129,23 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import BackButton from '@/components/BackButton.vue'
-import { createMovie } from '@/api/movie.js'
+import { getMovieById, updateMovie } from '@/api/movie.js'
 import { uploadVideo, uploadImage } from '@/api/upload.js'
 
+const route = useRoute()
 const router = useRouter()
 
-const creating = ref(false)
+const updating = ref(false)
+const loading = ref(false)
 const movieFiles = ref([])
 const coverFiles = ref([])
-const videoPreviewSectionRef = ref(null) // 视频预览区域容器引用
-const containerWidth = ref(400) // 默认容器宽度
+const videoPreviewSectionRef = ref(null)
+const containerWidth = ref(400)
 
-const newMovie = reactive({
+const editMovie = reactive({
   title: '',
   description: '',
   isPublic: false
@@ -146,14 +155,13 @@ const newMovie = reactive({
 const updateContainerWidth = () => {
   if (videoPreviewSectionRef.value) {
     containerWidth.value = videoPreviewSectionRef.value.offsetWidth
-    // 确保容器宽度在合理范围内
     containerWidth.value = Math.max(300, Math.min(containerWidth.value, 800))
   }
 }
 
 // 表单验证
 const isFormValid = computed(() => {
-  return newMovie.title.trim() !== '' && movieFiles.value.length > 0
+  return editMovie.title.trim() !== '' && movieFiles.value.length > 0
 })
 
 // 计算是否有正在上传的文件
@@ -165,8 +173,8 @@ const hasUploadingFiles = computed(() => {
 
 // 获取提交按钮文本
 const getSubmitButtonText = () => {
-  if (creating.value) {
-    return '创建中...'
+  if (updating.value) {
+    return '更新中...'
   }
   if (hasUploadingFiles.value) {
     return '等待上传完成'
@@ -174,7 +182,102 @@ const getSubmitButtonText = () => {
   if (!isFormValid.value) {
     return '请填写必填信息'
   }
-  return '创建电影'
+  return '更新电影'
+}
+
+// 加载电影数据
+const loadMovie = async () => {
+  loading.value = true
+  try {
+    const movieId = route.params.id
+    console.log('开始加载电影数据，ID:', movieId)
+    const movieData = await getMovieById(movieId)
+    
+    // 填充表单数据
+    editMovie.title = movieData.title || ''
+    editMovie.description = movieData.description || ''
+    editMovie.isPublic = movieData.isPublic || false
+    
+    // 如果有视频文件，添加到movieFiles
+    if (movieData.movieUrl) {
+      movieFiles.value = [{
+        url: movieData.movieUrl,
+        fileName: movieData.fileName || movieData.movieUrl.split('/').pop() || 'original-movie.mp4',
+        status: 'done',
+        message: '原有视频',
+        width: movieData.width || 0,
+        height: movieData.height || 0,
+        duration: movieData.durationMinutes ? movieData.durationMinutes * 60 : null,
+        fileSize: movieData.fileSize || 0
+      }]
+    }
+    
+    // 如果有封面，添加到coverFiles
+    if (movieData.coverUrl) {
+      coverFiles.value = [{
+        url: movieData.coverUrl,
+        fileName: movieData.coverFileName || movieData.coverUrl.split('/').pop() || 'original-cover.jpg',
+        status: 'done',
+        message: '原有封面'
+      }]
+    }
+    
+    loading.value = false
+    console.log('电影数据加载完成:', movieData)
+    console.log('回显的movieFiles:', movieFiles.value)
+    console.log('回显的coverFiles:', coverFiles.value)
+  } catch (error) {
+    console.error('加载电影数据失败:', error)
+    showToast('加载电影数据失败')
+    router.push('/movies')
+  }
+}
+
+// 获取视频名称
+const getVideoName = () => {
+  if (movieFiles.value.length > 0) {
+    return movieFiles.value[0].fileName || movieFiles.value[0].file?.name || '电影文件'
+  }
+  return '电影文件'
+}
+
+// 获取视频状态
+const getVideoStatus = () => {
+  if (movieFiles.value.length > 0) {
+    return movieFiles.value[0].status || 'default'
+  }
+  return 'default'
+}
+
+// 获取视频状态文本
+const getVideoStatusText = () => {
+  const status = getVideoStatus()
+  switch (status) {
+    case 'uploading':
+      return '上传中...'
+    case 'done':
+      return movieFiles.value[0]?.file ? '上传成功' : '原有视频'
+    case 'failed':
+      return '上传失败'
+    default:
+      return '待上传'
+  }
+}
+
+// 获取视频URL
+const getVideoUrl = () => {
+  if (movieFiles.value.length > 0 && movieFiles.value[0].url) {
+    return movieFiles.value[0].url
+  }
+  return ''
+}
+
+// 获取视频数据
+const getVideoData = () => {
+  if (movieFiles.value.length > 0) {
+    return movieFiles.value[0]
+  }
+  return null
 }
 
 // 电影文件上传处理
@@ -250,28 +353,13 @@ const onMovieOversize = (file) => {
   return false
 }
 
-// 获取视频状态文本
-const getVideoStatusText = (status) => {
-  switch (status) {
-    case 'uploading':
-      return '上传中...'
-    case 'done':
-      return '上传成功'
-    case 'failed':
-      return '上传失败'
-    default:
-      return '待上传'
-  }
-}
-
 // 视频播放方法
 const playVideo = () => {
-  const video = movieFiles.value[0]
-  if (!video || !video.url) {
+  const videoUrl = getVideoUrl()
+  if (!videoUrl) {
     return
   }
   
-  // 获取视频元素
   const videoElement = document.querySelector('.video-preview-player')
   
   if (videoElement) {
@@ -294,7 +382,7 @@ const getVideoInfo = (file) => {
       resolve({
         width: video.videoWidth,
         height: video.videoHeight,
-        duration: Math.round(video.duration) // 获取时长（秒）并四舍五入
+        duration: Math.round(video.duration)
       })
       URL.revokeObjectURL(video.src)
     }
@@ -309,9 +397,7 @@ const getVideoInfo = (file) => {
 const generateVideoPoster = (videoUrl, video) => {
   if (!videoUrl) return ''
   
-  // 判断是否为阿里云OSS URL
   if (videoUrl.includes('aliyuncs.com') || videoUrl.includes('oss-')) {
-    // 根据视频原始尺寸计算封面尺寸
     let posterWidth = 800
     let posterHeight = 600
     
@@ -321,35 +407,29 @@ const generateVideoPoster = (videoUrl, video) => {
       posterHeight = Math.round(800 / aspectRatio)
     }
     
-    // 直接拼接视频截图参数
-    // t_1000: 在1秒处截图
-    // f_jpg: 输出JPG格式
-    // w_800,h_600: 设置宽高
-    // m_fast: 快速模式
     return videoUrl + `?x-oss-process=video/snapshot,t_1000,f_jpg,w_${posterWidth},h_${posterHeight},m_fast`
   }
   
-  // 非阿里云OSS URL，返回原URL
   return videoUrl
 }
 
 // 获取视频自适应样式
-const getVideoStyle = (video) => {
-  if (!video.width || !video.height) {
+const getVideoStyle = () => {
+  const videoData = getVideoData()
+  if (!videoData || !videoData.width || !videoData.height) {
     return {
       width: '100%',
       height: '300px'
     }
   }
   
-  // 根据视频原始宽高比计算高度，宽度占满
-  const aspectRatio = video.width / video.height
+  const aspectRatio = videoData.width / videoData.height
   const height = containerWidth.value / aspectRatio
   
   return {
     width: '100%',
     height: `${height}px`,
-    objectFit: 'cover' // 让视频内容完全占满容器
+    objectFit: 'cover'
   }
 }
 
@@ -366,7 +446,6 @@ const afterCoverRead = async (file) => {
 
 const processCoverFile = async (file) => {
   try {
-    // 检查文件大小
     if (file.file.size > 20 * 1024 * 1024) {
       showToast('图片大小不能超过20MB')
       const index = coverFiles.value.findIndex(f => f.file === file.file)
@@ -376,7 +455,6 @@ const processCoverFile = async (file) => {
       return
     }
     
-    // 检查文件类型
     if (!file.file.type.startsWith('image/')) {
       showToast('只能上传图片文件')
       const index = coverFiles.value.findIndex(f => f.file === file.file)
@@ -386,7 +464,6 @@ const processCoverFile = async (file) => {
       return
     }
     
-    // 显示上传进度
     file.status = 'uploading'
     file.message = '上传中...'
     
@@ -419,46 +496,73 @@ const onCoverOversize = (file) => {
   return false
 }
 
-const handleCreateMovie = async () => {
+const handleEditMovie = async () => {
   if (!isFormValid.value) {
     showToast('请填写必填信息')
     return
   }
   
-  if (movieFiles.value.length === 0) {
-    showToast('请选择电影文件')
+  const uploadingMovies = movieFiles.value.some(file => file.status === 'uploading')
+  const uploadingCovers = coverFiles.value.some(file => file.status === 'uploading')
+  
+  if (uploadingMovies || uploadingCovers) {
+    showToast('请等待文件上传完成后再提交')
     return
   }
   
-  const movieFile = movieFiles.value[0]
-  if (movieFile.status !== 'done') {
-    showToast('请等待电影文件上传完成')
-    return
-  }
-  
-  creating.value = true
+  updating.value = true
   try {
     const movieData = {
-      title: newMovie.title.trim(),
-      description: newMovie.description.trim(),
-      movieUrl: movieFile.url,
-      coverUrl: coverFiles.value.length > 0 ? coverFiles.value[0].url : null,
-      fileName: movieFile.fileName,
-      fileSize: movieFile.fileSize,
-      width: movieFile.width,
-      height: movieFile.height,
-      durationMinutes: movieFile.duration ? Math.round(movieFile.duration / 60) : null, // 将秒转换为分钟
-      isPublic: newMovie.isPublic
+      title: editMovie.title.trim(),
+      description: editMovie.description.trim(),
+      isPublic: editMovie.isPublic
     }
     
-    await createMovie(movieData)
+    // 处理视频文件数据
+    if (movieFiles.value.length > 0) {
+      const movieFile = movieFiles.value[0]
+      if (movieFile.status === 'done') {
+        if (movieFile.file) {
+          movieData.movieUrl = movieFile.url
+          movieData.fileName = movieFile.fileName
+          movieData.fileSize = movieFile.fileSize
+          movieData.width = movieFile.width
+          movieData.height = movieFile.height
+          movieData.durationMinutes = movieFile.duration ? Math.round(movieFile.duration / 60) : null
+        } else {
+          movieData.movieUrl = movieFile.url
+          movieData.fileName = movieFile.fileName
+          movieData.fileSize = movieFile.fileSize
+          movieData.width = movieFile.width
+          movieData.height = movieFile.height
+          movieData.durationMinutes = movieFile.duration ? Math.round(movieFile.duration / 60) : null
+        }
+      }
+    }
     
-    showToast('电影创建成功')
+    // 处理封面文件数据
+    if (coverFiles.value.length > 0) {
+      const coverFile = coverFiles.value[0]
+      if (coverFile.status === 'done') {
+        if (coverFile.file) {
+          movieData.coverUrl = coverFile.url
+        } else {
+          movieData.coverUrl = coverFile.url
+        }
+      }
+    }
+    
+    console.log('提交的电影数据:', movieData)
+    const movieId = route.params.id
+    await updateMovie(movieId, movieData)
+    
+    showToast('电影更新成功')
     router.push('/movies')
   } catch (error) {
-    showToast(error.message)
+    console.error('更新电影失败:', error)
+    showToast(error.message || '更新失败，请重试')
   } finally {
-    creating.value = false
+    updating.value = false
   }
 }
 
@@ -472,13 +576,16 @@ watch(movieFiles, () => {
 }, { immediate: true })
 
 onMounted(() => {
+  console.log('EditMovie组件挂载，开始加载电影数据...')
+  console.log('路由参数:', route.params)
+  loadMovie()
   updateContainerWidth()
 })
 
 </script>
 
 <style scoped>
-.create-movie {
+.edit-movie {
   padding: 20px;
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -488,6 +595,17 @@ onMounted(() => {
   max-width: 800px;
   margin: 0 auto;
   padding-top: 60px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
 .title {
@@ -751,4 +869,3 @@ onMounted(() => {
   }
 }
 </style>
-

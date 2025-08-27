@@ -75,9 +75,18 @@
             />
             <div v-else class="cover-placeholder">🎬</div>
             <div class="movie-overlay">
-              <button class="play-btn" @click.stop="handleCreateRoom(movie)">
-                进入房间
-              </button>
+              <div class="overlay-buttons">
+                <button class="play-btn" @click.stop="handleCreateRoom(movie)">
+                  进入房间
+                </button>
+                <button 
+                  v-if="currentTab === 'my'" 
+                  class="edit-btn" 
+                  @click.stop="editMovie(movie)"
+                >
+                  编辑
+                </button>
+              </div>
             </div>
           </div>
           
@@ -230,6 +239,10 @@ const handleSearchInput = () => {
 
 const goToCreateMovie = () => {
   router.push('/create-movie')
+}
+
+const editMovie = (movie) => {
+  router.push(`/edit-movie/${movie.id}`)
 }
 
 const formatDuration = (minutes) => {
@@ -537,6 +550,13 @@ onMounted(() => {
   opacity: 1;
 }
 
+.overlay-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
 .play-btn {
   padding: 10px 20px;
   background: #667eea;
@@ -544,6 +564,28 @@ onMounted(() => {
   border: none;
   border-radius: 20px;
   cursor: pointer;
+  transition: all 0.3s;
+}
+
+.play-btn:hover {
+  background: #5a6fd8;
+  transform: translateY(-2px);
+}
+
+.edit-btn {
+  padding: 8px 16px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.edit-btn:hover {
+  background: #f57c00;
+  transform: translateY(-2px);
 }
 
 .movie-info {
@@ -614,6 +656,20 @@ onMounted(() => {
   
   .empty-content p {
     font-size: 14px;
+  }
+  
+  .overlay-buttons {
+    gap: 8px;
+  }
+  
+  .play-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  .edit-btn {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 </style>

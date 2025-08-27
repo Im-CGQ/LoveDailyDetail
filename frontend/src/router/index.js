@@ -78,6 +78,12 @@ const routes = [
             component: () => import('@/views/CreateMovie.vue'),
             meta: { title: '上传电影', requiresAuth: true }
           },
+          {
+            path: '/edit-movie/:id',
+            name: 'EditMovie',
+            component: () => import('@/views/EditMovie.vue'),
+            meta: { title: '编辑电影', requiresAuth: true }
+          },
   {
     path: '/movie/:id',
     name: 'MovieDetail',
