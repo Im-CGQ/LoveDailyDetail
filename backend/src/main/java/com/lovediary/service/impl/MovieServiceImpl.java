@@ -82,6 +82,11 @@ public class MovieServiceImpl implements MovieService {
             movie.setHeight(movieDTO.getHeight());
         }
         
+        // 确保时长信息被正确设置
+        if (movieDTO.getDurationMinutes() != null) {
+            movie.setDurationMinutes(movieDTO.getDurationMinutes());
+        }
+        
         Movie savedMovie = movieRepository.save(movie);
         return convertToDTO(savedMovie);
     }
@@ -103,6 +108,11 @@ public class MovieServiceImpl implements MovieService {
         }
         if (movieDTO.getHeight() != null) {
             movie.setHeight(movieDTO.getHeight());
+        }
+        
+        // 确保时长信息被正确设置
+        if (movieDTO.getDurationMinutes() != null) {
+            movie.setDurationMinutes(movieDTO.getDurationMinutes());
         }
         
         Movie updatedMovie = movieRepository.save(movie);
@@ -195,6 +205,9 @@ public class MovieServiceImpl implements MovieService {
         // 确保宽高信息被正确设置
         dto.setWidth(movie.getWidth());
         dto.setHeight(movie.getHeight());
+        
+        // 确保时长信息被正确设置
+        dto.setDurationMinutes(movie.getDurationMinutes());
         
         return dto;
     }

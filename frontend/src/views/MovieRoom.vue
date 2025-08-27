@@ -34,37 +34,39 @@
             @seeked="onSeeked"
           ></video>
           
-                     <!-- 播放控制 -->
-           <div class="video-controls">
-             <div class="progress-bar" 
-                  @click="seekTo"
-                  :class="{ 'disabled': !isRoomOwner }"
-                  :title="isRoomOwner ? '点击调整播放进度' : '只有房主才能控制播放进度'">
-               <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
-               <div class="progress-handle" :style="{ left: progressPercent + '%' }"></div>
-             </div>
-             
-             <div class="control-buttons">
-               <button class="control-btn" 
-                       @click="togglePlay"
-                       :class="{ 'disabled': !isRoomOwner }"
-                       :title="isRoomOwner ? '播放/暂停' : '只有房主才能控制播放'">
-                 {{ isPlaying ? '⏸️' : '▶️' }}
-               </button>
-               <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
-               <button class="control-btn" @click="leaveRoom">离开房间</button>
-             </div>
-             
-             <!-- 房主提示 -->
-             <div v-if="!isRoomOwner" class="owner-notice">
-               <span>👑 只有房主可以控制播放</span>
-             </div>
-           </div>
+          <!-- 播放控制 -->
+          <div class="video-controls">
+            <div class="progress-bar" 
+                 @click="seekTo"
+                 @mousedown="onProgressMouseDown"
+                 @mousemove="onProgressMouseMove"
+                 @mouseup="onProgressMouseUp"
+                 @mouseleave="onProgressMouseLeave"
+                 title="点击或拖拽调整播放进度">
+              <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+              <div class="progress-handle" :style="{ left: progressPercent + '%' }"></div>
+            </div>
+            
+            <div class="control-buttons">
+              <button class="control-btn" 
+                      @click="togglePlay"
+                      title="播放/暂停">
+                {{ isPlaying ? '⏸️' : '▶️' }}
+              </button>
+              <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+              <button class="control-btn" @click="leaveRoom">离开房间</button>
+            </div>
+          </div>
         </div>
 
         <!-- 房间成员 -->
         <div class="members-section">
-          <h3>房间成员 ({{ members.length }})</h3>
+          <div class="members-header">
+            <h3>房间成员 ({{ members.length }})</h3>
+            <button class="sync-btn" @click="manualSyncMembers" :disabled="syncing">
+              {{ syncing ? '同步中...' : '🔄 同步' }}
+            </button>
+          </div>
           <div class="members-list">
             <div 
               v-for="member in members" 
@@ -107,10 +109,11 @@ const currentTime = ref(0)
 const duration = ref(0)
 const isPlaying = ref(false)
 const isSeeking = ref(false)
+const isDragging = ref(false)
 const syncInterval = ref(null)
-const playbackInterval = ref(null)
-const currentUser = ref(null) // 当前用户信息
-const isRoomOwner = ref(false) // 是否是房主
+const membersSyncInterval = ref(null)
+const syncing = ref(false)
+const currentUser = ref(null)
 
 const progressPercent = computed(() => {
   if (duration.value === 0) return 0
@@ -128,9 +131,6 @@ const loadRoom = async () => {
     
     const roomData = await getRoom(roomCode.value)
     room.value = roomData
-    
-    // 判断是否是房主
-    isRoomOwner.value = currentUser.value && roomData.creatorId === currentUser.value.id
     
     // 加载播放状态
     const playbackData = await getPlaybackStatus(roomCode.value)
@@ -158,14 +158,28 @@ const loadMembers = async () => {
   }
 }
 
+const manualSyncMembers = async () => {
+  if (syncing.value) return
+  
+  syncing.value = true
+  try {
+    await loadMembers()
+    showToast('成员列表已同步')
+  } catch (error) {
+    showToast('同步失败')
+  } finally {
+    syncing.value = false
+  }
+}
+
 const startSync = () => {
-  // 定期同步播放状态
+  // 定期同步播放状态 - 每2秒同步一次
   syncInterval.value = setInterval(async () => {
     try {
       const playbackData = await getPlaybackStatus(roomCode.value)
       
       // 如果本地没有在拖拽进度条，则同步远程状态
-      if (!isSeeking.value) {
+      if (!isDragging.value && !isSeeking.value) {
         const timeDiff = Math.abs(currentTime.value - playbackData.currentTime)
         if (timeDiff > 2) { // 如果时间差大于2秒，则同步
           currentTime.value = playbackData.currentTime
@@ -175,13 +189,19 @@ const startSync = () => {
         }
         isPlaying.value = playbackData.isPlaying
       }
-      
-      // 重新加载成员列表
-      loadMembers()
     } catch (error) {
-      console.error('同步失败:', error)
+      console.error('同步播放状态失败:', error)
     }
-  }, 2000) // 每2秒同步一次
+  }, 2000)
+  
+  // 定期同步成员列表 - 每10秒同步一次
+  membersSyncInterval.value = setInterval(async () => {
+    try {
+      await loadMembers()
+    } catch (error) {
+      console.error('同步成员列表失败:', error)
+    }
+  }, 10000)
 }
 
 const onVideoLoaded = () => {
@@ -192,25 +212,19 @@ const onVideoLoaded = () => {
 }
 
 const onTimeUpdate = () => {
-  if (videoPlayer.value && !isSeeking.value) {
+  if (videoPlayer.value && !isSeeking.value && !isDragging.value) {
     currentTime.value = videoPlayer.value.currentTime
   }
 }
 
 const onPlay = () => {
-  // 只有房主才能控制播放
-  if (!isRoomOwner.value) return
-  
   isPlaying.value = true
-  updateRemotePlayback()
+  // 正常播放时不更新远程状态，避免卡顿
 }
 
 const onPause = () => {
-  // 只有房主才能控制播放
-  if (!isRoomOwner.value) return
-  
   isPlaying.value = false
-  updateRemotePlayback()
+  // 正常暂停时不更新远程状态，避免卡顿
 }
 
 const onSeeking = () => {
@@ -221,17 +235,49 @@ const onSeeked = () => {
   isSeeking.value = false
   if (videoPlayer.value) {
     currentTime.value = videoPlayer.value.currentTime
+    // 只有拖拽进度条时才更新远程状态
+    if (isDragging.value) {
+      updateRemotePlayback()
+    }
+  }
+}
+
+const onProgressMouseDown = (event) => {
+  isDragging.value = true
+  onProgressMouseMove(event)
+}
+
+const onProgressMouseMove = (event) => {
+  if (!isDragging.value) return
+  
+  if (!videoPlayer.value) return
+  
+  const rect = event.currentTarget.getBoundingClientRect()
+  const clickX = event.clientX - rect.left
+  const percent = Math.max(0, Math.min(1, clickX / rect.width))
+  const newTime = percent * duration.value
+  
+  videoPlayer.value.currentTime = newTime
+  currentTime.value = newTime
+}
+
+const onProgressMouseUp = () => {
+  if (isDragging.value) {
+    isDragging.value = false
+    // 拖拽结束时更新远程状态
+    updateRemotePlayback()
+  }
+}
+
+const onProgressMouseLeave = () => {
+  if (isDragging.value) {
+    isDragging.value = false
+    // 拖拽结束时更新远程状态
     updateRemotePlayback()
   }
 }
 
 const togglePlay = () => {
-  // 只有房主才能控制播放
-  if (!isRoomOwner.value) {
-    showToast('只有房主才能控制播放')
-    return
-  }
-  
   if (videoPlayer.value) {
     if (isPlaying.value) {
       videoPlayer.value.pause()
@@ -242,12 +288,6 @@ const togglePlay = () => {
 }
 
 const seekTo = (event) => {
-  // 只有房主才能控制进度
-  if (!isRoomOwner.value) {
-    showToast('只有房主才能控制播放进度')
-    return
-  }
-  
   if (!videoPlayer.value) return
   
   const rect = event.currentTarget.getBoundingClientRect()
@@ -257,13 +297,11 @@ const seekTo = (event) => {
   
   videoPlayer.value.currentTime = newTime
   currentTime.value = newTime
+  // 点击进度条时也更新远程状态
   updateRemotePlayback()
 }
 
 const updateRemotePlayback = async () => {
-  // 只有房主才能更新播放状态
-  if (!isRoomOwner.value) return
-  
   try {
     await updatePlayback(roomCode.value, {
       currentTime: currentTime.value,
@@ -303,12 +341,23 @@ onMounted(() => {
   loadRoom()
 })
 
-onUnmounted(() => {
+onUnmounted(async () => {
+  // 清理定时器
   if (syncInterval.value) {
     clearInterval(syncInterval.value)
   }
-  if (playbackInterval.value) {
-    clearInterval(playbackInterval.value)
+  if (membersSyncInterval.value) {
+    clearInterval(membersSyncInterval.value)
+  }
+  
+  // 离开界面时自动离开房间
+  if (room.value) {
+    try {
+      await leaveRoomApi(roomCode.value)
+      console.log('已自动离开房间')
+    } catch (error) {
+      console.error('自动离开房间失败:', error)
+    }
   }
 })
 </script>
@@ -412,9 +461,8 @@ onUnmounted(() => {
   transition: opacity 0.3s;
 }
 
-.progress-bar.disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+.progress-bar:hover {
+  opacity: 0.8;
 }
 
 .progress-fill {
@@ -458,30 +506,10 @@ onUnmounted(() => {
   background: #5a6fd8;
 }
 
-.control-btn.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.control-btn.disabled:hover {
-  background: #667eea;
-}
-
 .time-display {
   font-family: monospace;
   font-size: 14px;
   color: #666;
-}
-
-.owner-notice {
-  text-align: center;
-  margin-top: 10px;
-  padding: 8px;
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
-  border-radius: 6px;
-  color: #856404;
-  font-size: 14px;
 }
 
 .members-section {
@@ -489,9 +517,36 @@ onUnmounted(() => {
   padding-top: 20px;
 }
 
-.members-section h3 {
-  color: #333;
+.members-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 15px;
+}
+
+.members-header h3 {
+  color: #333;
+  margin: 0;
+}
+
+.sync-btn {
+  padding: 8px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.sync-btn:hover:not(:disabled) {
+  background: #218838;
+}
+
+.sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .members-list {
@@ -558,6 +613,12 @@ onUnmounted(() => {
   
   .members-list {
     grid-template-columns: 1fr;
+  }
+  
+  .members-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
   }
 }
 </style>

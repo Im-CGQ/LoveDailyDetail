@@ -37,7 +37,7 @@
               @oversize="onMovieOversize"
             />
             <div class="upload-tips">
-              <p>支持上传视频文件，大小不超过100MB</p>
+              <p>支持上传视频文件，大小不超过1.5GB</p>
               <p>支持格式：MP4, AVI, MOV, MKV等</p>
             </div>
             
@@ -179,8 +179,8 @@ const afterMovieRead = async (file) => {
 const processMovieFile = async (file) => {
   try {
     // 检查文件大小
-    if (file.file.size > 100 * 1024 * 1024) {
-      showToast('视频大小不能超过100MB')
+    if (file.file.size > 1.5 * 1024 * 1024 * 1024) {
+      showToast('视频大小不能超过1.5GB')
       const index = movieFiles.value.findIndex(f => f.file === file.file)
       if (index > -1) {
         movieFiles.value.splice(index, 1)
@@ -202,15 +202,16 @@ const processMovieFile = async (file) => {
     file.status = 'uploading'
     file.message = '上传中...'
     
-    // 获取视频尺寸
-    const dimensions = await getVideoDimensions(file.file)
+    // 获取视频尺寸和时长
+    const videoInfo = await getVideoInfo(file.file)
     
     const url = await uploadVideo(file.file)
     file.url = url
     file.fileName = file.file.name
     file.fileSize = file.file.size
-    file.width = dimensions.width
-    file.height = dimensions.height
+    file.width = videoInfo.width
+    file.height = videoInfo.height
+    file.duration = videoInfo.duration
     file.status = 'done'
     file.message = '上传成功'
     showToast('视频上传成功')
@@ -233,7 +234,7 @@ const beforeMovieDelete = (file) => {
 }
 
 const onMovieOversize = (file) => {
-  showToast('视频大小不能超过100MB')
+  showToast('视频大小不能超过1.5GB')
   return false
 }
 
@@ -273,19 +274,20 @@ const playVideo = () => {
   }
 }
 
-// 获取视频尺寸
-const getVideoDimensions = (file) => {
+// 获取视频信息（尺寸和时长）
+const getVideoInfo = (file) => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video')
     video.onloadedmetadata = () => {
       resolve({
         width: video.videoWidth,
-        height: video.videoHeight
+        height: video.videoHeight,
+        duration: Math.round(video.duration) // 获取时长（秒）并四舍五入
       })
       URL.revokeObjectURL(video.src)
     }
     video.onerror = () => {
-      reject(new Error('无法获取视频尺寸'))
+      reject(new Error('无法获取视频信息'))
     }
     video.src = URL.createObjectURL(file)
   })
@@ -434,6 +436,7 @@ const handleCreateMovie = async () => {
       fileSize: movieFile.fileSize,
       width: movieFile.width,
       height: movieFile.height,
+      durationMinutes: movieFile.duration ? Math.round(movieFile.duration / 60) : null, // 将秒转换为分钟
       isPublic: newMovie.isPublic
     }
     

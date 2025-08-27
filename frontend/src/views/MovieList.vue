@@ -44,7 +44,10 @@
         </div>
       </div>
 
-      <div v-if="loading" class="loading">加载中...</div>
+      <div v-if="listLoading" class="list-loading">
+        <div class="loading-spinner"></div>
+        <p>加载中...</p>
+      </div>
       
       <div v-else-if="filteredMovies.length === 0" class="empty">
         <div class="empty-content">
@@ -57,7 +60,7 @@
         </div>
       </div>
       
-      <div v-else class="movies-grid">
+      <div v-else class="movies-grid" :class="{ 'fade-in': !listLoading }">
         <div 
           v-for="movie in filteredMovies" 
           :key="movie.id"
@@ -107,6 +110,7 @@ import { createRoom } from '@/api/movieRoom.js'
 const router = useRouter()
 
 const loading = ref(false)
+const listLoading = ref(false) // 专门用于列表加载状态
 const currentTab = ref('all')
 const searchKeyword = ref('')
 const movies = ref([])
@@ -140,22 +144,28 @@ const filteredMovies = computed(() => {
 
 
 const loadMovies = async () => {
-  loading.value = true
+  listLoading.value = true
   try {
     const data = await getAllMovies()
     movies.value = data
   } catch (error) {
     showToast(error.message)
   } finally {
-    loading.value = false
+    listLoading.value = false
   }
 }
 
 const switchTab = async (tab) => {
   if (currentTab.value === tab) return // 如果点击的是当前tab，不重复加载
   
+  // 先更新tab状态，让UI立即响应
   currentTab.value = tab
-  loading.value = true
+  
+  // 清空搜索关键词，避免切换tab时搜索状态混乱
+  searchKeyword.value = ''
+  
+  // 显示列表加载状态，只针对列表区域
+  listLoading.value = true
   
   try {
     let data
@@ -172,7 +182,7 @@ const switchTab = async (tab) => {
   } catch (error) {
     showToast(error.message || '加载失败')
   } finally {
-    loading.value = false
+    listLoading.value = false
   }
 }
 
@@ -214,9 +224,20 @@ const goToCreateMovie = () => {
 }
 
 const formatDuration = (minutes) => {
+  if (!minutes || minutes <= 0) return '未知'
+  
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
-  return hours > 0 ? `${hours}小时${mins}分钟` : `${mins}分钟`
+  
+  if (hours > 0) {
+    if (mins > 0) {
+      return `${hours}小时${mins}分钟`
+    } else {
+      return `${hours}小时`
+    }
+  } else {
+    return `${mins}分钟`
+  }
 }
 
 const getEmptyTitle = () => {
@@ -347,6 +368,41 @@ onMounted(() => {
   font-size: 18px;
 }
 
+.list-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 20px;
+  padding: 40px;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.list-loading p {
+  color: #666;
+  font-size: 16px;
+  margin: 0;
+}
+
 .empty {
   display: flex;
   justify-content: center;
@@ -409,6 +465,14 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   margin-top: 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+}
+
+.movies-grid.fade-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .movie-card {

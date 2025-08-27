@@ -117,10 +117,20 @@ const joinRoom = () => {
 }
 
 const formatDuration = (minutes) => {
-  if (!minutes) return '未知'
+  if (!minutes || minutes <= 0) return '未知'
+  
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
-  return hours > 0 ? `${hours}小时${mins}分钟` : `${mins}分钟`
+  
+  if (hours > 0) {
+    if (mins > 0) {
+      return `${hours}小时${mins}分钟`
+    } else {
+      return `${hours}小时`
+    }
+  } else {
+    return `${mins}分钟`
+  }
 }
 
 const formatFileSize = (bytes) => {
