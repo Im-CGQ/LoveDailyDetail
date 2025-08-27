@@ -76,7 +76,7 @@
             <div v-else class="cover-placeholder">🎬</div>
             <div class="movie-overlay">
               <button class="play-btn" @click.stop="handleCreateRoom(movie)">
-                一起看
+                进入房间
               </button>
             </div>
           </div>
@@ -105,7 +105,7 @@ import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import BackButton from '@/components/BackButton.vue'
 import { getAllMovies, getMyMovies, getPublicMovies } from '@/api/movie.js'
-import { createRoom } from '@/api/movieRoom.js'
+import { createRoom, checkUserInMovieRoom } from '@/api/movieRoom.js'
 
 const router = useRouter()
 
@@ -194,13 +194,22 @@ const viewMovie = (movie) => {
 
 const handleCreateRoom = async (movie) => {
   try {
-    const roomData = {
-      roomName: `观看 ${movie.title}`,
-      movieId: movie.id
+    // 先检查用户是否已经在该电影的房间中
+    try {
+      const existingRoom = await checkUserInMovieRoom(movie.id)
+      // 如果用户已经在房间中，直接进入该房间
+      router.push(`/movie-room/${existingRoom.roomCode}`)
+      showToast('已进入现有房间')
+    } catch (checkError) {
+      // 用户不在房间中，创建新房间
+      const roomData = {
+        roomName: `观看 ${movie.title}`,
+        movieId: movie.id
+      }
+      
+      const room = await createRoom(roomData)
+      router.push(`/movie-room/${room.roomCode}`)
     }
-    
-    const room = await createRoom(roomData)
-    router.push(`/movie-room/${room.roomCode}`)
   } catch (error) {
     showToast(error.message || '创建房间失败')
   }

@@ -182,6 +182,34 @@ public class MovieRoomController {
         }
     }
 
+    @GetMapping("/check-movie/{movieId}")
+    public ResponseEntity<ApiResponse<MovieRoomDetailDTO>> checkUserInMovieRoom(
+            @PathVariable Long movieId,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            Long userId = getCurrentUserId(token);
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户未登录"));
+            }
+            
+            // 检查用户是否在指定电影的房间中
+            if (movieRoomService.isUserInMovieRoom(userId, movieId)) {
+                // 获取用户在该电影中的房间成员记录
+                List<MovieRoomMember> members = movieRoomService.getUserMovieRoomMembers(userId, movieId);
+                if (!members.isEmpty()) {
+                    // 获取房间信息
+                    MovieRoom room = members.get(0).getRoom();
+                    MovieRoomDetailDTO roomDetailDTO = convertToDetailDTO(room);
+                    return ResponseEntity.ok(ApiResponse.success("用户已在房间中", roomDetailDTO));
+                }
+            }
+            
+            return ResponseEntity.ok(ApiResponse.error("用户不在该电影的房间中"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("检查房间状态失败：" + e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/{roomCode}")
     public ResponseEntity<ApiResponse<String>> deleteRoom(
             @PathVariable String roomCode,

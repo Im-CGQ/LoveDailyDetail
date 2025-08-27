@@ -41,6 +41,12 @@ public interface MovieRoomService {
     
     // 删除房间
     void deleteRoom(String roomCode, Long userId);
+    
+    // 检查用户是否已经在同一部电影的房间中
+    boolean isUserInMovieRoom(Long userId, Long movieId);
+    
+    // 根据用户ID和电影ID获取房间成员记录
+    List<MovieRoomMember> getUserMovieRoomMembers(Long userId, Long movieId);
 }
 
 

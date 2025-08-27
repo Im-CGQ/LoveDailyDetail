@@ -52,5 +52,17 @@ public interface MovieRoomMemberRepository extends JpaRepository<MovieRoomMember
      */
     @Query("SELECT COUNT(m) FROM MovieRoomMember m WHERE m.room.id = :roomId AND m.isOnline = true")
     long countOnlineMembersByRoomId(@Param("roomId") Long roomId);
+    
+    /**
+     * 检查用户是否已经在同一部电影的房间中
+     */
+    @Query("SELECT COUNT(m) > 0 FROM MovieRoomMember m WHERE m.user.id = :userId AND m.room.movie.id = :movieId")
+    boolean existsByUserIdAndMovieId(@Param("userId") Long userId, @Param("movieId") Long movieId);
+    
+    /**
+     * 根据用户ID和电影ID查找房间成员记录
+     */
+    @Query("SELECT m FROM MovieRoomMember m WHERE m.user.id = :userId AND m.room.movie.id = :movieId")
+    List<MovieRoomMember> findByUserIdAndMovieId(@Param("userId") Long userId, @Param("movieId") Long movieId);
 }
 

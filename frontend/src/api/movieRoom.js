@@ -135,4 +135,19 @@ export const deleteRoom = async (roomCode) => {
   }
 }
 
+// 检查用户是否在指定电影的房间中
+export const checkUserInMovieRoom = async (movieId) => {
+  try {
+    const response = await api.get(`/movie-rooms/check-movie/${movieId}`)
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '检查房间状态失败')
+    }
+  } catch (error) {
+    console.error('检查房间状态失败:', error.message)
+    throw new Error(error.message || '检查房间状态失败，请检查网络连接')
+  }
+}
+
 

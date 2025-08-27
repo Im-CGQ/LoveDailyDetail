@@ -42,6 +42,8 @@ public class MovieRoomServiceImpl implements MovieRoomService {
             throw new RuntimeException("无权观看此电影");
         }
         
+
+        
         MovieRoom room = new MovieRoom();
         room.setRoomName(roomDTO.getRoomName());
         room.setRoomCode(generateRoomCode());
@@ -169,6 +171,16 @@ public class MovieRoomServiceImpl implements MovieRoomService {
         }
         
         movieRoomRepository.delete(room);
+    }
+    
+    @Override
+    public boolean isUserInMovieRoom(Long userId, Long movieId) {
+        return memberRepository.existsByUserIdAndMovieId(userId, movieId);
+    }
+    
+    @Override
+    public List<MovieRoomMember> getUserMovieRoomMembers(Long userId, Long movieId) {
+        return memberRepository.findByUserIdAndMovieId(userId, movieId);
     }
 
     private boolean canViewMovie(Movie movie, Long userId) {

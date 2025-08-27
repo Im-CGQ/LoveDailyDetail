@@ -32,6 +32,8 @@
             @pause="onPause"
             @seeking="onSeeking"
             @seeked="onSeeked"
+            @error="onVideoError"
+            @canplay="onVideoCanPlay"
           ></video>
           
           <!-- 播放控制 -->
@@ -47,15 +49,21 @@
               <div class="progress-handle" :style="{ left: progressPercent + '%' }"></div>
             </div>
             
-            <div class="control-buttons">
-              <button class="control-btn" 
-                      @click="togglePlay"
-                      title="播放/暂停">
-                {{ isPlaying ? '⏸️' : '▶️' }}
-              </button>
-              <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
-              <button class="control-btn" @click="leaveRoom">离开房间</button>
-            </div>
+                         <div class="control-buttons">
+               <button class="control-btn" 
+                       @click="togglePlay"
+                       title="播放/暂停">
+                 {{ isPlaying ? '⏸️' : '▶️' }}
+               </button>
+               <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+               <button class="control-btn sync-progress-btn" @click="syncVideoProgress" title="同步视频进度">
+                 🔄 同步进度
+               </button>
+               <button class="control-btn" @click="leaveRoom">离开房间</button>
+             </div>
+             <div class="sync-tip">
+               💡 提示：拖拽进度条或点击同步按钮可同步进度给其他用户，其他用户需要手动点击同步按钮接收更新
+             </div>
           </div>
         </div>
 
@@ -110,10 +118,11 @@ const duration = ref(0)
 const isPlaying = ref(false)
 const isSeeking = ref(false)
 const isDragging = ref(false)
-const syncInterval = ref(null)
 const membersSyncInterval = ref(null)
 const syncing = ref(false)
 const currentUser = ref(null)
+const lastSyncTime = ref(0) // 记录最后同步时间，避免自己同步自己
+const isVideoPlaying = ref(false) // 跟踪视频是否正在播放
 
 const progressPercent = computed(() => {
   if (duration.value === 0) return 0
@@ -131,11 +140,6 @@ const loadRoom = async () => {
     
     const roomData = await getRoom(roomCode.value)
     room.value = roomData
-    
-    // 加载播放状态
-    const playbackData = await getPlaybackStatus(roomCode.value)
-    currentTime.value = playbackData.currentTime || 0
-    isPlaying.value = playbackData.isPlaying || false
     
     // 加载成员列表
     loadMembers()
@@ -173,27 +177,6 @@ const manualSyncMembers = async () => {
 }
 
 const startSync = () => {
-  // 定期同步播放状态 - 每2秒同步一次
-  syncInterval.value = setInterval(async () => {
-    try {
-      const playbackData = await getPlaybackStatus(roomCode.value)
-      
-      // 如果本地没有在拖拽进度条，则同步远程状态
-      if (!isDragging.value && !isSeeking.value) {
-        const timeDiff = Math.abs(currentTime.value - playbackData.currentTime)
-        if (timeDiff > 2) { // 如果时间差大于2秒，则同步
-          currentTime.value = playbackData.currentTime
-          if (videoPlayer.value) {
-            videoPlayer.value.currentTime = playbackData.currentTime
-          }
-        }
-        isPlaying.value = playbackData.isPlaying
-      }
-    } catch (error) {
-      console.error('同步播放状态失败:', error)
-    }
-  }, 2000)
-  
   // 定期同步成员列表 - 每10秒同步一次
   membersSyncInterval.value = setInterval(async () => {
     try {
@@ -202,29 +185,44 @@ const startSync = () => {
       console.error('同步成员列表失败:', error)
     }
   }, 10000)
+  
+  // 移除自动同步播放状态，只保留手动同步功能
+  // 避免频繁的自动同步导致播放中断
 }
 
 const onVideoLoaded = () => {
   if (videoPlayer.value) {
     duration.value = videoPlayer.value.duration
-    videoPlayer.value.currentTime = currentTime.value
+    // 视频加载完成后，不自动设置播放位置，让用户自由控制
   }
 }
 
 const onTimeUpdate = () => {
-  if (videoPlayer.value && !isSeeking.value && !isDragging.value) {
+  if (videoPlayer.value) {
     currentTime.value = videoPlayer.value.currentTime
   }
 }
 
 const onPlay = () => {
   isPlaying.value = true
-  // 正常播放时不更新远程状态，避免卡顿
+  isVideoPlaying.value = true
+  // 播放时不发起任何请求
 }
 
 const onPause = () => {
   isPlaying.value = false
-  // 正常暂停时不更新远程状态，避免卡顿
+  isVideoPlaying.value = false
+  // 暂停时不发起任何请求
+}
+
+const onVideoError = (event) => {
+  console.error('视频播放错误:', event)
+  showToast('视频加载失败，请刷新页面重试')
+  isPlaying.value = false
+}
+
+const onVideoCanPlay = () => {
+  // 视频可以开始播放，不做任何处理
 }
 
 const onSeeking = () => {
@@ -307,8 +305,33 @@ const updateRemotePlayback = async () => {
       currentTime: currentTime.value,
       isPlaying: isPlaying.value
     })
+    // 记录同步时间，避免自己同步自己
+    lastSyncTime.value = Date.now()
   } catch (error) {
     console.error('更新播放状态失败:', error)
+  }
+}
+
+const syncVideoProgress = async () => {
+  try {
+    // 先获取远程进度
+    const playbackData = await getPlaybackStatus(roomCode.value)
+    const timeDiff = Math.abs(currentTime.value - playbackData.currentTime)
+    
+    if (timeDiff > 1) {
+      // 如果有差异，同步远程进度
+      currentTime.value = playbackData.currentTime
+      if (videoPlayer.value && videoPlayer.value.readyState >= 2) {
+        videoPlayer.value.currentTime = playbackData.currentTime
+        showToast(`已同步到 ${formatTime(playbackData.currentTime)}`)
+      }
+    } else {
+      // 如果没有差异，发送当前进度
+      await updateRemotePlayback()
+      showToast('视频进度已同步')
+    }
+  } catch (error) {
+    showToast('同步失败')
   }
 }
 
@@ -316,6 +339,7 @@ const leaveRoom = async () => {
   try {
     await leaveRoomApi(roomCode.value)
     showToast('已离开房间')
+    
     router.push('/movies')
   } catch (error) {
     showToast(error.message)
@@ -341,24 +365,13 @@ onMounted(() => {
   loadRoom()
 })
 
-onUnmounted(async () => {
+onUnmounted(() => {
   // 清理定时器
-  if (syncInterval.value) {
-    clearInterval(syncInterval.value)
-  }
   if (membersSyncInterval.value) {
     clearInterval(membersSyncInterval.value)
   }
   
-  // 离开界面时自动离开房间
-  if (room.value) {
-    try {
-      await leaveRoomApi(roomCode.value)
-      console.log('已自动离开房间')
-    } catch (error) {
-      console.error('自动离开房间失败:', error)
-    }
-  }
+  // 移除自动离开房间的逻辑，只有手动点击离开房间按钮才会离开
 })
 </script>
 
@@ -506,10 +519,29 @@ onUnmounted(async () => {
   background: #5a6fd8;
 }
 
+.sync-progress-btn {
+  background: #28a745;
+}
+
+.sync-progress-btn:hover {
+  background: #218838;
+}
+
 .time-display {
   font-family: monospace;
   font-size: 14px;
   color: #666;
+}
+
+.sync-tip {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  margin-top: 10px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #28a745;
 }
 
 .members-section {
@@ -622,4 +654,5 @@ onUnmounted(async () => {
   }
 }
 </style>
+
 

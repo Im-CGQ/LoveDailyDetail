@@ -76,7 +76,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import BackButton from '@/components/BackButton.vue'
 import { getMovieById } from '@/api/movie.js'
-import { createRoom as createRoomApi } from '@/api/movieRoom.js'
+import { createRoom as createRoomApi, checkUserInMovieRoom } from '@/api/movieRoom.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -99,6 +99,18 @@ const loadMovie = async () => {
 
 const createRoom = async () => {
   try {
+    // 先检查用户是否已经在该电影的房间中
+    try {
+      const existingRoom = await checkUserInMovieRoom(movie.value.id)
+      // 如果用户已经在房间中，拦截创建并提示
+      showToast('您当前有房间正在观看这部电影，请先离开现有房间后再创建新房间')
+      return
+    } catch (checkError) {
+      // 用户不在房间中，可以创建新房间
+      console.log('用户不在房间中，可以创建新房间')
+    }
+    
+    // 创建新房间
     const roomData = {
       roomName: `观看 ${movie.value.title}`,
       movieId: movie.value.id
@@ -112,8 +124,21 @@ const createRoom = async () => {
   }
 }
 
-const joinRoom = () => {
-  router.push('/join-room')
+const joinRoom = async () => {
+  try {
+    // 先检查用户是否已经在该电影的房间中
+    try {
+      const existingRoom = await checkUserInMovieRoom(movie.value.id)
+      // 如果用户已经在房间中，直接进入该房间
+      router.push(`/movie-room/${existingRoom.roomCode}`)
+      showToast('已进入现有房间')
+    } catch (checkError) {
+      // 用户不在房间中，跳转到输入房间码页面
+      router.push('/join-room')
+    }
+  } catch (error) {
+    showToast(error.message || '操作失败')
+  }
 }
 
 const formatDuration = (minutes) => {
