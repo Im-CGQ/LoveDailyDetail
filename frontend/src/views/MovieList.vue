@@ -65,39 +65,45 @@
           v-for="movie in filteredMovies" 
           :key="movie.id"
           class="movie-card"
-          @click="viewMovie(movie)"
         >
-          <div class="movie-cover">
+          <div class="movie-cover" @click="viewMovie(movie)">
             <img 
               v-if="movie.coverUrl" 
               :src="movie.coverUrl" 
               :alt="movie.title"
             />
             <div v-else class="cover-placeholder">🎬</div>
-            <div class="movie-overlay">
-              <div class="overlay-buttons">
-                <button class="play-btn" @click.stop="handleCreateRoom(movie)">
-                  进入房间
-                </button>
-                <button 
-                  v-if="currentTab === 'my'" 
-                  class="edit-btn" 
-                  @click.stop="editMovie(movie)"
-                >
-                  编辑
-                </button>
-              </div>
-            </div>
           </div>
           
           <div class="movie-info">
-            <h3>{{ movie.title }}</h3>
-            <p>{{ movie.description || '暂无描述' }}</p>
+            <h3 @click="viewMovie(movie)">{{ movie.title }}</h3>
+            <p @click="viewMovie(movie)">{{ movie.description || '暂无描述' }}</p>
             <div class="movie-meta">
               <span v-if="movie.durationMinutes">{{ formatDuration(movie.durationMinutes) }}</span>
               <span :class="movie.isPublic ? 'public' : 'private'">
                 {{ movie.isPublic ? '公开' : '私密' }}
               </span>
+            </div>
+            
+            <!-- 按钮区域 -->
+            <div class="movie-actions">
+              <button class="action-btn play-btn" @click="handleCreateRoom(movie)">
+                🎬 进入房间
+              </button>
+              <button 
+                v-if="currentTab === 'my'" 
+                class="action-btn edit-btn" 
+                @click="editMovie(movie)"
+              >
+                ✏️ 编辑
+              </button>
+              <button 
+                v-if="currentTab === 'my'" 
+                class="action-btn delete-btn" 
+                @click="handleDeleteMovie(movie)"
+              >
+                🗑️ 删除
+              </button>
             </div>
           </div>
         </div>
@@ -111,9 +117,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { showToast } from 'vant'
+import { showToast, showConfirmDialog } from 'vant'
 import BackButton from '@/components/BackButton.vue'
-import { getAllMovies, getMyMovies, getPublicMovies } from '@/api/movie.js'
+import { getAllMovies, getMyMovies, getPublicMovies, deleteMovie } from '@/api/movie.js'
 import { createRoom, checkUserInMovieRoom } from '@/api/movieRoom.js'
 
 const router = useRouter()
@@ -243,6 +249,30 @@ const goToCreateMovie = () => {
 
 const editMovie = (movie) => {
   router.push(`/edit-movie/${movie.id}`)
+}
+
+const handleDeleteMovie = async (movie) => {
+  try {
+    // 显示确认对话框
+    const confirmed = await showConfirmDialog({
+      title: '确认删除',
+      message: `确定要删除电影"${movie.title}"吗？此操作不可恢复。`,
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      confirmButtonColor: '#ff4444'
+    })
+    
+    if (confirmed) {
+      await deleteMovie(movie.id)
+      showToast('删除成功')
+      // 重新加载电影列表
+      await loadMovies()
+    }
+  } catch (error) {
+    if (error.message !== 'cancel') {
+      showToast(error.message || '删除失败')
+    }
+  }
 }
 
 const formatDuration = (minutes) => {
@@ -514,6 +544,12 @@ onMounted(() => {
 .movie-cover {
   position: relative;
   height: 200px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.movie-cover:hover {
+  transform: scale(1.02);
 }
 
 .movie-cover img {
@@ -532,75 +568,85 @@ onMounted(() => {
   font-size: 40px;
 }
 
-.movie-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.movie-card:hover .movie-overlay {
-  opacity: 1;
-}
-
-.overlay-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-}
-
-.play-btn {
-  padding: 10px 20px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.play-btn:hover {
-  background: #5a6fd8;
-  transform: translateY(-2px);
-}
-
-.edit-btn {
-  padding: 8px 16px;
-  background: #ff9800;
-  color: white;
-  border: none;
-  border-radius: 15px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s;
-}
-
-.edit-btn:hover {
-  background: #f57c00;
-  transform: translateY(-2px);
-}
-
-.movie-info {
-  padding: 15px;
-}
-
 .movie-info h3 {
   margin: 0 0 10px 0;
   color: #333;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.movie-info h3:hover {
+  color: #667eea;
 }
 
 .movie-info p {
   color: #666;
   margin: 0 0 10px 0;
   font-size: 14px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.movie-info p:hover {
+  color: #333;
+}
+
+/* 按钮区域样式 */
+.movie-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.play-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.play-btn:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4c93 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
+  color: white;
+}
+
+.edit-btn:hover {
+  background: linear-gradient(135deg, #f57c00 0%, #e64a19 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: white;
+}
+
+.delete-btn:hover {
+  background: linear-gradient(135deg, #e63939 0%, #b30000 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+}
+
+.movie-info {
+  padding: 15px;
 }
 
 .movie-meta {
@@ -658,18 +704,13 @@ onMounted(() => {
     font-size: 14px;
   }
   
-  .overlay-buttons {
-    gap: 8px;
+  .movie-actions {
+    gap: 6px;
   }
   
-  .play-btn {
-    padding: 8px 16px;
-    font-size: 14px;
-  }
-  
-  .edit-btn {
-    padding: 6px 12px;
-    font-size: 12px;
+  .action-btn {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 }
 </style>
