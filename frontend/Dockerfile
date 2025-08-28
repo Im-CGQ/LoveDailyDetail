@@ -7,11 +7,12 @@ WORKDIR /app
 # 复制构建好的dist文件到nginx目录
 COPY dist /usr/share/nginx/html
 
+COPY ./ssl/  /ssl/
 # 复制nginx配置文件（如果有自定义配置）
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # 暴露80端口
-EXPOSE 80
+# EXPOSE 80
 
 # 启动nginx
 CMD ["nginx", "-g", "daemon off;"]

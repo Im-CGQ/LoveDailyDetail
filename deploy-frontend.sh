@@ -44,9 +44,9 @@ docker build -t my-frontend-app .
 
 # 运行新容器
 echo "启动新容器..."
-docker run -d --name frontend -p 80:80 my-frontend-app
+docker run -d --name frontend -p 443:443 my-frontend-app
 
 echo "前端服务部署完成！"
 echo "容器名称: frontend"
-echo "端口映射: 80:80"
+echo "端口映射: 443:443"
 echo "镜像名称: my-frontend-app"
