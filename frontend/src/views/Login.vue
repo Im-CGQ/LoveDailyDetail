@@ -8,7 +8,7 @@
     <div class="login-container glass-effect">
       <div class="login-header float">
         <div class="logo heartbeat">💕</div>
-        <h1 class="title text-gradient-romantic">{{ isAdmin ? '后台管理' : '美好回忆' }}</h1>
+        <h1 class="title text-gradient-romantic">美好回忆</h1>
         <p class="subtitle pulse">记录美好回忆的每一天</p>
       </div>
 
@@ -55,17 +55,7 @@
       </div>
 
       <div class="login-footer">
-        <div class="mode-switch">
-          <van-button 
-            size="small" 
-            :type="isAdmin ? 'default' : 'primary'"
-            @click="switchMode"
-            class="switch-btn"
-          >
-            {{ isAdmin ? '切换到前台' : '切换到后台' }}
-          </van-button>
-        </div>
-        <!-- <div class="register-link" v-if="!isAdmin">
+        <div class="register-link">
           <p class="register-tip">还没有账号？</p>
           <van-button 
             size="small" 
@@ -75,7 +65,7 @@
           >
             立即注册
           </van-button>
-        </div> -->
+        </div>
       </div>
     </div>
   </div>
@@ -93,22 +83,15 @@ const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const rememberMe = ref(true)
-const isAdmin = ref(false)
 
 const form = ref({
   username: '',
   password: ''
 })
 
-// 切换登录模式
-const switchMode = () => {
-  isAdmin.value = !isAdmin.value
-  form.value = { username: '', password: '' }
-}
-
-// 跳转到注册页面
+// 跳转到邮箱注册页面
 const goToRegister = () => {
-  router.push('/register')
+  router.push('/email-register')
 }
 
 
@@ -165,10 +148,6 @@ onMounted(() => {
     // 已登录访问登录页时，统一进入欢迎页
     router.push('/')
     return
-  }
-  
-  if (route.query.mode === 'admin') {
-    isAdmin.value = true
   }
 })
 </script>
@@ -298,18 +277,7 @@ onMounted(() => {
     margin-bottom: 15px;
   }
   
-  .mode-switch {
-    .switch-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 107, 157, 0.3);
-      color: #ff6b9d;
-      font-size: 14px;
-      
-      &:hover {
-        background: rgba(255, 107, 157, 0.1);
-      }
-    }
-  }
+
   
   .register-link {
     margin-top: 15px;

@@ -112,6 +112,10 @@
 
              <!-- 管理按钮组 -->
          <div v-if="isLoggedIn" class="admin-actions">
+           <van-button size="small" type="default" @click="goToEditProfile" class="profile-btn" title="编辑个人信息">
+             <span class="btn-icon">👤</span>
+             <span class="btn-text">个人信息</span>
+           </van-button>
            <van-button size="small" type="default" @click="goToAdmin" class="admin-btn" title="后台管理">
              <span class="btn-icon">🎛️</span>
              <span class="btn-text">管理</span>
@@ -234,6 +238,16 @@ const goToAdmin = () => {
   }
 }
 
+const goToEditProfile = () => {
+  if (checkLoginState()) {
+    // 已登录，直接跳转到编辑个人信息页面
+    router.push('/edit-profile')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login?mode=user')
+  }
+}
+
 const goToCalendar = () => {
   if (checkLoginState()) {
     // 已登录，直接跳转到日历页面
@@ -292,6 +306,8 @@ const goToLogin = () => {
     router.push('/login?mode=user')
   }
 }
+
+
 
 
 
@@ -533,6 +549,17 @@ const handleLogout = async () => {
     }
   }
   
+  .profile-btn {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(135deg, #3e9bed 0%, #00e1ed 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(79, 172, 254, 0.3);
+    }
+  }
+  
   .logout-btn {
     background: linear-gradient(135deg, #ff6b9d 0%, #f093fb 100%);
     color: white;
@@ -649,7 +676,7 @@ const handleLogout = async () => {
   
 
   
-     .admin-actions {
+           .admin-actions {
      gap: 10px;
      margin-top: 0px;
      

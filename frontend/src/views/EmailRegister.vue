@@ -232,18 +232,20 @@ export default {
     const handleSubmit = async () => {
       try {
         loading.value = true
-        const response = await emailRegister(
-          form.username,
-          form.password,
-          form.confirmPassword,
-          form.displayName,
-          form.email,
-          form.verificationCode
-        )
+        const userData = {
+          username: form.username,
+          password: form.password,
+          confirmPassword: form.confirmPassword,
+          displayName: form.displayName,
+          email: form.email,
+          emailCode: form.verificationCode
+        }
+        
+        const response = await emailRegister(userData)
         
         if (response.success) {
           showToast('注册成功，请登录')
-          router.push('/email-login')
+          router.push('/login')
         }
       } catch (error) {
         showToast(error.message || '注册失败')

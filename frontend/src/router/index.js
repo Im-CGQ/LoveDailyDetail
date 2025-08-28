@@ -116,6 +116,18 @@ const routes = [
     meta: { title: '注册' }
   },
   {
+    path: '/email-register',
+    name: 'EmailRegister',
+    component: () => import('@/views/EmailRegister.vue'),
+    meta: { title: '邮箱注册' }
+  },
+  {
+    path: '/edit-profile',
+    name: 'EditProfile',
+    component: () => import('@/views/EditProfile.vue'),
+    meta: { title: '编辑个人信息', requiresAuth: true }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/admin/AdminLayout.vue'),

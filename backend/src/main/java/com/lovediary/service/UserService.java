@@ -99,4 +99,27 @@ public class UserService {
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
     }
+    
+    @Transactional
+    public boolean updateUserInfo(String username, String displayName, String newPassword) {
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (!userOpt.isPresent()) {
+            return false;
+        }
+        
+        User user = userOpt.get();
+        user.setDisplayName(displayName);
+        
+        // 如果提供了新密码，则更新密码
+        if (newPassword != null && !newPassword.trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+        }
+        
+        userRepository.save(user);
+        return true;
+    }
+    
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
 } 
