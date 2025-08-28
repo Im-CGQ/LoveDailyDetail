@@ -63,7 +63,7 @@
          <p class="date pulse">{{ formatDate(diary.date) }}</p>
        </div>
 
-      <div class="media hover-lift">
+      <div class="media">
         <!-- 图片展示 -->
         <div v-if="diary.images && diary.images.length > 0" class="image-section">
           <div class="image-header">
@@ -732,16 +732,14 @@ onUnmounted(() => {
   position: relative;
 }
 
-
-
-
-
- .content {
-   padding: 20px;
-   position: relative;
-   z-index: 2;
-   padding-bottom: 40px;
- }
+.content {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+  padding-bottom: 40px;
+}
 
 /* 倒计时样式 */
 .countdown-section {
@@ -986,12 +984,11 @@ onUnmounted(() => {
       .image-wrapper {
         border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
+        background: transparent;
         
         &:hover {
           transform: scale(1.02);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
         
         .image {
@@ -1048,22 +1045,21 @@ onUnmounted(() => {
         cursor: pointer;
         border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
+        background: transparent;
         
         &:hover {
           transform: scale(1.02);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
       }
       
             .video-player {
         border-radius: 20px;
         overflow: hidden;
-        background: #000;
         transition: all 0.3s ease;
         display: block;
         cursor: pointer;
+        background: transparent;
         
         &:hover {
           transform: scale(1.02);
@@ -1208,6 +1204,7 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .content {
     padding: 15px;
+    max-width: 100%;
   }
   
   .header .title {
@@ -1231,6 +1228,7 @@ onUnmounted(() => {
       right: -20px;
     }
   }
+  
   
 
   

@@ -26,6 +26,8 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     display_name VARCHAR(100),
     avatar_url VARCHAR(500) NULL COMMENT '用户头像URL',
+    email VARCHAR(100) NULL COMMENT '用户邮箱',
+    phone VARCHAR(20) NULL COMMENT '用户手机号',
     role VARCHAR(10) DEFAULT 'ADMIN',
     partner_id BIGINT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -223,6 +225,8 @@ INSERT INTO system_configs (config_key, config_value, config_type, description, 
 ('background_music_autoplay', 'true', 'BOOLEAN', '背景音乐是否自动播放', NULL);
 
 -- 创建索引
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_diaries_date ON diaries(date);
 CREATE INDEX idx_diaries_partner_id ON diaries(partner_id);
 CREATE INDEX idx_diaries_user_partner ON diaries(user_id, partner_id);

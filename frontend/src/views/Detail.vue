@@ -54,7 +54,7 @@
         <p class="date pulse">{{ formatDate(diary.date) }}</p>
       </div>
 
-      <div class="media hover-lift">
+      <div class="media">
         <!-- 图片展示 -->
         <div v-if="diary.images && diary.images.length > 0" class="image-section">
           <div class="image-header">
@@ -710,6 +710,8 @@ onUnmounted(() => {
 
 
 .content {
+  max-width: 600px;
+  margin: 0 auto;
   padding: 20px;
   padding-top: 100px;
   position: relative;
@@ -919,12 +921,11 @@ onUnmounted(() => {
       .image-wrapper {
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
+        background: transparent;
         
         &:hover {
           transform: scale(1.02);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
     
          .image {
@@ -981,22 +982,21 @@ onUnmounted(() => {
         cursor: pointer;
         border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
+        background: transparent;
         
         &:hover {
           transform: scale(1.02);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
       }
       
       .video-player {
         border-radius: 20px;
         overflow: hidden;
-        background: #000;
         transition: all 0.3s ease;
         display: block;
         cursor: pointer;
+        background: transparent;
         
         &:hover {
           transform: scale(1.02);
@@ -1111,6 +1111,7 @@ onUnmounted(() => {
   .content {
     padding: 15px;
     padding-top: 80px;
+    max-width: 100%;
   }
   
   .header .title {
