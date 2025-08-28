@@ -134,11 +134,29 @@ export const useUserStore = defineStore('user', () => {
     if (newUserInfo.displayName) {
       localStorage.setItem('auth_display_name', newUserInfo.displayName)
     }
-    if (newUserInfo.partnerId) {
-      localStorage.setItem('auth_partner_id', newUserInfo.partnerId)
+    if (newUserInfo.partnerId !== undefined) {
+      if (newUserInfo.partnerId) {
+        localStorage.setItem('auth_partner_id', newUserInfo.partnerId)
+      } else {
+        localStorage.removeItem('auth_partner_id')
+      }
     }
     if (newUserInfo.email) {
       localStorage.setItem('auth_email', newUserInfo.email)
+    }
+  }
+
+  // 更新伴侣关系
+  const updatePartnerRelationship = (partnerId) => {
+    userInfo.value = { 
+      ...userInfo.value, 
+      partnerId: partnerId 
+    }
+    
+    if (partnerId) {
+      localStorage.setItem('auth_partner_id', partnerId)
+    } else {
+      localStorage.removeItem('auth_partner_id')
     }
   }
 
@@ -173,7 +191,8 @@ export const useUserStore = defineStore('user', () => {
     userLogin,
     userLogout,
     clearUserState,
-    updateUserInfo
+    updateUserInfo,
+    updatePartnerRelationship
   }
 })
 

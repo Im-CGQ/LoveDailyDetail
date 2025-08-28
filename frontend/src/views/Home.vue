@@ -194,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onBeforeUnmount, onActivated, onDeactivated, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import dayjs from 'dayjs'
@@ -742,6 +742,40 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
+// 添加路由离开守卫
+onBeforeUnmount(() => {
+  // 停止音乐播放
+  forceStopMusic()
+  
+  // 停止所有视频播放
+  const videoElements = document.querySelectorAll('.video-player')
+  videoElements.forEach(video => {
+    if (!video.paused) {
+      video.pause()
+    }
+  })
+  
+  // 清理音乐播放器
+  if (audioElement.value) {
+    audioElement.value.pause()
+    audioElement.value.currentTime = 0
+    audioElement.value = null
+  }
+  
+  // 清理进度定时器
+  if (progressTimer.value) {
+    clearInterval(progressTimer.value)
+    progressTimer.value = null
+  }
+  
+  // 重置播放状态
+  isMusicPlaying.value = false
+  showMusicControls.value = false
+  currentTime.value = 0
+  musicProgress.value = 0
+  playingVideoIndex.value = -1
+})
+
 
 </script>
 
@@ -756,6 +790,8 @@ onUnmounted(() => {
   margin: 0 auto;
   position: relative;
   z-index: 2;
+  padding: 20px;
+  padding-top: 100px;
   padding-bottom: 40px;
 }
 
@@ -833,6 +869,7 @@ onUnmounted(() => {
 
 .media-section {
   margin-bottom: 30px;
+  padding-top: 20px;
   
 
   
@@ -1322,8 +1359,17 @@ onUnmounted(() => {
 
 
 @media (max-width: 768px) {
+  .content {
+    padding: 15px;
+    padding-top: 80px;
+  }
+  
   .title-section .main-title {
     font-size: 28px;
+  }
+  
+  .media-section {
+    padding-top: 15px;
   }
   
   .media-section .image-section .image-container .image-wrapper .memory-image {

@@ -278,11 +278,17 @@ const handleDeleteMovie = async (movie) => {
   }
 }
 
-const formatDuration = (minutes) => {
-  if (!minutes || minutes <= 0) return '未知'
+const formatDuration = (duration) => {
+  if (!duration || duration <= 0) return '未知'
   
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
+  // 如果数值小于60，认为是秒数
+  if (duration < 60) {
+    return `${Math.round(duration)}秒`
+  }
+  
+  // 如果数值大于等于60，认为是分钟数
+  const hours = Math.floor(duration / 60)
+  const mins = Math.floor(duration % 60)
   
   if (hours > 0) {
     if (mins > 0) {

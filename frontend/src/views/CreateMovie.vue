@@ -47,9 +47,14 @@
               <div class="video-preview-item" ref="videoPreviewSectionRef">
                 <div class="video-info">
                   <span class="video-name">{{ movieFiles[0].file?.name || '电影文件' }}</span>
-                  <span class="video-status" :class="movieFiles[0].status">
-                    {{ getVideoStatusText(movieFiles[0].status) }}
-                  </span>
+                  <div class="video-meta">
+                    <span class="video-duration" v-if="movieFiles[0].duration">
+                      ⏱️ {{ formatDuration(movieFiles[0].duration) }}
+                    </span>
+                    <span class="video-status" :class="movieFiles[0].status">
+                      {{ getVideoStatusText(movieFiles[0].status) }}
+                    </span>
+                  </div>
                 </div>
                 <div class="video-player-container" v-if="movieFiles[0].url" :style="getVideoStyle(movieFiles[0])">
                   <video 
@@ -250,6 +255,27 @@ const onMovieOversize = (file) => {
   return false
 }
 
+// 格式化时长显示
+const formatDuration = (duration) => {
+  if (!duration || isNaN(duration)) return '0:00'
+  
+  // 如果duration是秒数，直接使用；如果是分钟，转换为秒
+  let seconds = duration
+  if (duration < 1000) { // 如果小于1000，认为是分钟
+    seconds = duration * 60
+  }
+  
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const remainingSeconds = Math.floor(seconds % 60)
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+  } else {
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+}
+
 // 获取视频状态文本
 const getVideoStatusText = (status) => {
   switch (status) {
@@ -447,7 +473,7 @@ const handleCreateMovie = async () => {
       fileSize: movieFile.fileSize,
       width: movieFile.width,
       height: movieFile.height,
-      durationMinutes: movieFile.duration ? Math.round(movieFile.duration / 60) : null, // 将秒转换为分钟
+      durationMinutes: movieFile.duration ? (movieFile.duration < 60 ? movieFile.duration : Math.round(movieFile.duration / 60)) : null, // 小于60秒时发送秒数，否则发送分钟数
       isPublic: newMovie.isPublic
     }
     
@@ -617,30 +643,44 @@ onMounted(() => {
       white-space: nowrap;
     }
     
-    .video-status {
-      font-size: 12px;
-      padding: 2px 8px;
-      border-radius: 12px;
-      margin-left: 10px;
+    .video-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       
-      &.uploading {
-        background: #e6f7ff;
-        color: #1890ff;
-      }
-      
-      &.done {
-        background: #f6ffed;
-        color: #52c41a;
-      }
-      
-      &.failed {
-        background: #fff2f0;
-        color: #ff4d4f;
-      }
-      
-      &.default {
-        background: #f5f5f5;
+      .video-duration {
+        font-size: 12px;
         color: #666;
+        background: #f0f0f0;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-weight: 500;
+      }
+      
+      .video-status {
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        
+        &.uploading {
+          background: #e6f7ff;
+          color: #1890ff;
+        }
+        
+        &.done {
+          background: #f6ffed;
+          color: #52c41a;
+        }
+        
+        &.failed {
+          background: #fff2f0;
+          color: #ff4d4f;
+        }
+        
+        &.default {
+          background: #f5f5f5;
+          color: #666;
+        }
       }
     }
   }
@@ -740,6 +780,29 @@ onMounted(() => {
   
   .form-container {
     padding: 25px;
+  }
+  
+  .video-preview-item {
+    .video-info {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      
+      .video-meta {
+        width: 100%;
+        justify-content: space-between;
+        
+        .video-duration {
+          font-size: 11px;
+          padding: 1px 4px;
+        }
+        
+        .video-status {
+          font-size: 11px;
+          padding: 1px 6px;
+        }
+      }
+    }
   }
   
   .form-actions {

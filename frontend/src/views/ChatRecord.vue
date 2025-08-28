@@ -8,7 +8,7 @@
     <div class="top-bar">
       <BackButton />
       <button class="create-btn" @click="showAddDialog = true">
-        📝 添加记录
+        📝 添加
       </button>
     </div>
 
@@ -18,33 +18,51 @@
       </div>
     </div>
 
-    <div class="content">
-      <van-list
-        v-model:loading="loading"
-        :finished="finished"
-        finished-text="没有更多了"
-        @load="loadChatRecords"
-      >
-        <div class="chat-record-item" v-for="record in chatRecords" :key="record.id">
-          <div class="record-header">
-            <div class="chat-type">
-              <span class="type-icon">{{ getChatTypeIcon(record.chatType) }}</span>
-              <span class="type-text" :class="{ 'custom-type': isCustomType(record) }">{{ getDisplayChatType(record) }}</span>
-            </div>
-            <div class="duration">
-              <span class="duration-number">{{ record.durationMinutes }}</span>
-              <span class="duration-unit">分钟</span>
-            </div>
-          </div>
-          
-          <div class="record-date">{{ formatDate(record.date) }}</div>
-          
-          <div v-if="record.description" class="record-description">
-            {{ record.description }}
-          </div>
-                         </div>
-        </van-list>
-      </div>
+         <div class="content">
+       <!-- 空状态显示 -->
+       <div v-if="!loading && chatRecords.length === 0" class="empty-state">
+         <div class="empty-icon">💬</div>
+         <h3 class="empty-title">还没有聊天记录</h3>
+         <p class="empty-desc">开始记录你们的每一次美好对话吧</p>
+         <van-button 
+           type="primary" 
+           size="large" 
+           @click="showAddDialog = true"
+           class="add-first-btn"
+         >
+           <span class="btn-icon">✨</span>
+           添加第一条记录
+         </van-button>
+       </div>
+       
+       <!-- 有数据时显示列表 -->
+       <van-list
+         v-else
+         v-model:loading="loading"
+         :finished="finished"
+         finished-text="没有更多了"
+         @load="loadChatRecords"
+       >
+         <div class="chat-record-item" v-for="record in chatRecords" :key="record.id">
+           <div class="record-header">
+             <div class="chat-type">
+               <span class="type-icon">{{ getChatTypeIcon(record.chatType) }}</span>
+               <span class="type-text" :class="{ 'custom-type': isCustomType(record) }">{{ getDisplayChatType(record) }}</span>
+             </div>
+             <div class="duration">
+               <span class="duration-number">{{ record.durationMinutes }}</span>
+               <span class="duration-unit">分钟</span>
+             </div>
+           </div>
+           
+           <div class="record-date">{{ formatDate(record.date) }}</div>
+           
+           <div v-if="record.description" class="record-description">
+             {{ record.description }}
+           </div>
+         </div>
+       </van-list>
+     </div>
 
     <!-- 添加聊天记录弹窗 -->
     <van-dialog v-model:show="showAddDialog" title="添加聊天记录" :show-confirm-button="false">
@@ -393,11 +411,11 @@ onMounted(() => {
 }
 
 .create-btn {
-  height: 40px;
-  padding: 0 20px;
-  font-size: 16px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
   font-weight: 600;
-  border-radius: 20px;
+  border-radius: 18px;
   background: linear-gradient(135deg, #ff6b9d 0%, #ff8e9e 100%);
   border: none;
   color: white;
@@ -405,7 +423,8 @@ onMounted(() => {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.2);
 }
 
 .create-btn:hover {
@@ -519,16 +538,113 @@ onMounted(() => {
   margin-bottom: 10px;
 }
 
-.record-description {
-  color: #333;
-  font-size: 14px;
-  line-height: 1.5;
-  background: #f8f9fa;
-  padding: 10px;
-  border-radius: 8px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
+ .record-description {
+   color: #333;
+   font-size: 14px;
+   line-height: 1.5;
+   background: #f8f9fa;
+   padding: 10px;
+   border-radius: 8px;
+   white-space: pre-wrap;
+   word-wrap: break-word;
+ }
+
+   .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    
+    .empty-icon {
+      font-size: 60px;
+      margin-bottom: 16px;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .empty-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .empty-desc {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+   
+   .add-first-btn {
+     height: 56px;
+     border-radius: 28px;
+     font-size: 18px;
+     font-weight: 600;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     gap: 10px;
+     background: linear-gradient(135deg, #ff6b9d 0%, #ff8e9e 100%);
+     border: none;
+     box-shadow: 
+       0 8px 25px rgba(255, 107, 157, 0.4),
+       0 4px 12px rgba(255, 107, 157, 0.2),
+       inset 0 2px 4px rgba(255, 255, 255, 0.3);
+     position: relative;
+     overflow: hidden;
+     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+     
+     &::before {
+       content: '';
+       position: absolute;
+       top: 0;
+       left: -100%;
+       width: 100%;
+       height: 100%;
+       background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+       transition: left 0.6s ease;
+     }
+     
+     &:hover {
+       transform: translateY(-3px) scale(1.02);
+       box-shadow: 
+         0 12px 35px rgba(255, 107, 157, 0.5),
+         0 6px 18px rgba(255, 107, 157, 0.3),
+         inset 0 2px 4px rgba(255, 255, 255, 0.4);
+       background: linear-gradient(135deg, #ff5a8c 0%, #ff7d8e 100%);
+       
+       &::before {
+         left: 100%;
+       }
+       
+       .btn-icon {
+         transform: rotate(15deg) scale(1.1);
+       }
+     }
+     
+     &:active {
+       transform: translateY(-1px) scale(0.98);
+       box-shadow: 
+         0 6px 20px rgba(255, 107, 157, 0.4),
+         0 3px 10px rgba(255, 107, 157, 0.2),
+         inset 0 1px 3px rgba(0, 0, 0, 0.1);
+     }
+     
+     .btn-icon {
+       font-size: 20px;
+       transition: all 0.3s ease;
+       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+     }
+   }
+ }
+
+ @keyframes float {
+   0%, 100% {
+     transform: translateY(0px);
+   }
+   50% {
+     transform: translateY(-10px);
+   }
+ }
 
 .add-chat-dialog {
   padding: 20px;
@@ -605,19 +721,45 @@ onMounted(() => {
   }
 }
 
-// 响应式设计
-@media (max-width: 768px) {
-  .chat-record-page {
-    padding: 15px;
-  }
-  
-  .page-header h2 {
-    font-size: 20px;
-  }
-  
-  .content {
-    padding: 15px;
-  }
-}
+ // 响应式设计
+ @media (max-width: 768px) {
+   .chat-record-page {
+     padding: 15px;
+   }
+   
+   .page-header h2 {
+     font-size: 20px;
+   }
+   
+   .content {
+     padding: 15px;
+   }
+   
+       .empty-state {
+      padding: 40px 15px;
+      
+      .empty-icon {
+        font-size: 48px;
+      }
+      
+      .empty-title {
+        font-size: 18px;
+      }
+      
+      .empty-desc {
+        font-size: 13px;
+      }
+     
+     .add-first-btn {
+       height: 48px;
+       font-size: 16px;
+       border-radius: 24px;
+       
+       .btn-icon {
+         font-size: 18px;
+       }
+     }
+   }
+ }
 </style>
 

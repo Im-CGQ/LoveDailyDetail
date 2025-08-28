@@ -409,7 +409,7 @@ onMounted(() => {
 
 .content {
   padding: 20px;
-  padding-top: 80px;
+  padding-top: 120px;
   position: relative;
   z-index: 2;
   padding-bottom: 40px;
@@ -420,9 +420,12 @@ onMounted(() => {
     margin-bottom: 30px;
     
     .subtitle {
-      font-size: 16px;
-      color: rgba(255, 255, 255, 0.8);
-      margin-bottom: 20px;
+      font-size: 22px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 25px;
+      font-weight: bold;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      line-height: 1.4;
     }
     
     .view-toggle {
@@ -703,12 +706,13 @@ onMounted(() => {
         transition: all 0.3s ease;
         cursor: pointer;
         
-        .day-number {
-          color: white;
-          font-size: 16px;
-          font-weight: 600;
-          z-index: 2;
-        }
+                 .day-number {
+           color: white;
+           font-size: 16px;
+           font-weight: 600;
+           z-index: 2;
+           transition: color 0.3s ease;
+         }
         
 
         
@@ -748,16 +752,37 @@ onMounted(() => {
           }
         }
         
-        &.has-diary {
-          background: linear-gradient(135deg, rgba(255, 107, 157, 0.3) 0%, rgba(255, 143, 171, 0.3) 100%);
-          border: 2px solid rgba(255, 107, 157, 0.5);
-          
-          &:hover {
-            background: linear-gradient(135deg, rgba(255, 107, 157, 0.4) 0%, rgba(255, 143, 171, 0.4) 100%);
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
-          }
-        }
+                 &.has-diary {
+           background: rgba(255, 255, 255, 0.2);
+           border: 1px solid rgba(255, 255, 255, 0.3);
+           position: relative;
+           
+           .day-number {
+             color: white;
+             font-weight: 600;
+             font-size: 16px;
+             position: relative;
+           }
+           
+           .day-number::before {
+             content: '💕';
+             position: absolute;
+             top: -12px;
+             left: 50%;
+             transform: translateX(-50%);
+             font-size: 12px;
+             animation: heartbeat 2s ease-in-out infinite;
+           }
+           
+           &:hover {
+             background: rgba(255, 255, 255, 0.3);
+             transform: scale(1.05);
+             
+             .day-number {
+               transform: scale(1.05);
+             }
+           }
+         }
         
         &.today {
           background: linear-gradient(135deg, rgba(255, 193, 7, 0.3) 0%, rgba(255, 235, 59, 0.3) 100%);
@@ -796,18 +821,96 @@ onMounted(() => {
   }
   
   .create-btn {
-    height: 56px;
-    border-radius: 28px;
+    height: 60px;
+    border-radius: 30px;
     font-size: 18px;
-    font-weight: 500;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
+    background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 50%, #ffb3c1 100%);
+    border: none;
+    box-shadow: 
+      0 8px 25px rgba(255, 107, 157, 0.4),
+      0 4px 12px rgba(255, 107, 157, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.6s ease;
+    }
+    
+    &:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 
+        0 12px 35px rgba(255, 107, 157, 0.5),
+        0 6px 18px rgba(255, 107, 157, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+      background: linear-gradient(135deg, #ff5a8c 0%, #ff7a9f 50%, #ffa5b8 100%);
+      
+      &::before {
+        left: 100%;
+      }
+      
+      .btn-icon {
+        transform: rotate(15deg) scale(1.1);
+      }
+    }
+    
+    &:active {
+      transform: translateY(-1px) scale(0.98);
+      box-shadow: 
+        0 6px 20px rgba(255, 107, 157, 0.4),
+        0 3px 10px rgba(255, 107, 157, 0.2),
+        inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
     
     .btn-icon {
-      font-size: 20px;
+      font-size: 22px;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
     }
+  }
+}
+
+@keyframes borderGlow {
+  0% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
   }
 }
 
@@ -824,6 +927,7 @@ onMounted(() => {
   
   .content {
     padding: 15px;
+    padding-top: 90px;
   }
   
 
@@ -862,6 +966,17 @@ onMounted(() => {
         font-size: 14px;
       }
       
+             &.has-diary {
+         .day-number {
+           font-size: 14px;
+         }
+         
+         .day-number::before {
+           top: -10px;
+           font-size: 10px;
+         }
+       }
+      
       .diary-indicator {
         font-size: 10px;
       }
@@ -869,8 +984,13 @@ onMounted(() => {
   }
   
   .empty-state .create-btn {
-    height: 48px;
+    height: 52px;
     font-size: 16px;
+    border-radius: 26px;
+    
+    .btn-icon {
+      font-size: 20px;
+    }
   }
 }
 </style> 

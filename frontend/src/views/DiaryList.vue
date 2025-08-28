@@ -12,7 +12,11 @@
       <div class="header float">
         <h2 class="page-title">{{ formatDate(selectedDate) }} 的日记</h2>
         <p class="subtitle pulse">记录我们的每一个美好瞬间</p>
-        <div class="diary-count">共 {{ diaries.length }} 条日记</div>
+                 <div class="diary-count">
+           <span class="count-label">共</span>
+           <span class="count-number">{{ diaries.length }}</span>
+           <span class="count-label">条日记</span>
+         </div>
       </div>
       
       <div v-if="loading" class="loading">
@@ -241,6 +245,7 @@ onMounted(() => {
 
 .content {
   padding: 20px;
+  padding-top: 100px;
   position: relative;
   z-index: 2;
   padding-bottom: 40px;
@@ -266,9 +271,35 @@ onMounted(() => {
 }
 
 .diary-count {
-  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+}
+
+.diary-count:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.count-label {
+  color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
   font-weight: 500;
+}
+
+.count-number {
+  color: #ff6b9d;
+  font-size: 18px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(255, 107, 157, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+  min-width: 24px;
+  text-align: center;
 }
 
 .loading {
@@ -564,10 +595,26 @@ onMounted(() => {
   
   .content {
     padding: 15px;
+    padding-top: 80px;
   }
   
   .page-title {
     font-size: 24px;
+  }
+  
+  .diary-count {
+    padding: 6px 12px;
+    gap: 6px;
+    
+    .count-label {
+      font-size: 12px;
+    }
+    
+    .count-number {
+      font-size: 16px;
+      padding: 1px 6px;
+      min-width: 20px;
+    }
   }
   
   .diary-item {
