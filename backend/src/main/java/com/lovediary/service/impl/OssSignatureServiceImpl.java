@@ -42,7 +42,7 @@ public class OssSignatureServiceImpl implements OssSignatureService {
             result.put("policy", policy);
             result.put("signature", signature);
             result.put("dir", getFileDir(fileType));
-            result.put("host", ossConfig.getUrlPrefix().replace("/", ""));
+            result.put("host", ossConfig.getUrlPrefix());
             result.put("expire", String.valueOf(expiration.getTime() / 1000));
             result.put("fileName", uniqueFileName);
             result.put("urlPrefix", ossConfig.getUrlPrefix());
