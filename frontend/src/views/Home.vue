@@ -58,7 +58,7 @@
         </div>
       </div>
 
-      <div class="media-section hover-lift">
+      <div class="media-section">
         <!-- 图片展示 -->
         <div v-if="currentDiary.images && currentDiary.images.length > 0" class="image-section">
           <div class="image-header">
@@ -906,12 +906,11 @@ onBeforeUnmount(() => {
       .image-wrapper {
         border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
+        background: transparent;
         
         &:hover {
           transform: scale(1.02);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
     
         .memory-image {
@@ -968,22 +967,21 @@ onBeforeUnmount(() => {
           cursor: pointer;
           border-radius: 20px;
           overflow: hidden;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
           transition: all 0.3s ease;
+          background: transparent;
           
           &:hover {
             transform: scale(1.02);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
           }
         }
         
-        .video-player {
+                 .video-player {
           border-radius: 20px;
           overflow: hidden;
-          background: #000;
           transition: all 0.3s ease;
           display: block;
           cursor: pointer;
+          background: transparent;
           
           &:hover {
             transform: scale(1.02);
