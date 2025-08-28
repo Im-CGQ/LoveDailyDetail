@@ -25,6 +25,9 @@ public class User {
     @Column(name = "display_name")
     private String displayName;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @Enumerated(EnumType.STRING)
     private Role role = Role.ADMIN;
 

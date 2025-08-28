@@ -25,6 +25,7 @@ CREATE TABLE users (
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     display_name VARCHAR(100),
+    avatar_url VARCHAR(500) NULL COMMENT '用户头像URL',
     role VARCHAR(10) DEFAULT 'ADMIN',
     partner_id BIGINT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

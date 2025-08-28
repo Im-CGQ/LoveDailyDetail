@@ -904,9 +904,9 @@ onBeforeUnmount(() => {
       gap: 15px;
       
       .image-wrapper {
-    border-radius: 20px;
-        overflow: visible;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
         
         &:hover {
@@ -914,16 +914,17 @@ onBeforeUnmount(() => {
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
     
-    .memory-image {
+        .memory-image {
           width: 100% !important;
           height: auto !important;
           max-height: none !important;
           display: block;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-      
-      &:hover {
-        transform: scale(1.02);
+          cursor: pointer;
+          transition: transform 0.3s ease;
+          border-radius: 20px;
+          
+          &:hover {
+            transform: scale(1.02);
           }
         }
       }

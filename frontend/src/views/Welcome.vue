@@ -145,12 +145,11 @@
 
                                                                                                                        <!-- 伴侣信息弹窗 -->
          <van-dialog v-model:show="showPartnerDialog" title="伴侣信息" :show-confirm-button="false" :close-on-click-overlay="true">
-           <div class="partner-dialog-content">
-             <div class="partner-detail">
-               <div class="partner-avatar-large" @click="confirmUnbindPartner" :class="{ 'unbind-loading': unbindLoading }">💑</div>
-               <h3>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</h3>
-               <p>用户名: {{ partnerInfo.partnerUsername }}</p>
-             </div>
+                       <div class="partner-dialog-content">
+              <div class="partner-detail">
+                <div class="partner-avatar-large" @click="confirmUnbindPartner" :class="{ 'unbind-loading': unbindLoading }">💑</div>
+                <h3>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</h3>
+              </div>
                                          <div class="partner-actions">
                  <van-button @click="goToHome" class="enter-space-btn">进入我们的空间</van-button>
                </div>
@@ -192,7 +191,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { checkLoginState, clearLoginState } from '@/utils/auth'
 import { getPartnerInfo, invitePartner, acceptInvitation, rejectInvitation, unbindPartner, cancelInvitation } from '@/api/partner'
@@ -311,27 +310,46 @@ const goToLogin = () => {
 
 
 
+// 防抖变量和缓存
+let loadPartnerInfoTimer = null
+let lastLoadTime = 0
+const CACHE_DURATION = 5000 // 5秒缓存
+
 // 获取伴侣信息
 const loadPartnerInfo = async () => {
   if (!isLoggedIn.value) return
   
-  try {
-    const response = await getPartnerInfo()
-    partnerInfo.value = response.data
-    
-    // 更新用户store中的伴侣信息
-    if (partnerInfo.value.hasPartner && partnerInfo.value.partnerId) {
-      userStore.updatePartnerRelationship(partnerInfo.value.partnerId)
-    } else {
-      // 如果没有伴侣，清除partnerId
-      userStore.updatePartnerRelationship(null)
-    }
-  } catch (error) {
-    // 获取后端返回的错误信息
-    const errorMessage = error.response?.data?.message || error.message || '获取伴侣信息失败'
-    console.error('获取伴侣信息失败:', errorMessage, error)
-    // 不显示toast，因为这是后台静默加载
+  // 检查缓存，避免频繁请求
+  const now = Date.now()
+  if (now - lastLoadTime < CACHE_DURATION) {
+    return
   }
+  
+  // 防抖处理，避免频繁调用
+  if (loadPartnerInfoTimer) {
+    clearTimeout(loadPartnerInfoTimer)
+  }
+  
+  loadPartnerInfoTimer = setTimeout(async () => {
+    try {
+      const response = await getPartnerInfo()
+      partnerInfo.value = response.data
+      lastLoadTime = Date.now() // 更新最后加载时间
+      
+      // 更新用户store中的伴侣信息
+      if (partnerInfo.value.hasPartner && partnerInfo.value.partnerId) {
+        userStore.updatePartnerRelationship(partnerInfo.value.partnerId)
+      } else {
+        // 如果没有伴侣，清除partnerId
+        userStore.updatePartnerRelationship(null)
+      }
+    } catch (error) {
+      // 获取后端返回的错误信息
+      const errorMessage = error.response?.data?.message || error.message || '获取伴侣信息失败'
+      console.error('获取伴侣信息失败:', errorMessage, error)
+      // 不显示toast，因为这是后台静默加载
+    }
+  }, 100) // 100ms防抖延迟
 }
 
 // 发送邀请
@@ -462,12 +480,22 @@ const handleCancelInvitation = async () => {
   }
 }
 
+// 监听登录状态变化
+watch(isLoggedIn, async (newValue, oldValue) => {
+  // 只有在从未登录变为已登录时才加载伴侣信息
+  if (newValue && !oldValue) {
+    await loadPartnerInfo()
+  }
+})
+
 // 生命周期
 onMounted(async () => {
   // 初始化用户状态
   await userStore.initUserState()
-  // 加载伴侣信息
-  await loadPartnerInfo()
+  // 只有在登录状态下才加载伴侣信息
+  if (isLoggedIn.value) {
+    await loadPartnerInfo()
+  }
 })
 
 // 退出登录

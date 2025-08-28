@@ -110,4 +110,13 @@ export const uploadVideo = async (file) => {
  */
 export const uploadMusic = async (file) => {
   return uploadToOss(file, 'music')
+}
+
+/**
+ * 上传头像
+ * @param {File} file 头像文件
+ * @returns {Promise<string>} 头像URL
+ */
+export const uploadAvatar = async (file) => {
+  return uploadToOss(file, 'avatar')
 } 

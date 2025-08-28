@@ -78,6 +78,8 @@ public class OssSignatureServiceImpl implements OssSignatureService {
                 return "video/";
             case "music":
                 return "music/";
+            case "avatar":
+                return "avatar/";
             default:
                 return "others/";
         }

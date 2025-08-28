@@ -32,11 +32,7 @@
             class="form-field"
           />
           
-          <div class="form-options">
-            <van-checkbox v-model="rememberMe" class="remember-checkbox">
-              记住我一个月
-            </van-checkbox>
-          </div>
+
           
           <div class="submit-btn">
             <van-button 
@@ -82,7 +78,6 @@ import { useUserStore } from '@/stores/user'
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
-const rememberMe = ref(true)
 
 const form = ref({
   username: '',
@@ -102,7 +97,7 @@ const onSubmit = async (values) => {
   
   try {
     const userStore = useUserStore()
-    const response = await userStore.userLogin(values.username, values.password, rememberMe.value)
+         const response = await userStore.userLogin(values.username, values.password, false)
     
     showToast({
       message: '登录成功',
@@ -203,46 +198,52 @@ onMounted(() => {
     margin-bottom: 20px;
     
     :deep(.van-cell) {
-      padding: 8px 0;
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    :deep(.van-field--focus .van-cell) {
+      border-color: #ff6b9d;
+      box-shadow: 0 4px 20px rgba(255, 107, 157, 0.2);
+      transform: translateY(-2px);
     }
     
     :deep(.van-field__label) {
-      color: #333;
-      font-weight: 500;
-      font-size: 16px;
-      margin-bottom: 8px;
-      display: block;
-      width: 100%;
-      text-align: left;
+      color: #555;
+      font-weight: 600;
+      font-size: 15px;
+      width: 70px;
+      flex-shrink: 0;
+      margin-right: 15px;
       
       &::after {
-        content: ':';
-        margin-left: 2px;
+        content: '';
       }
     }
     
     :deep(.van-field__control) {
       color: #333;
       font-size: 16px;
-      width: 100%;
+      flex: 1;
+      font-weight: 500;
+      
+      &::placeholder {
+        color: #bbb;
+        font-weight: 400;
+      }
     }
     
     :deep(.van-field__body) {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      align-items: center;
     }
   }
   
-  .form-options {
-    margin: 20px 0;
-    
-    .remember-checkbox {
-      :deep(.van-checkbox__label) {
-        color: #666;
-        font-size: 14px;
-      }
-    }
-  }
+
   
   .submit-btn {
     margin-top: 30px;

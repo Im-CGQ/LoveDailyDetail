@@ -149,6 +149,7 @@ public class AuthController {
             boolean success = userService.updateUserInfo(
                 username, 
                 request.getDisplayName(), 
+                request.getAvatarUrl(),
                 request.getPassword()
             );
             

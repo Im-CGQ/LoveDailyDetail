@@ -932,11 +932,12 @@ onUnmounted(() => {
           height: auto !important;
           max-height: none !important;
           display: block;
-       cursor: pointer;
-       transition: transform 0.3s ease;
-       
-       &:hover {
-         transform: scale(1.02);
+          cursor: pointer;
+          transition: transform 0.3s ease;
+          border-radius: 20px;
+          
+          &:hover {
+            transform: scale(1.02);
           }
         }
        }

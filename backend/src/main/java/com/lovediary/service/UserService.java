@@ -101,7 +101,7 @@ public class UserService {
     }
     
     @Transactional
-    public boolean updateUserInfo(String username, String displayName, String newPassword) {
+    public boolean updateUserInfo(String username, String displayName, String avatarUrl, String newPassword) {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (!userOpt.isPresent()) {
             return false;
@@ -109,6 +109,11 @@ public class UserService {
         
         User user = userOpt.get();
         user.setDisplayName(displayName);
+        
+        // 如果提供了头像URL，则更新头像
+        if (avatarUrl != null) {
+            user.setAvatarUrl(avatarUrl);
+        }
         
         // 如果提供了新密码，则更新密码
         if (newPassword != null && !newPassword.trim().isEmpty()) {

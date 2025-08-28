@@ -413,6 +413,8 @@ onMounted(() => {
   position: relative;
   z-index: 2;
   padding-bottom: 40px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
   .header {
@@ -460,6 +462,9 @@ onMounted(() => {
   }
 
 .diary-list {
+  max-width: 550px;
+  margin: 0 auto;
+  
   .diary-item {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 20px;
@@ -642,6 +647,9 @@ onMounted(() => {
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   margin-bottom: 20px;
+  max-width: 580px;
+  margin-left: auto;
+  margin-right: auto;
   
   .calendar-header {
     display: flex;
@@ -808,6 +816,8 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
+  max-width: 350px;
+  margin: 0 auto;
   
   .empty-icon {
     font-size: 80px;
@@ -928,6 +938,19 @@ onMounted(() => {
   .content {
     padding: 15px;
     padding-top: 90px;
+    max-width: none;
+  }
+  
+  .diary-list {
+    max-width: none;
+  }
+  
+  .calendar-view {
+    max-width: none;
+  }
+  
+  .empty-state {
+    max-width: none;
   }
   
 
