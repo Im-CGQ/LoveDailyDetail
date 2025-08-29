@@ -81,15 +81,23 @@ public class UserService {
         }
     }
 
-    public boolean registerUser(String username, String password, String displayName) {
+    public boolean registerUser(String username, String password, String displayName, String email) {
         if (userRepository.existsByUsername(username)) {
             return false;
+        }
+        
+        // 检查邮箱是否已存在
+        if (email != null && !email.trim().isEmpty()) {
+            if (userRepository.existsByEmail(email)) {
+                return false;
+            }
         }
         
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setDisplayName(displayName);
+        user.setEmail(email);
         user.setRole(User.Role.USER);
         
         userRepository.save(user);
@@ -98,6 +106,10 @@ public class UserService {
 
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
+    }
+    
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
     
     @Transactional

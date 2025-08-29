@@ -128,6 +128,18 @@ const routes = [
     meta: { title: '编辑个人信息', requiresAuth: true }
   },
   {
+    path: '/love-tree',
+    name: 'LoveTree',
+    component: () => import('@/views/LoveTree.vue'),
+    meta: { title: '樱花树', requiresAuth: false }
+  },
+  {
+    path: '/love-tree-demo',
+    name: 'LoveTreeDemo',
+    component: () => import('@/views/LoveTreeDemo.vue'),
+    meta: { title: '樱花树演示', requiresAuth: false }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/admin/AdminLayout.vue'),

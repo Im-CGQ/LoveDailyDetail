@@ -86,7 +86,8 @@ public class AuthController {
             boolean success = userService.registerUser(
                 request.getUsername(), 
                 request.getPassword(), 
-                request.getDisplayName()
+                request.getDisplayName(),
+                null  // 普通注册不包含邮箱
             );
             
             if (success) {
@@ -223,8 +224,13 @@ public class AuthController {
                 return ResponseEntity.status(409).body(ApiResponse.error("用户名已存在"));
             }
             
+            // 检查邮箱是否已存在
+            if (userService.existsByEmail(email)) {
+                return ResponseEntity.status(409).body(ApiResponse.error("邮箱已被注册"));
+            }
+            
             // 注册用户
-            boolean success = userService.registerUser(username, password, displayName != null ? displayName : username);
+            boolean success = userService.registerUser(username, password, displayName != null ? displayName : username, email);
             
             if (success) {
                 return ResponseEntity.ok(ApiResponse.success("注册成功，请登录"));

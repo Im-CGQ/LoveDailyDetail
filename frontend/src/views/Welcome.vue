@@ -94,6 +94,8 @@
           </div>
           
 
+          
+
                  </div>
        </div>
 
@@ -286,6 +288,8 @@ const goToMovies = () => {
     router.push('/login?mode=user')
   }
 }
+
+
 
 const goToHome = () => {
   if (checkLoginState() && partnerInfo.value.hasPartner) {
@@ -622,6 +626,17 @@ const handleLogout = async () => {
     font-size: 14px;
     opacity: 0.8;
   }
+  
+
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 .welcome-content {
@@ -700,6 +715,8 @@ const handleLogout = async () => {
     .title {
       font-size: 24px;
     }
+    
+
   }
   
 
