@@ -37,14 +37,15 @@ CREATE TABLE users (
 -- 创建系统配置表
 CREATE TABLE system_configs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    config_key VARCHAR(100) NOT NULL UNIQUE COMMENT '配置键',
+    config_key VARCHAR(100) NOT NULL COMMENT '配置键',
     config_value TEXT COMMENT '配置值',
     config_type VARCHAR(20) DEFAULT 'STRING' COMMENT '配置类型：STRING, NUMBER, BOOLEAN, JSON',
     description VARCHAR(255) COMMENT '配置描述',
     user_id BIGINT NULL COMMENT '用户ID，NULL表示全局配置',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_config_key_user (config_key, user_id)
 );
 
 -- 创建伴侣邀请表

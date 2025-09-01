@@ -8,6 +8,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -187,6 +188,45 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         }
         
         return configMap;
+    }
+
+    @Override
+    public String getLetterBackgroundMusicByUserId(Long userId) {
+        if (userId == null) {
+            return "";
+        }
+        
+        Optional<SystemConfig> configOpt = systemConfigRepository.findByConfigKeyAndUserId("letter_background_music", userId);
+        return configOpt.map(SystemConfig::getConfigValue).orElse("");
+    }
+
+    @Override
+    public void setLetterBackgroundMusicByUserId(Long userId, String musicUrl) {
+        if (userId == null) {
+            throw new IllegalArgumentException("用户ID不能为空");
+        }
+        
+        // 查找现有配置
+        Optional<SystemConfig> existingConfigOpt = systemConfigRepository.findByConfigKeyAndUserId("letter_background_music", userId);
+        
+        if (existingConfigOpt.isPresent()) {
+            // 更新现有配置
+            SystemConfig existingConfig = existingConfigOpt.get();
+            existingConfig.setConfigValue(musicUrl);
+            existingConfig.setUpdatedAt(LocalDateTime.now());
+            systemConfigRepository.save(existingConfig);
+        } else {
+            // 创建新配置
+            SystemConfig newConfig = new SystemConfig();
+            newConfig.setConfigKey("letter_background_music");
+            newConfig.setConfigValue(musicUrl);
+            newConfig.setConfigType("STRING");
+            newConfig.setDescription("看信背景音乐URL");
+            newConfig.setUserId(userId);
+            newConfig.setCreatedAt(LocalDateTime.now());
+            newConfig.setUpdatedAt(LocalDateTime.now());
+            systemConfigRepository.save(newConfig);
+        }
     }
 
     private SystemConfigDTO convertToDTO(SystemConfig entity) {

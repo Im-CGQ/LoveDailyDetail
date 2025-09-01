@@ -193,4 +193,37 @@ public class SystemConfigController {
             return ResponseEntity.ok(ApiResponse.error("获取配置映射失败: " + e.getMessage()));
         }
     }
+
+    /**
+     * 根据用户ID获取看信背景音乐（公开接口，无需登录）
+     */
+    @GetMapping("/public/letter-background-music/{userId}")
+    public ResponseEntity<ApiResponse<String>> getLetterBackgroundMusicByUserIdPublic(@PathVariable Long userId) {
+        try {
+            String musicUrl = systemConfigService.getLetterBackgroundMusicByUserId(userId);
+            return ResponseEntity.ok(ApiResponse.success(musicUrl != null ? musicUrl : ""));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取看信背景音乐失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 设置看信背景音乐配置
+     */
+    @PostMapping("/letter-background-music")
+    public ResponseEntity<ApiResponse<String>> setLetterBackgroundMusic(@RequestBody Map<String, Object> request) {
+        try {
+            Long userId = Long.valueOf(request.get("userId").toString());
+            String musicUrl = (String) request.get("musicUrl");
+            
+            if (userId == null) {
+                return ResponseEntity.ok(ApiResponse.error("用户ID不能为空"));
+            }
+            
+            systemConfigService.setLetterBackgroundMusicByUserId(userId, musicUrl);
+            return ResponseEntity.ok(ApiResponse.success("设置成功"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("设置看信背景音乐配置失败: " + e.getMessage()));
+        }
+    }
 }
