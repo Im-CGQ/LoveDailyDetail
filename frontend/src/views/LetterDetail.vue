@@ -71,6 +71,43 @@
       </div>
     </div>
 
+    <!-- 全局悬浮音乐播放器 -->
+    <div class="global-floating-music-player" v-if="letterBackgroundMusic?.url">
+      <div 
+        class="music-icon" 
+        :class="{ 'playing': isMusicPlaying, 'show-controls': showMusicControls }"
+        @click="toggleMusicControls"
+      >
+        <span class="music-emoji">🎵</span>
+      </div>
+      
+      <!-- 音乐控制面板 -->
+      <div class="music-controls" v-show="showMusicControls">
+        <div class="music-info">
+          <span class="music-title">{{ getShortFileName(letterBackgroundMusic.fileName) || '背景音乐' }}</span>
+          <div class="music-progress">
+            <div class="progress-bar" @click="seekMusic" ref="progressBar">
+              <div class="progress-fill" :style="{ width: musicProgress + '%' }"></div>
+              <div 
+                class="progress-handle" 
+                :style="{ left: musicProgress + '%' }"
+                @mousedown="startDrag"
+                @touchstart="startDrag"
+              ></div>
+            </div>
+            <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+          </div>
+        </div>
+        <div class="music-buttons">
+          <button class="control-btn" @click="toggleMusic">
+            <span v-if="isMusicPlaying">⏸️</span>
+            <span v-else>▶️</span>
+          </button>
+          <button class="control-btn" @click="stopMusic">⏹️</button>
+        </div>
+      </div>
+    </div>
+
     <div v-else class="loading-state">
       <van-loading type="spinner" size="24px">加载中...</van-loading>
     </div>
@@ -78,13 +115,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getLetterById, markAsRead } from '@/api/letter'
 import { createLetterShareLink } from '@/api/share'
 import { copyToClipboard } from '@/utils/clipboard'
 import { getShareExpireMinutes } from '@/api/systemConfig'
 import { showToast } from 'vant'
+import { getLetterBackgroundMusicByUserIdPublic } from '@/api/music'
 
 const route = useRoute()
 const router = useRouter()
@@ -95,6 +133,18 @@ const countdownTimer = ref(null)
 const displayText = ref('')
 const typingComplete = ref(false)
 let typingTimer = null
+const letterBackgroundMusic = ref(null)
+
+// 音乐播放器相关
+const audioElement = ref(null)
+const isMusicPlaying = ref(false)
+const showMusicControls = ref(false)
+const currentTime = ref(0)
+const duration = ref(0)
+const musicProgress = ref(0)
+const progressBar = ref(null)
+const progressTimer = ref(null)
+const isDragging = ref(false)
 
 const fetchLetterDetail = async () => {
   try {
@@ -111,6 +161,20 @@ const fetchLetterDetail = async () => {
     }
     // 获取信件详情后启动倒计时
     startCountdown()
+    // 加载看信背景音乐配置（根据发送者ID获取）
+    if (letter.value && letter.value.senderId) {
+      const musicUrl = await getLetterBackgroundMusicByUserIdPublic(letter.value.senderId)
+      if (musicUrl) {
+        letterBackgroundMusic.value = {
+          url: musicUrl,
+          fileName: musicUrl.split('/').pop()
+        }
+        // 初始化音乐播放器
+        nextTick(() => {
+          initAudio()
+        })
+      }
+    }
   } catch (error) {
     showToast('获取信件详情失败')
     console.error('获取信件详情失败:', error)
@@ -221,6 +285,15 @@ const showFullText = () => {
     if (typingTimer) {
       clearTimeout(typingTimer)
     }
+    
+    // 点击信件内容时播放音乐
+    if (letterBackgroundMusic.value?.url && audioElement.value) {
+      if (audioElement.value.paused) {
+        audioElement.value.play().catch(error => {
+          console.warn('播放音乐失败:', error)
+        })
+      }
+    }
   }
 }
 
@@ -293,6 +366,146 @@ const showShareDialog = (shareUrl) => {
   }, 3000)
 }
 
+// 音乐播放器相关方法
+const toggleMusicControls = () => {
+  showMusicControls.value = !showMusicControls.value
+}
+
+const toggleMusic = () => {
+  if (!audioElement.value) return
+  
+  if (isMusicPlaying.value) {
+    audioElement.value.pause()
+  } else {
+    audioElement.value.play()
+  }
+}
+
+const stopMusic = () => {
+  if (!audioElement.value) return
+  audioElement.value.pause()
+  audioElement.value.currentTime = 0
+  isMusicPlaying.value = false
+}
+
+const initAudio = () => {
+  if (!letterBackgroundMusic.value?.url) return
+  
+  audioElement.value = new Audio(letterBackgroundMusic.value.url)
+  audioElement.value.loop = true
+  
+  audioElement.value.addEventListener('loadedmetadata', () => {
+    duration.value = audioElement.value.duration
+    // 自动播放音乐
+    audioElement.value.play().catch(error => {
+      console.warn('自动播放失败:', error)
+    })
+  })
+  
+  audioElement.value.addEventListener('play', () => {
+    isMusicPlaying.value = true
+    startProgressTimer()
+  })
+  
+  audioElement.value.addEventListener('pause', () => {
+    isMusicPlaying.value = false
+    stopProgressTimer()
+  })
+  
+  audioElement.value.addEventListener('ended', () => {
+    isMusicPlaying.value = false
+    stopProgressTimer()
+  })
+  
+  audioElement.value.addEventListener('error', () => {
+    showToast('音乐加载失败')
+  })
+}
+
+const startProgressTimer = () => {
+  if (progressTimer.value) {
+    clearInterval(progressTimer.value)
+  }
+  
+  progressTimer.value = setInterval(() => {
+    if (audioElement.value && !audioElement.value.paused && !isDragging.value) {
+      currentTime.value = audioElement.value.currentTime
+      musicProgress.value = (audioElement.value.currentTime / audioElement.value.duration) * 100
+    }
+  }, 100)
+}
+
+const stopProgressTimer = () => {
+  if (progressTimer.value) {
+    clearInterval(progressTimer.value)
+    progressTimer.value = null
+  }
+}
+
+const formatTime = (time) => {
+  if (!time || isNaN(time)) return '0:00'
+  const minutes = Math.floor(time / 60)
+  const seconds = Math.floor(time % 60)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+const seekMusic = (event) => {
+  if (!audioElement.value || !progressBar.value) return
+  
+  const rect = progressBar.value.getBoundingClientRect()
+  const clickX = event.clientX - rect.left
+  const progressBarWidth = rect.width
+  const percentage = (clickX / progressBarWidth) * 100
+  
+  const clampedPercentage = Math.max(0, Math.min(100, percentage))
+  const newTime = (clampedPercentage / 100) * audioElement.value.duration
+  
+  audioElement.value.currentTime = newTime
+  currentTime.value = newTime
+  musicProgress.value = clampedPercentage
+}
+
+const startDrag = (event) => {
+  if (!audioElement.value) return
+  isDragging.value = true
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', stopDrag)
+  document.addEventListener('touchmove', onDrag)
+  document.addEventListener('touchend', stopDrag)
+}
+
+const onDrag = (event) => {
+  if (!isDragging.value || !audioElement.value || !progressBar.value) return
+  
+  event.preventDefault()
+  const rect = progressBar.value.getBoundingClientRect()
+  const clientX = event.clientX || (event.touches && event.touches[0].clientX)
+  const clickX = clientX - rect.left
+  const progressBarWidth = rect.width
+  const percentage = (clickX / progressBarWidth) * 100
+  
+  const clampedPercentage = Math.max(0, Math.min(100, percentage))
+  const newTime = (clampedPercentage / 100) * audioElement.value.duration
+  
+  audioElement.value.currentTime = newTime
+  currentTime.value = newTime
+  musicProgress.value = clampedPercentage
+}
+
+const stopDrag = () => {
+  isDragging.value = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+  document.removeEventListener('touchmove', onDrag)
+  document.removeEventListener('touchend', stopDrag)
+}
+
+const getShortFileName = (fileName) => {
+  if (!fileName) return ''
+  if (fileName.length <= 15) return fileName
+  return '...' + fileName.slice(-15)
+}
+
 onMounted(() => {
   fetchLetterDetail()
 })
@@ -302,6 +515,12 @@ onUnmounted(() => {
   if (typingTimer) {
     clearTimeout(typingTimer) // 清理打字机定时器
   }
+  // 清理音乐播放器
+  if (audioElement.value) {
+    audioElement.value.pause()
+    audioElement.value = null
+  }
+  stopProgressTimer()
 })
 </script>
 
@@ -670,6 +889,218 @@ onUnmounted(() => {
   }
 }
 
+/* 全局悬浮音乐播放器样式 */
+.global-floating-music-player {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  transform: translateY(-50%);
+  z-index: 1000;
+  
+      .music-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, rgba(255, 107, 157, 0.7) 0%, rgba(255, 143, 171, 0.7) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 107, 157, 0.3);
+      transition: all 0.3s ease;
+      position: relative;
+      user-select: none;
+    
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(255, 107, 157, 0.4);
+      background: linear-gradient(135deg, rgba(255, 143, 171, 0.8) 0%, rgba(255, 107, 157, 0.8) 100%);
+    }
+    
+    &.playing {
+      animation: rotate 3s linear infinite;
+    }
+    
+    &.show-controls {
+      transform: scale(1.05);
+      box-shadow: 0 6px 25px rgba(255, 107, 157, 0.5);
+    }
+    
+          .music-emoji {
+        font-size: 20px;
+        color: white;
+        user-select: none;
+        pointer-events: none;
+      }
+  }
+  
+  .music-controls {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    width: 280px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: slideIn 0.3s ease;
+    z-index: 1000;
+    transform-origin: top right;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    
+          .music-info {
+        margin-bottom: 12px;
+        
+        .music-title {
+          display: block;
+          font-size: 14px;
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 8px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          user-select: none;
+        }
+      
+              .music-progress {
+          .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+            overflow: visible;
+            margin-bottom: 6px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            
+            &:hover {
+              .progress-fill {
+                background: linear-gradient(90deg, #ff8fab 0%, #ff6b9d 100%);
+              }
+              
+              .progress-handle {
+                transform: translate(-50%, -50%) scale(1.1);
+              }
+            }
+            
+            .progress-fill {
+              height: 100%;
+              background: linear-gradient(90deg, #ff6b9d 0%, #ff8fab 100%);
+              border-radius: 2px;
+              transition: width 0.1s ease;
+            }
+            
+            .progress-handle {
+              position: absolute;
+              top: 50%;
+              transform: translate(-50%, -50%);
+              width: 12px;
+              height: 12px;
+              background: #ff6b9d;
+              border-radius: 50%;
+              border: 2px solid white;
+              box-shadow: 0 2px 8px rgba(255, 107, 157, 0.4);
+              cursor: grab;
+              transition: all 0.2s ease;
+              z-index: 10;
+              user-select: none;
+              
+              &:hover {
+                transform: translate(-50%, -50%) scale(1.2);
+                box-shadow: 0 4px 12px rgba(255, 107, 157, 0.6);
+              }
+              
+              &:active {
+                cursor: grabbing;
+                transform: translate(-50%, -50%) scale(1.1);
+              }
+            }
+          }
+          
+          .time-display {
+            font-size: 12px;
+            color: #666;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            user-select: none;
+          }
+        }
+    }
+    
+        .music-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+      
+      .control-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        user-select: none;
+        
+        &:hover {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+          background: linear-gradient(135deg, #ff8fab 0%, #ff6b9d 100%);
+        }
+        
+        &:active {
+          transform: scale(0.95);
+          box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
+        }
+      }
+    }
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 @media (max-width: 768px) {
   .back-button {
     top: 15px;
@@ -691,7 +1122,7 @@ onUnmounted(() => {
   }
   
   .letter-title h1 {
-    font-size: 26px;
+    font-size: 22px;
   }
   
   .letter-body .content {
@@ -711,6 +1142,25 @@ onUnmounted(() => {
       .name {
         font-size: 18px;
       }
+    }
+  }
+  
+  // 移动端音乐播放器样式
+  .global-floating-music-player {
+    right: 15px;
+    
+    .music-icon {
+      width: 35px;
+      height: 35px;
+      
+      .music-emoji {
+        font-size: 18px;
+      }
+    }
+    
+    .music-controls {
+      width: 240px;
+      right: -20px;
     }
   }
 }

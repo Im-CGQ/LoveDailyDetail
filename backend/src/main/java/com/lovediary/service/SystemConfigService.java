@@ -19,4 +19,14 @@ public interface SystemConfigService {
     Integer getShareExpireMinutes();
     void setShareExpireMinutes(Integer minutes);
     Map<String, Object> getConfigMap(Long userId);
+
+    /**
+     * 根据用户ID获取看信背景音乐
+     */
+    String getLetterBackgroundMusicByUserId(Long userId);
+
+    /**
+     * 根据用户ID设置看信背景音乐
+     */
+    void setLetterBackgroundMusicByUserId(Long userId, String musicUrl);
 }

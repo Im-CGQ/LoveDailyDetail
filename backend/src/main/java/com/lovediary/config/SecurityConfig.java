@@ -30,6 +30,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .cors().and()
             .csrf().disable()
             .authorizeRequests()
+                // 允许公开访问的接口
+                .antMatchers("/system-config/public/**").permitAll()
+                .antMatchers("/error").permitAll()
                 .antMatchers("/auth/**").permitAll()
                 .antMatchers("/diaries/**").permitAll()
                 .antMatchers("/chat-records/**").permitAll()
