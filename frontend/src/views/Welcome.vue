@@ -12,145 +12,162 @@
         <h1 class="title text-gradient-romantic">美好回忆</h1>
       </div>
 
-      <!-- 伴侣状态显示区域 -->
-      <div v-if="isLoggedIn" class="partner-status-section">
-        <!-- 没有伴侣时显示邀请图标 -->
-        <div v-if="!partnerInfo.hasPartner && !partnerInfo.hasPendingInvitation && !partnerInfo.hasSentInvitation" 
-             class="partner-invite-section" @click="showInviteDialog = true">
-          <div class="partner-invite-icon">💝</div>
-          <div class="partner-invite-text">
-            <h3>邀请伴侣</h3>
-            <p>与心爱的人一起记录美好时光</p>
+      <!-- 伴侣状态和倒计时区域 - 紧凑布局 -->
+      <div v-if="isLoggedIn" class="status-countdown-section">
+        <!-- 伴侣状态 - 更紧凑 -->
+        <div class="partner-status-compact">
+          <!-- 没有伴侣时显示邀请图标 -->
+          <div v-if="!partnerInfo.hasPartner && !partnerInfo.hasPendingInvitation && !partnerInfo.hasSentInvitation" 
+               class="partner-invite-compact" @click="showInviteDialog = true">
+            <div class="partner-invite-icon">💝</div>
+            <div class="partner-invite-text">
+              <h3>邀请伴侣</h3>
+              <p>与心爱的人一起记录美好时光</p>
+            </div>
+          </div>
+
+          <!-- 有伴侣时显示伴侣信息，点击显示伴侣信息弹窗 -->
+          <div v-else-if="partnerInfo.hasPartner" 
+               class="partner-info-compact" @click="showPartnerDialog = true">
+            <div class="partner-avatar">💑</div>
+            <div class="partner-info">
+              <h3>我的伴侣</h3>
+              <p>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</p>
+            </div>
+          </div>
+
+          <!-- 有邀请时显示邀请信息 -->
+          <div v-else-if="partnerInfo.hasPendingInvitation" 
+               class="partner-invitation-compact" @click="showInvitationDialog = true">
+            <div class="invitation-icon">💌</div>
+            <div class="invitation-info">
+              <h3>收到邀请</h3>
+              <p>{{ partnerInfo.pendingInvitation.fromDisplayName || partnerInfo.pendingInvitation.fromUsername }} 邀请您成为伴侣</p>
+            </div>
+          </div>
+          
+          <!-- 已发送邀请时显示邀请信息 -->
+          <div v-else-if="partnerInfo.hasSentInvitation" 
+               class="partner-sent-invitation-compact" @click="showSentInvitationDialog = true">
+            <div class="invitation-icon">📤</div>
+            <div class="invitation-info">
+              <h3>已发送邀请</h3>
+              <p>等待 {{ partnerInfo.sentInvitation.toDisplayName || partnerInfo.sentInvitation.toUsername }} 回复</p>
+            </div>
           </div>
         </div>
 
-        <!-- 有伴侣时显示伴侣信息，点击显示伴侣信息弹窗 -->
-        <div v-else-if="partnerInfo.hasPartner" 
-             class="partner-info-section" @click="showPartnerDialog = true">
-          <div class="partner-avatar">💑</div>
-          <div class="partner-info">
-            <h3>我的伴侣</h3>
-            <p>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</p>
+        <!-- 倒计时显示区域 - 更紧凑 -->
+        <div v-if="loveCountdown || anniversaryCountdown || nextMeetingCountdown" class="countdown-section-compact">
+          <!-- 在一起时间倒计时 -->
+          <div v-if="loveCountdown" class="countdown-card-compact glass-effect shimmer">
+            <div class="countdown-header-compact">
+              <span class="countdown-emoji">💕</span>
+              <h3 class="countdown-title-compact">在一起</h3>
+            </div>
+            <div class="countdown-time-compact">{{ loveCountdown }}</div>
           </div>
-        </div>
-
-        <!-- 有邀请时显示邀请信息 -->
-        <div v-else-if="partnerInfo.hasPendingInvitation" 
-             class="partner-invitation-section" @click="showInvitationDialog = true">
-          <div class="invitation-icon">💌</div>
-          <div class="invitation-info">
-            <h3>收到邀请</h3>
-            <p>{{ partnerInfo.pendingInvitation.fromDisplayName || partnerInfo.pendingInvitation.fromUsername }} 邀请您成为伴侣</p>
+          
+          <!-- 纪念日倒计时 -->
+          <div v-if="anniversaryCountdown" class="countdown-card-compact glass-effect shimmer" @click="goToAnniversaryList">
+            <div class="countdown-header-compact">
+              <span class="countdown-emoji">💕</span>
+              <h3 class="countdown-title-compact">最近纪念日</h3>
+            </div>
+            <div class="countdown-time-compact">{{ anniversaryCountdown }}</div>
+            <div class="countdown-description-compact">{{ nextAnniversaryName }}</div>
+            <div class="click-hint-compact">点击查看全部</div>
           </div>
-        </div>
-        
-        <!-- 已发送邀请时显示邀请信息 -->
-        <div v-else-if="partnerInfo.hasSentInvitation" 
-             class="partner-sent-invitation-section" @click="showSentInvitationDialog = true">
-          <div class="invitation-icon">📤</div>
-          <div class="invitation-info">
-            <h3>已发送邀请</h3>
-            <p>等待 {{ partnerInfo.sentInvitation.toDisplayName || partnerInfo.sentInvitation.toUsername }} 回复</p>
+          
+          <!-- 下次见面倒计时 -->
+          <div v-if="nextMeetingCountdown" class="countdown-card-compact glass-effect shimmer">
+            <div class="countdown-header-compact">
+              <span class="countdown-emoji">💕</span>
+              <h3 class="countdown-title-compact">下次见面</h3>
+            </div>
+            <div class="countdown-time-compact">{{ nextMeetingCountdown }}</div>
           </div>
-        </div>
-      </div>
-
-      <!-- 倒计时显示区域 -->
-      <div v-if="isLoggedIn && (loveCountdown || anniversaryCountdown || nextMeetingCountdown)" class="countdown-section">
-        <!-- 在一起时间倒计时 -->
-        <div v-if="loveCountdown" class="countdown-card glass-effect shimmer">
-          <div class="countdown-header">
-            <span class="countdown-emoji">💕</span>
-            <h3 class="countdown-title">在一起</h3>
-          </div>
-          <div class="countdown-time">{{ loveCountdown }}</div>
-        </div>
-        
-        <!-- 纪念日倒计时 -->
-        <div v-if="anniversaryCountdown" class="countdown-card glass-effect shimmer" @click="goToAnniversaryList">
-          <div class="countdown-header">
-            <span class="countdown-emoji">💕</span>
-            <h3 class="countdown-title">最近纪念日</h3>
-          </div>
-          <div class="countdown-time">{{ anniversaryCountdown }}</div>
-          <div class="countdown-description">{{ nextAnniversaryName }}</div>
-          <div class="click-hint">点击查看全部纪念日</div>
-        </div>
-        
-        <!-- 下次见面倒计时 -->
-        <div v-if="nextMeetingCountdown" class="countdown-card glass-effect shimmer">
-          <div class="countdown-header">
-            <span class="countdown-emoji">💕</span>
-            <h3 class="countdown-title">下次见面</h3>
-          </div>
-          <div class="countdown-time">{{ nextMeetingCountdown }}</div>
         </div>
       </div>
 
       <div class="welcome-content">
-        <div class="feature-grid">
-          <div class="feature-item" @click="goToCalendar">
-            <span class="feature-icon">📅</span>
-            <div class="feature-text">
+        <div class="feature-grid-compact">
+          <div class="feature-item-compact" @click="goToCalendar">
+            <span class="feature-icon-compact">📅</span>
+            <div class="feature-text-compact">
               <h3>时光日历</h3>
               <p>记录每一个重要的日子</p>
             </div>
           </div>
           
-          <div class="feature-item" @click="goToLetterBox">
-            <span class="feature-icon">📮</span>
-            <div class="feature-text">
+          <div class="feature-item-compact" @click="goToLetterBox">
+            <span class="feature-icon-compact">📮</span>
+            <div class="feature-text-compact">
               <h3>我的信箱</h3>
               <p>查看收到的信件</p>
             </div>
           </div>
           
-          <div class="feature-item" @click="goToChatRecord">
-            <span class="feature-icon">💬</span>
-            <div class="feature-text">
+          <div class="feature-item-compact" @click="goToChatRecord">
+            <span class="feature-icon-compact">💬</span>
+            <div class="feature-text-compact">
               <h3>聊天记录</h3>
               <p>记录聊天时光</p>
             </div>
           </div>
           
-          <div class="feature-item" @click="goToMovies">
-            <span class="feature-icon">🎬</span>
-            <div class="feature-text">
+          <div class="feature-item-compact" @click="goToMovies">
+            <span class="feature-icon-compact">🎬</span>
+            <div class="feature-text-compact">
               <h3>一起看电影</h3>
               <p>与伴侣同步观看电影</p>
             </div>
           </div>
+          
+          <!-- 管理功能 -->
+          <div v-if="isLoggedIn" class="feature-item-compact admin-feature-compact" @click="goToEditProfile">
+            <span class="feature-icon-compact">👤</span>
+            <div class="feature-text-compact">
+              <h3>个人信息</h3>
+              <p>编辑个人资料</p>
+            </div>
+          </div>
+          
+          <div v-if="isLoggedIn" class="feature-item-compact admin-feature-compact" @click="goToAdmin">
+            <span class="feature-icon-compact">🎛️</span>
+            <div class="feature-text-compact">
+              <h3>后台管理</h3>
+              <p>系统配置管理</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 未登录时显示登录按钮 -->
+        <div v-if="!isLoggedIn" class="login-section-compact">
+          <van-button 
+            type="primary" 
+            size="large" 
+            @click="goToLogin"
+            class="btn-primary ripple"
+          >
+            <span class="btn-icon">💕</span>
+            开始使用
+          </van-button>
+        </div>
+        
+        <!-- 退出登录按钮 -->
+        <div v-if="isLoggedIn" class="logout-section-compact">
+          <van-button 
+            size="small" 
+            type="default" 
+            @click="handleLogout" 
+            class="logout-btn-compact"
+          >
+            <span class="btn-icon">🚶</span>
+            退出登录
+          </van-button>
         </div>
       </div>
-
-       <!-- 未登录时显示登录按钮 -->
-       <div v-if="!isLoggedIn" class="login-section">
-         <van-button 
-           type="primary" 
-           size="large" 
-           @click="goToLogin"
-           class="btn-primary ripple"
-         >
-           <span class="btn-icon">💕</span>
-           开始使用
-         </van-button>
-       </div>
-
-             <!-- 管理按钮组 -->
-         <div v-if="isLoggedIn" class="admin-actions">
-           <van-button size="small" type="default" @click="goToEditProfile" class="profile-btn" title="编辑个人信息">
-             <span class="btn-icon">👤</span>
-             <span class="btn-text">个人信息</span>
-           </van-button>
-           <van-button size="small" type="default" @click="goToAdmin" class="admin-btn" title="后台管理">
-             <span class="btn-icon">🎛️</span>
-             <span class="btn-text">管理</span>
-           </van-button>
-           <van-button size="small" type="default" @click="handleLogout" class="logout-btn" title="退出登录">
-             <span class="btn-icon">🚶</span>
-             <span class="btn-text">退出</span>
-           </van-button>
-         </div>
     </div>
 
     <!-- 邀请伴侣弹窗 -->
@@ -773,16 +790,16 @@ const handleLogout = async () => {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 20px;
+  padding: 15px;
   position: relative;
 }
 
 .welcome-container {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 25px;
+  border-radius: 18px;
+  padding: 18px;
   width: 100%;
-  max-width: 480px;
+  max-width: 460px;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -854,87 +871,87 @@ const handleLogout = async () => {
 
 .welcome-header {
   text-align: center;
-  margin-bottom: 15px;
-  margin-top: 10px;
+  margin-bottom: 12px;
+  margin-top: 5px;
   
   .logo {
-    font-size: 40px;
-    margin-bottom: 10px;
+    font-size: 36px;
+    margin-bottom: 8px;
     display: block;
   }
   
   .title {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: bold;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   
   .subtitle {
     color: #666;
-    font-size: 14px;
+    font-size: 13px;
     opacity: 0.8;
   }
 }
 
 // 倒计时区域样式
-.countdown-section {
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.countdown-section-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
 }
 
-.countdown-card {
-  padding: 15px;
-  border-radius: 12px;
+.countdown-card-compact {
+  padding: 10px;
+  border-radius: 8px;
   text-align: center;
   transition: all 0.3s ease;
   cursor: pointer;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 107, 157, 0.15);
+    box-shadow: 0 4px 15px rgba(255, 107, 157, 0.15);
   }
 }
 
-.countdown-header {
+.countdown-header-compact {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .countdown-emoji {
-  font-size: 20px;
+  font-size: 16px;
 }
 
-.countdown-title {
+.countdown-title-compact {
   color: #333;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   margin: 0;
 }
 
-.countdown-time {
-  font-size: 18px;
+.countdown-time-compact {
+  font-size: 15px;
   font-weight: bold;
   color: #ff6b9d;
-  margin-bottom: 5px;
-  line-height: 1.4;
+  margin-bottom: 3px;
+  line-height: 1.2;
 }
 
-.countdown-description {
-  font-size: 14px;
+.countdown-description-compact {
+  font-size: 12px;
   color: #666;
   font-style: italic;
+  margin-bottom: 3px;
 }
 
-.click-hint {
-  font-size: 12px;
+.click-hint-compact {
+  font-size: 11px;
   color: #ff6b9d;
   text-align: center;
-  margin-top: 8px;
+  margin-top: 4px;
   font-style: italic;
   opacity: 0.8;
 }
@@ -952,10 +969,75 @@ const handleLogout = async () => {
   margin-bottom: 20px;
 }
 
-.feature-grid {
+.feature-grid-compact {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.feature-item-compact {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 107, 157, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  &:hover {
+    background: rgba(255, 107, 157, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.15);
+  }
+}
+
+.feature-icon-compact {
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 107, 157, 0.1);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.feature-text-compact {
+  flex: 1;
+  
+  h3 {
+    color: #333;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    line-height: 1.2;
+  }
+  
+  p {
+    color: #666;
+    font-size: 11px;
+    margin: 0;
+    line-height: 1.3;
+  }
+}
+
+.admin-feature-compact {
+  background: rgba(79, 172, 254, 0.05) !important;
+  border: 1px solid rgba(79, 172, 254, 0.1) !important;
+  
+  &:hover {
+    background: rgba(79, 172, 254, 0.1) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.2);
+  }
+  
+  .feature-icon-compact {
+    background: rgba(79, 172, 254, 0.1) !important;
+  }
 }
 
 .feature-item {
@@ -1012,100 +1094,163 @@ const handleLogout = async () => {
 
 @media (max-width: 768px) {
   .welcome-container {
-    padding: 25px 20px;
-    margin: 10px;
+    padding: 18px 15px;
+    margin: 8px;
+    max-width: calc(100vw - 16px);
   }
   
   .welcome-header {
+    margin-bottom: 10px;
+    margin-top: 3px;
+    
     .logo {
-      font-size: 40px;
+      font-size: 34px;
+      margin-bottom: 6px;
     }
     
     .title {
-      font-size: 24px;
+      font-size: 20px;
+      margin-bottom: 4px;
     }
-  }
-  
-  .feature-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  
-  .countdown-section {
-    gap: 10px;
-  }
-  
-  .countdown-card {
-    padding: 12px;
-  }
-  
-  .countdown-time {
-    font-size: 16px;
-  }
-  
-  .admin-actions {
-    gap: 10px;
-    margin-top: 0px;
     
-    .van-button {
-      height: 36px;
-      padding: 0 12px;
-      
-      .btn-text {
-        font-size: 12px;
-      }
-      
-      .btn-icon {
-        font-size: 14px;
-      }
+    .subtitle {
+      font-size: 12px;
     }
   }
   
-  .login-section .van-button {
-    height: 48px;
-    font-size: 16px;
-    padding: 0 25px;
+  .status-countdown-section {
+    margin-bottom: 8px;
+    gap: 6px;
+  }
+  
+  .partner-status-compact {
+    padding: 6px;
+  }
+  
+  .partner-invite-compact,
+  .partner-info-compact,
+  .partner-invitation-compact,
+  .partner-sent-invitation-compact {
+    padding: 5px;
+    gap: 6px;
+  }
+  
+  .partner-invite-icon,
+  .partner-avatar,
+  .invitation-icon {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .partner-invite-text h3,
+  .partner-info h3,
+  .invitation-info h3 {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  
+  .partner-invite-text p,
+  .partner-info p,
+  .invitation-info p {
+    font-size: 11px;
+  }
+  
+  .countdown-section-compact {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 6px;
+  }
+  
+  .countdown-card-compact {
+    padding: 8px;
+  }
+  
+  .countdown-title-compact {
+    font-size: 12px;
+  }
+  
+  .countdown-time-compact {
+    font-size: 14px;
+  }
+  
+  .feature-grid-compact {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  
+  .feature-item-compact {
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .feature-icon-compact {
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+  }
+  
+  .feature-text-compact h3 {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+  
+  .feature-text-compact p {
+    font-size: 10px;
+  }
+  
+  .login-section-compact {
+    margin: 6px 0;
+  }
+  
+  .logout-section-compact {
+    margin-top: 6px;
   }
 }
 
-// 伴侣状态区域样式
-.partner-status-section {
-  margin-bottom: 15px;
-  padding: 12px;
+// 伴侣状态和倒计时区域样式
+.status-countdown-section {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.partner-status-compact {
+  padding: 8px;
   background: rgba(255, 107, 157, 0.05);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 107, 157, 0.1);
 }
 
-.partner-invite-section,
-.partner-info-section,
-.partner-invitation-section,
-.partner-sent-invitation-section {
+.partner-invite-compact,
+.partner-info-compact,
+.partner-invitation-compact,
+.partner-sent-invitation-compact {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
-  padding: 10px;
-  border-radius: 10px;
+  padding: 6px;
+  border-radius: 6px;
   transition: all 0.3s ease;
   
   &:hover {
     background: rgba(255, 107, 157, 0.1);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 }
 
 .partner-invite-icon,
 .partner-avatar,
 .invitation-icon {
-  font-size: 28px;
-  width: 45px;
-  height: 45px;
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 107, 157, 0.1);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .partner-invite-text,
@@ -1115,39 +1260,40 @@ const handleLogout = async () => {
   
   h3 {
     color: #333;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     margin: 0 0 3px 0;
   }
   
   p {
     color: #666;
-    font-size: 13px;
+    font-size: 12px;
     margin: 0;
+    line-height: 1.3;
   }
   
   .click-hint {
     color: #667eea;
-    font-size: 12px;
+    font-size: 11px;
     font-style: italic;
     margin-top: 3px;
   }
 }
 
 // 登录区域样式
-.login-section {
+.login-section-compact {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  margin: 8px 0;
   
   .van-button {
-    height: 50px;
-    font-size: 18px;
+    height: 44px;
+    font-size: 16px;
     font-weight: 600;
-    padding: 0 30px;
+    padding: 0 24px;
     
     .btn-icon {
-      margin-right: 8px;
+      margin-right: 6px;
     }
   }
 }
@@ -1251,5 +1397,36 @@ const handleLogout = async () => {
 .invitation-time {
   color: #999 !important;
   font-size: 12px !important;
+}
+
+.login-section-compact {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.logout-section-compact {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.logout-btn-compact {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 11px;
+  border-radius: 16px;
+  background: rgba(255, 107, 157, 0.1);
+  color: #ff6b9d;
+  border: 1px solid rgba(255, 107, 157, 0.2);
+  
+  &:hover {
+    background: rgba(255, 107, 157, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .btn-icon {
+    margin-right: 4px;
+  }
 }
 </style> 
