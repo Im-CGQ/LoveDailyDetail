@@ -121,13 +121,23 @@
           >
             <span class="anniversary-date">{{ date.date }}</span>
             <span class="anniversary-name">{{ date.name }}</span>
-            <van-button 
-              size="mini" 
-              type="danger" 
-              @click="removeAnniversary(index)"
-            >
-              删除
-            </van-button>
+            <div class="anniversary-actions">
+              <van-button 
+                size="mini" 
+                type="primary" 
+                @click="editAnniversary(index)"
+                style="margin-right: 8px;"
+              >
+                编辑
+              </van-button>
+              <van-button 
+                size="mini" 
+                type="danger" 
+                @click="removeAnniversary(index)"
+              >
+                删除
+              </van-button>
+            </div>
           </div>
         </div>
       </van-cell-group>
@@ -188,6 +198,31 @@
       </div>
     </van-dialog>
 
+    <!-- 纪念日编辑对话框 -->
+    <van-dialog
+      v-model:show="showEditAnniversaryDialog"
+      title="编辑纪念日"
+      show-cancel-button
+      @confirm="updateAnniversary"
+    >
+      <div class="anniversary-form">
+        <van-field
+          v-model="editingAnniversaryName"
+          label="纪念日名称"
+          placeholder="请输入纪念日名称"
+          :border="false"
+        />
+        <van-field
+          v-model="editingAnniversaryDate"
+          label="纪念日日期"
+          placeholder="请选择日期"
+          readonly
+          @click="showEditAnniversaryDatePicker = true"
+          :border="false"
+        />
+      </div>
+    </van-dialog>
+
     <!-- 新纪念日日期选择器 -->
     <van-popup v-model:show="showNewAnniversaryDatePicker" position="bottom">
       <van-date-picker
@@ -197,6 +232,18 @@
         :max-date="maxDate"
         @confirm="onNewAnniversaryDateConfirm"
         @cancel="showNewAnniversaryDatePicker = false"
+      />
+    </van-popup>
+
+    <!-- 编辑纪念日日期选择器 -->
+    <van-popup v-model:show="showEditAnniversaryDatePicker" position="bottom">
+      <van-date-picker
+        v-model="selectedEditAnniversaryDate"
+        title="选择纪念日日期"
+        :min-date="minDate"
+        :max-date="maxDate"
+        @confirm="onEditAnniversaryDateConfirm"
+        @cancel="showEditAnniversaryDatePicker = false"
       />
     </van-popup>
     
@@ -231,6 +278,18 @@ const showNewAnniversaryDatePicker = ref(false)
 const newAnniversaryName = ref('')
 const newAnniversaryDate = ref('')
 const selectedNewAnniversaryDate = ref([
+  new Date().getFullYear().toString(),
+  (new Date().getMonth() + 1).toString().padStart(2, '0'),
+  new Date().getDate().toString().padStart(2, '0')
+])
+
+// 编辑纪念日相关
+const showEditAnniversaryDialog = ref(false)
+const showEditAnniversaryDatePicker = ref(false)
+const editingAnniversaryIndex = ref(-1)
+const editingAnniversaryName = ref('')
+const editingAnniversaryDate = ref('')
+const selectedEditAnniversaryDate = ref([
   new Date().getFullYear().toString(),
   (new Date().getMonth() + 1).toString().padStart(2, '0'),
   new Date().getDate().toString().padStart(2, '0')
@@ -662,6 +721,29 @@ const addAnniversary = async () => {
   }
 }
 
+// 重置添加纪念日表单
+const resetAddAnniversaryForm = () => {
+  newAnniversaryName.value = ''
+  newAnniversaryDate.value = ''
+  selectedNewAnniversaryDate.value = [
+    new Date().getFullYear().toString(),
+    (new Date().getMonth() + 1).toString().padStart(2, '0'),
+    new Date().getDate().toString().padStart(2, '0')
+  ]
+}
+
+// 重置编辑纪念日表单
+const resetEditAnniversaryForm = () => {
+  editingAnniversaryIndex.value = -1
+  editingAnniversaryName.value = ''
+  editingAnniversaryDate.value = ''
+  selectedEditAnniversaryDate.value = [
+    new Date().getFullYear().toString(),
+    (new Date().getMonth() + 1).toString().padStart(2, '0'),
+    new Date().getDate().toString().padStart(2, '0')
+  ]
+}
+
 const removeAnniversary = async (index) => {
   try {
     await showConfirmDialog({
@@ -679,6 +761,97 @@ const removeAnniversary = async (index) => {
     if (error !== 'cancel') {
       showToast(error.message || '删除失败')
     }
+  }
+}
+
+// 编辑纪念日
+const editAnniversary = (index) => {
+  const anniversary = anniversaryDates.value[index]
+  editingAnniversaryIndex.value = index
+  editingAnniversaryName.value = anniversary.name
+  editingAnniversaryDate.value = anniversary.date
+  
+  // 将日期字符串转换为数组格式
+  const parts = anniversary.date.split('-')
+  if (parts.length === 3) {
+    selectedEditAnniversaryDate.value = [
+      parts[0],
+      parts[1].padStart(2, '0'),
+      parts[2].padStart(2, '0')
+    ]
+  }
+  
+  showEditAnniversaryDialog.value = true
+}
+
+// 编辑纪念日日期确认
+const onEditAnniversaryDateConfirm = (value) => {
+  try {
+    // 处理日期选择器返回的数组格式 ['2021', '02', '01']
+    let selectedDate
+    if (Array.isArray(value)) {
+      const [year, month, day] = value
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (value && value.selectedValues && Array.isArray(value.selectedValues)) {
+      const [year, month, day] = value.selectedValues
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (value instanceof Date) {
+      selectedDate = value
+    } else {
+      selectedDate = new Date(value)
+    }
+    
+    // 验证日期是否有效
+    if (isNaN(selectedDate.getTime())) {
+      throw new Error('无效的日期值')
+    }
+    
+    const dateStr = formatDate(selectedDate)
+    editingAnniversaryDate.value = dateStr
+    showEditAnniversaryDatePicker.value = false
+  } catch (error) {
+    console.error('日期处理错误:', error)
+    showToast(error.message || '日期设置失败')
+  }
+}
+
+// 更新纪念日
+const updateAnniversary = async () => {
+  try {
+    if (!editingAnniversaryName.value.trim()) {
+      showToast('请输入纪念日名称')
+      return
+    }
+    
+    if (!editingAnniversaryDate.value) {
+      showToast('请选择纪念日日期')
+      return
+    }
+    
+    const index = editingAnniversaryIndex.value
+    if (index === -1) {
+      showToast('编辑索引无效')
+      return
+    }
+    
+    // 更新纪念日数据
+    anniversaryDates.value[index] = {
+      name: editingAnniversaryName.value.trim(),
+      date: editingAnniversaryDate.value
+    }
+    
+    // 保存到后端
+    await setAnniversaryDates(JSON.stringify(anniversaryDates.value))
+    
+    // 清空编辑状态
+    editingAnniversaryIndex.value = -1
+    editingAnniversaryName.value = ''
+    editingAnniversaryDate.value = ''
+    showEditAnniversaryDialog.value = false
+    
+    showToast('纪念日更新成功')
+  } catch (error) {
+    showToast(error.message || '更新失败')
   }
 }
 
@@ -929,6 +1102,12 @@ onUnmounted(() => {
   color: #646566;
   margin: 0 8px;
   flex: 1;
+}
+
+.anniversary-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .anniversary-form {
