@@ -9,7 +9,7 @@ echo "开始初始化数据库..."
 DB_CONTAINER_NAME="mysql-latest"
 DB_NAME="love_diary"
 DB_USER="root"
-DB_PASSWORD="123456"
+DB_PASSWORD="cgqcgq250"
 DB_PORT="3306"
 
 # 检查MySQL容器是否运行
