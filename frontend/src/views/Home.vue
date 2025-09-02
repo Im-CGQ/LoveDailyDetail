@@ -1634,6 +1634,28 @@ onBeforeUnmount(() => {
   }
 }
 
+/* 纪念日倒计时卡片特殊样式 */
+.countdown-card[onclick*="goToAnniversaryList"] {
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  
+  &:hover::after {
+    opacity: 1;
+  }
+}
+
 @keyframes slideInUp {
   from {
     transform: translateY(30px);
@@ -1692,6 +1714,11 @@ onBeforeUnmount(() => {
   .countdown-description {
     font-size: 15px;
   }
+  
+  .click-hint {
+    font-size: 11px;
+    margin-top: 6px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1719,6 +1746,11 @@ onBeforeUnmount(() => {
   
   .countdown-description {
     font-size: 14px;
+  }
+  
+  .click-hint {
+    font-size: 10px;
+    margin-top: 5px;
   }
 }
 </style> 
