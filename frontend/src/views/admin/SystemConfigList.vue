@@ -2,9 +2,50 @@
   <div class="system-config-list">
     
     <div class="content">
-      <!-- 在一起时间 -->
-      <van-cell-group title="在一起时间">
+      <!-- 时间配置 -->
+      <van-cell-group title="时间配置">
+        <!-- 在一起时间 -->
         <van-cell title="在一起的时间" :value="togetherDate" @click="showDatePicker = true" />
+        
+        <!-- 下次见面日 -->
+        <van-cell title="下次见面日期" :value="nextMeetingDate" @click="showNextMeetingDatePicker = true" />
+        
+        <!-- 纪念日管理 -->
+        <van-cell title="纪念日列表" @click="showAnniversaryDialog = true" />
+        
+        <!-- 纪念日列表展示 -->
+        <div class="anniversary-list" v-if="anniversaryDates.length > 0">
+          <div 
+            v-for="(date, index) in anniversaryDates" 
+            :key="index" 
+            class="anniversary-item"
+          >
+            <div class="anniversary-info">
+              <span class="anniversary-date">{{ date.date }}</span>
+              <span class="anniversary-name">{{ date.name }}</span>
+            </div>
+            <div class="anniversary-actions">
+              <van-button 
+                size="mini" 
+                type="primary" 
+                @click="editAnniversary(index)"
+                style="margin-right: 8px;"
+              >
+                编辑
+              </van-button>
+              <van-button 
+                size="mini" 
+                type="danger" 
+                @click="removeAnniversary(index)"
+              >
+                删除
+              </van-button>
+            </div>
+          </div>
+        </div>
+        <div class="anniversary-empty" v-else>
+          <van-empty description="暂无纪念日，点击上方按钮添加" />
+        </div>
       </van-cell-group>
       
       <!-- 背景音乐 -->
@@ -21,24 +62,16 @@
         <van-cell title="背景音乐">
           <template #right-icon>
             <div class="music-upload-section">
-                             <van-uploader
-                 v-model="letterBackgroundMusic"
-                 :max-count="1"
-                 :after-read="onMusicUpload"
-                 :before-delete="onMusicDelete"
-                 accept="audio/*"
-                 :show-upload="letterBackgroundMusic.length === 0"
-               >
-                 <van-button size="small" type="primary">上传音乐</van-button>
-               </van-uploader>
-               <van-button 
-                 size="small" 
-                 type="default" 
-                 style="margin-left: 8px;"
-                 @click="debugUserInfo"
-               >
-                 调试用户信息
-               </van-button>
+              <van-uploader
+                v-model="letterBackgroundMusic"
+                :max-count="1"
+                :after-read="onMusicUpload"
+                :before-delete="onMusicDelete"
+                accept="audio/*"
+                :show-upload="letterBackgroundMusic.length === 0"
+              >
+                <van-button size="small" type="primary">上传音乐</van-button>
+              </van-uploader>
             </div>
           </template>
         </van-cell>
@@ -109,44 +142,6 @@
           </template>
         </van-cell>
       </van-cell-group>
-
-      <!-- 纪念日管理 -->
-      <van-cell-group title="纪念日管理">
-        <van-cell title="纪念日列表" @click="showAnniversaryDialog = true" />
-        <div class="anniversary-list" v-if="anniversaryDates.length > 0">
-          <div 
-            v-for="(date, index) in anniversaryDates" 
-            :key="index" 
-            class="anniversary-item"
-          >
-            <span class="anniversary-date">{{ date.date }}</span>
-            <span class="anniversary-name">{{ date.name }}</span>
-            <div class="anniversary-actions">
-              <van-button 
-                size="mini" 
-                type="primary" 
-                @click="editAnniversary(index)"
-                style="margin-right: 8px;"
-              >
-                编辑
-              </van-button>
-              <van-button 
-                size="mini" 
-                type="danger" 
-                @click="removeAnniversary(index)"
-              >
-                删除
-              </van-button>
-            </div>
-          </div>
-        </div>
-      </van-cell-group>
-
-      <!-- 下次见面日 -->
-      <van-cell-group title="下次见面日">
-        <van-cell title="下次见面日期" :value="nextMeetingDate" @click="showNextMeetingDatePicker = true" />
-      </van-cell-group>
-
     </div>
     
     <!-- 日期选择器 -->
@@ -179,6 +174,7 @@
       title="添加纪念日"
       show-cancel-button
       @confirm="addAnniversary"
+      @cancel="resetAddAnniversaryForm"
     >
       <div class="anniversary-form">
         <van-field
@@ -204,6 +200,7 @@
       title="编辑纪念日"
       show-cancel-button
       @confirm="updateAnniversary"
+      @cancel="resetEditAnniversaryForm"
     >
       <div class="anniversary-form">
         <van-field
@@ -246,8 +243,6 @@
         @cancel="showEditAnniversaryDatePicker = false"
       />
     </van-popup>
-    
-
   </div>
 </template>
 
@@ -888,28 +883,6 @@ const onNextMeetingDateConfirm = async (value) => {
   }
 }
 
-// 调试用户信息
-const debugUserInfo = () => {
-  console.log('=== 调试用户信息 ===')
-  console.log('Store状态:', {
-    isLoggedIn: userStore.isLoggedIn,
-    userId: userStore.userId,
-    userInfo: userStore.userInfo,
-    token: userStore.token
-  })
-  
-  console.log('localStorage中的用户相关数据:')
-  const userKeys = ['auth_token', 'auth_user_id', 'auth_display_name', 'auth_partner_id', 'auth_email']
-  userKeys.forEach(key => {
-    const value = localStorage.getItem(key)
-    if (value) {
-      console.log(`${key}:`, value)
-    }
-  })
-  
-  showToast(`用户ID: ${userStore.userId || '未获取到'}`)
-}
-
 // 生命周期
 onMounted(() => {
   loadConfigs()
@@ -931,19 +904,38 @@ onUnmounted(() => {
 
 .content {
   padding: 16px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 
 
 :deep(.van-cell-group__title) {
-  font-size: 14px;
-  color: #969799;
-  margin-bottom: 8px;
+  font-size: 16px;
+  color: #323233;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-left: 4px;
 }
 
 :deep(.van-cell) {
   border-radius: 8px;
   margin-bottom: 8px;
+  background-color: #ffffff;
+  
+  &:hover {
+    background-color: #f7f8fa;
+  }
+}
+
+:deep(.van-cell__title) {
+  font-weight: 500;
+  color: #323233;
+}
+
+:deep(.van-cell__value) {
+  color: #646566;
+  font-weight: 500;
 }
 
 .music-upload-section {
@@ -985,7 +977,7 @@ onUnmounted(() => {
 .music-player-container {
   margin: 8px 0;
   padding: 8px;
-  background-color: #f7f8fa;
+  background-color: #fff;
   border-radius: 8px;
 }
 
@@ -1078,30 +1070,44 @@ onUnmounted(() => {
 
 .anniversary-list {
   margin-top: 8px;
+  padding: 0 16px;
+  padding-bottom: 8px;
 }
 
 .anniversary-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  margin: 4px 0;
-  background-color: #f7f8fa;
-  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  background-color: #ffffff;
+  border-radius: 8px;
   border: 1px solid #e4e7ed;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+}
+
+.anniversary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
 }
 
 .anniversary-date {
-  font-size: 14px;
+  font-size: 16px;
   color: #323233;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .anniversary-name {
   font-size: 14px;
   color: #646566;
-  margin: 0 8px;
-  flex: 1;
 }
 
 .anniversary-actions {
@@ -1116,5 +1122,30 @@ onUnmounted(() => {
 
 .anniversary-form .van-field {
   margin-bottom: 12px;
+}
+
+// 响应式优化
+@media (max-width: 768px) {
+  .content {
+    padding: 12px;
+  }
+  
+  .anniversary-item {
+    padding: 10px 12px;
+    margin: 6px 0;
+  }
+  
+  .anniversary-date {
+    font-size: 15px;
+  }
+  
+  .anniversary-name {
+    font-size: 13px;
+  }
+  
+  :deep(.van-cell-group__title) {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
 }
 </style>
