@@ -1162,7 +1162,7 @@ const handleLogout = async () => {
   }
   
   .countdown-card-compact {
-    padding: 8px;
+    padding: 4px;
   }
   
   .countdown-title-compact {
