@@ -60,13 +60,14 @@
         <!-- 倒计时显示 -->
         <div class="countdown-section" v-if="anniversaryCountdown || nextMeetingCountdown">
           <!-- 纪念日倒计时 -->
-          <div class="countdown-card glass-effect shimmer" v-if="anniversaryCountdown">
+          <div class="countdown-card glass-effect shimmer" v-if="anniversaryCountdown" @click="goToAnniversaryList">
             <div class="countdown-header">
               <span class="countdown-emoji">💕</span>
               <h3 class="countdown-title">最近纪念日</h3>
             </div>
             <div class="countdown-time">{{ anniversaryCountdown }}</div>
             <div class="countdown-description">{{ nextAnniversaryName }}</div>
+            <div class="click-hint">点击查看全部纪念日</div>
           </div>
           
           <!-- 下次见面倒计时 -->
@@ -409,6 +410,10 @@ const formatDate = (date) => {
 
 const goToCalendar = () => {
   router.push('/calendar')
+}
+
+const goToAnniversaryList = () => {
+  router.push('/anniversary-list')
 }
 
 const goToCreateDiary = () => {
@@ -1560,6 +1565,13 @@ onBeforeUnmount(() => {
   border-radius: 20px;
   width: 100%;
   animation: slideInUp 0.8s ease-out;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.15);
+  }
 }
 
 .countdown-header {
@@ -1604,6 +1616,22 @@ onBeforeUnmount(() => {
   word-wrap: break-word;
   opacity: 0.9;
   font-style: italic;
+}
+
+.click-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    opacity: 1;
+    color: rgba(255, 255, 255, 1);
+  }
 }
 
 @keyframes slideInUp {
