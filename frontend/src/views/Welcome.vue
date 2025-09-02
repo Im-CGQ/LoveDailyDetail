@@ -12,51 +12,83 @@
         <h1 class="title text-gradient-romantic">美好回忆</h1>
       </div>
 
-             <!-- 伴侣状态显示区域 -->
-       <div v-if="isLoggedIn" class="partner-status-section">
-                  <!-- 没有伴侣时显示邀请图标 -->
-         <div v-if="!partnerInfo.hasPartner && !partnerInfo.hasPendingInvitation && !partnerInfo.hasSentInvitation" 
-              class="partner-invite-section" @click="showInviteDialog = true">
-           <div class="partner-invite-icon">💝</div>
-           <div class="partner-invite-text">
-             <h3>邀请伴侣</h3>
-             <p>与心爱的人一起记录美好时光</p>
-           </div>
-         </div>
+      <!-- 伴侣状态显示区域 -->
+      <div v-if="isLoggedIn" class="partner-status-section">
+        <!-- 没有伴侣时显示邀请图标 -->
+        <div v-if="!partnerInfo.hasPartner && !partnerInfo.hasPendingInvitation && !partnerInfo.hasSentInvitation" 
+             class="partner-invite-section" @click="showInviteDialog = true">
+          <div class="partner-invite-icon">💝</div>
+          <div class="partner-invite-text">
+            <h3>邀请伴侣</h3>
+            <p>与心爱的人一起记录美好时光</p>
+          </div>
+        </div>
 
-                             <!-- 有伴侣时显示伴侣信息，点击显示伴侣信息弹窗 -->
-           <div v-else-if="partnerInfo.hasPartner" 
-                class="partner-info-section" @click="showPartnerDialog = true">
-             <div class="partner-avatar">💑</div>
-             <div class="partner-info">
-               <h3>我的伴侣</h3>
-               <p>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</p>
-             </div>
-           </div>
+        <!-- 有伴侣时显示伴侣信息，点击显示伴侣信息弹窗 -->
+        <div v-else-if="partnerInfo.hasPartner" 
+             class="partner-info-section" @click="showPartnerDialog = true">
+          <div class="partner-avatar">💑</div>
+          <div class="partner-info">
+            <h3>我的伴侣</h3>
+            <p>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</p>
+          </div>
+        </div>
 
-                 <!-- 有邀请时显示邀请信息 -->
-         <div v-else-if="partnerInfo.hasPendingInvitation" 
-              class="partner-invitation-section" @click="showInvitationDialog = true">
-           <div class="invitation-icon">💌</div>
-           <div class="invitation-info">
-             <h3>收到邀请</h3>
-             <p>{{ partnerInfo.pendingInvitation.fromDisplayName || partnerInfo.pendingInvitation.fromUsername }} 邀请您成为伴侣</p>
-           </div>
-         </div>
-         
-         <!-- 已发送邀请时显示邀请信息 -->
-         <div v-else-if="partnerInfo.hasSentInvitation" 
-              class="partner-sent-invitation-section" @click="showSentInvitationDialog = true">
-           <div class="invitation-icon">📤</div>
-           <div class="invitation-info">
-             <h3>已发送邀请</h3>
-             <p>等待 {{ partnerInfo.sentInvitation.toDisplayName || partnerInfo.sentInvitation.toUsername }} 回复</p>
-           </div>
-         </div>
+        <!-- 有邀请时显示邀请信息 -->
+        <div v-else-if="partnerInfo.hasPendingInvitation" 
+             class="partner-invitation-section" @click="showInvitationDialog = true">
+          <div class="invitation-icon">💌</div>
+          <div class="invitation-info">
+            <h3>收到邀请</h3>
+            <p>{{ partnerInfo.pendingInvitation.fromDisplayName || partnerInfo.pendingInvitation.fromUsername }} 邀请您成为伴侣</p>
+          </div>
+        </div>
+        
+        <!-- 已发送邀请时显示邀请信息 -->
+        <div v-else-if="partnerInfo.hasSentInvitation" 
+             class="partner-sent-invitation-section" @click="showSentInvitationDialog = true">
+          <div class="invitation-icon">📤</div>
+          <div class="invitation-info">
+            <h3>已发送邀请</h3>
+            <p>等待 {{ partnerInfo.sentInvitation.toDisplayName || partnerInfo.sentInvitation.toUsername }} 回复</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 倒计时显示区域 -->
+      <div v-if="isLoggedIn && (loveCountdown || anniversaryCountdown || nextMeetingCountdown)" class="countdown-section">
+        <!-- 在一起时间倒计时 -->
+        <div v-if="loveCountdown" class="countdown-card glass-effect shimmer">
+          <div class="countdown-header">
+            <span class="countdown-emoji">💕</span>
+            <h3 class="countdown-title">在一起</h3>
+          </div>
+          <div class="countdown-time">{{ loveCountdown }}</div>
+        </div>
+        
+        <!-- 纪念日倒计时 -->
+        <div v-if="anniversaryCountdown" class="countdown-card glass-effect shimmer" @click="goToAnniversaryList">
+          <div class="countdown-header">
+            <span class="countdown-emoji">💕</span>
+            <h3 class="countdown-title">最近纪念日</h3>
+          </div>
+          <div class="countdown-time">{{ anniversaryCountdown }}</div>
+          <div class="countdown-description">{{ nextAnniversaryName }}</div>
+          <div class="click-hint">点击查看全部纪念日</div>
+        </div>
+        
+        <!-- 下次见面倒计时 -->
+        <div v-if="nextMeetingCountdown" class="countdown-card glass-effect shimmer">
+          <div class="countdown-header">
+            <span class="countdown-emoji">💕</span>
+            <h3 class="countdown-title">下次见面</h3>
+          </div>
+          <div class="countdown-time">{{ nextMeetingCountdown }}</div>
+        </div>
       </div>
 
       <div class="welcome-content">
-        <div class="feature-list">
+        <div class="feature-grid">
           <div class="feature-item" @click="goToCalendar">
             <span class="feature-icon">📅</span>
             <div class="feature-text">
@@ -65,8 +97,6 @@
             </div>
           </div>
           
-
-          
           <div class="feature-item" @click="goToLetterBox">
             <span class="feature-icon">📮</span>
             <div class="feature-text">
@@ -74,8 +104,6 @@
               <p>查看收到的信件</p>
             </div>
           </div>
-          
-
           
           <div class="feature-item" @click="goToChatRecord">
             <span class="feature-icon">💬</span>
@@ -92,12 +120,8 @@
               <p>与伴侣同步观看电影</p>
             </div>
           </div>
-          
-
-          
-
-                 </div>
-       </div>
+        </div>
+      </div>
 
        <!-- 未登录时显示登录按钮 -->
        <div v-if="!isLoggedIn" class="login-section">
@@ -193,12 +217,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { checkLoginState, clearLoginState } from '@/utils/auth'
 import { getPartnerInfo, invitePartner, acceptInvitation, rejectInvitation, unbindPartner, cancelInvitation } from '@/api/partner'
+import { getAnniversaryDates, getNextMeetingDate, getTogetherDate } from '@/api/systemConfig'
 import { showToast, showDialog } from 'vant'
 import { useUserStore } from '@/stores/user'
+import dayjs from 'dayjs'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -213,6 +239,15 @@ const partnerInfo = ref({
   pendingInvitation: null
 })
 
+// 倒计时相关数据
+const loveCountdown = ref('')
+const anniversaryCountdown = ref('')
+const nextMeetingCountdown = ref('')
+const nextAnniversaryName = ref('')
+const anniversaryDates = ref([])
+const nextMeetingDate = ref('')
+const togetherDate = ref('2025-05-30 14:30:00') // 在一起的时间，从后台配置读取
+
 const showInviteDialog = ref(false)
 const showPartnerDialog = ref(false)
 const showInvitationDialog = ref(false)
@@ -226,6 +261,198 @@ const cancelLoading = ref(false)
 
 // 计算属性
 const isLoggedIn = computed(() => checkLoginState())
+
+// 倒计时相关方法
+const calculateLoveCountdown = () => {
+  if (!togetherDate.value) {
+    console.log('没有在一起时间，跳过计算')
+    return
+  }
+  
+  const now = dayjs()
+  const startDate = dayjs(togetherDate.value)
+  const diff = now.diff(startDate, 'second')
+  
+  const days = Math.floor(diff / (24 * 60 * 60))
+  const hours = Math.floor((diff % (24 * 60 * 60)) / (60 * 60))
+  const minutes = Math.floor((diff % (60 * 60)) / 60)
+  const seconds = diff % 60
+  
+  if (days > 0) {
+    loveCountdown.value = `${days}天${hours}时${minutes}分${seconds}秒`
+  } else if (hours > 0) {
+    loveCountdown.value = `${hours}时${minutes}分${seconds}秒`
+  } else if (minutes > 0) {
+    loveCountdown.value = `${minutes}分${seconds}秒`
+  } else {
+    loveCountdown.value = `${seconds}秒`
+  }
+  
+  console.log('在一起倒计时计算完成:', loveCountdown.value)
+}
+
+const calculateAnniversaryCountdown = () => {
+  if (!anniversaryDates.value || anniversaryDates.value.length === 0) {
+    anniversaryCountdown.value = ''
+    nextAnniversaryName.value = ''
+    return
+  }
+  
+  const now = dayjs()
+  let nextAnniversary = null
+  let minTime = Infinity
+  
+  // 找到最近的纪念日
+  anniversaryDates.value.forEach(anniversary => {
+    const anniversaryDate = dayjs(anniversary.date)
+    
+    // 计算到今年纪念日的时间
+    let targetDate = anniversaryDate.year(now.year())
+    if (targetDate.isBefore(now)) {
+      targetDate = anniversaryDate.year(now.year() + 1)
+    }
+    
+    const diff = targetDate.diff(now)
+    if (diff < minTime) {
+      minTime = diff
+      nextAnniversary = anniversary
+    }
+  })
+  
+  if (nextAnniversary && minTime !== Infinity) {
+    // 保存最近纪念日的名称
+    nextAnniversaryName.value = nextAnniversary.name
+    
+    if (minTime <= 0) {
+      anniversaryCountdown.value = '就是今天！🎉'
+    } else {
+      const days = Math.floor(minTime / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((minTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((minTime % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((minTime % (1000 * 60)) / 1000)
+      
+      if (days > 0) {
+        anniversaryCountdown.value = `${days}天${hours}时${minutes}分${seconds}秒`
+      } else if (hours > 0) {
+        anniversaryCountdown.value = `${hours}时${minutes}分${seconds}秒`
+      } else if (minutes > 0) {
+        anniversaryCountdown.value = `${minutes}分${seconds}秒`
+      } else {
+        anniversaryCountdown.value = `${seconds}秒`
+      }
+    }
+  }
+}
+
+const calculateNextMeetingCountdown = () => {
+  if (!nextMeetingDate.value) {
+    nextMeetingCountdown.value = ''
+    return
+  }
+  
+  const now = dayjs()
+  const meetingDate = dayjs(nextMeetingDate.value)
+  
+  if (meetingDate.isBefore(now)) {
+    nextMeetingCountdown.value = '已过期'
+    return
+  }
+  
+  const diff = meetingDate.diff(now)
+  
+  if (diff <= 0) {
+    nextMeetingCountdown.value = '就是今天！💕'
+  } else {
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+    
+    if (days > 0) {
+      nextMeetingCountdown.value = `${days}天${hours}时${minutes}分${seconds}秒`
+    } else if (hours > 0) {
+      nextMeetingCountdown.value = `${hours}时${minutes}分${seconds}秒`
+    } else if (minutes > 0) {
+      nextMeetingCountdown.value = `${minutes}分${seconds}秒`
+    } else {
+      nextMeetingCountdown.value = `${seconds}秒`
+    }
+  }
+}
+
+// 启动倒计时定时器
+let countdownTimer = null
+const startCountdownTimer = () => {
+  // 立即计算一次
+  calculateLoveCountdown()
+  calculateAnniversaryCountdown()
+  calculateNextMeetingCountdown()
+  
+  // 每秒更新一次
+  countdownTimer = setInterval(() => {
+    calculateLoveCountdown()
+    calculateAnniversaryCountdown()
+    calculateNextMeetingCountdown()
+  }, 1000)
+}
+
+// 停止倒计时定时器
+const stopCountdownTimer = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+// 加载倒计时配置
+const loadCountdownConfigs = async () => {
+  if (!isLoggedIn.value) return
+  
+  try {
+    // 加载在一起时间配置
+    try {
+      const togetherDateConfig = await getTogetherDate()
+      if (togetherDateConfig) {
+        // 如果后台返回的是日期格式，转换为完整的日期时间格式
+        if (togetherDateConfig.includes('-') && !togetherDateConfig.includes(':')) {
+          togetherDate.value = togetherDateConfig + ' 00:00:00'
+        } else {
+          togetherDate.value = togetherDateConfig
+        }
+      }
+    } catch (error) {
+      console.warn('加载在一起时间配置失败，使用默认值:', error)
+      // 保持默认值不变
+    }
+    
+    // 加载纪念日列表
+    try {
+      const anniversaryDatesValue = await getAnniversaryDates()
+      try {
+        anniversaryDates.value = JSON.parse(anniversaryDatesValue)
+      } catch (e) {
+        anniversaryDates.value = []
+      }
+    } catch (error) {
+      console.warn('加载纪念日配置失败:', error)
+      anniversaryDates.value = []
+    }
+    
+    // 加载下次见面日期
+    try {
+      const nextMeetingDateValue = await getNextMeetingDate()
+      nextMeetingDate.value = nextMeetingDateValue
+    } catch (error) {
+      console.warn('加载下次见面日期配置失败:', error)
+      nextMeetingDate.value = ''
+    }
+    
+    // 启动倒计时
+    startCountdownTimer()
+  } catch (error) {
+    console.error('加载倒计时配置失败:', error)
+  }
+}
 
 // 方法
 
@@ -288,6 +515,20 @@ const goToMovies = () => {
     router.push('/login?mode=user')
   }
 }
+
+const goToAnniversaryList = () => {
+  if (checkLoginState()) {
+    // 已登录，直接跳转到纪念日列表页面
+    router.push('/anniversary-list')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login?mode=user')
+  }
+}
+
+
+
+
 
 
 
@@ -489,6 +730,7 @@ watch(isLoggedIn, async (newValue, oldValue) => {
   // 只有在从未登录变为已登录时才加载伴侣信息
   if (newValue && !oldValue) {
     await loadPartnerInfo()
+    await loadCountdownConfigs()
   }
 })
 
@@ -500,6 +742,12 @@ onMounted(async () => {
   if (isLoggedIn.value) {
     await loadPartnerInfo()
   }
+  // 加载倒计时配置
+  await loadCountdownConfigs()
+})
+
+onUnmounted(() => {
+  stopCountdownTimer()
 })
 
 // 退出登录
@@ -626,8 +874,69 @@ const handleLogout = async () => {
     font-size: 14px;
     opacity: 0.8;
   }
-  
+}
 
+// 倒计时区域样式
+.countdown-section {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.countdown-card {
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 157, 0.15);
+  }
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.countdown-emoji {
+  font-size: 20px;
+}
+
+.countdown-title {
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.countdown-time {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff6b9d;
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+.countdown-description {
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+}
+
+.click-hint {
+  font-size: 12px;
+  color: #ff6b9d;
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
+  opacity: 0.8;
 }
 
 @keyframes float {
@@ -643,9 +952,9 @@ const handleLogout = async () => {
   margin-bottom: 20px;
 }
 
-.feature-list {
-  display: flex;
-  flex-direction: column;
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
@@ -715,36 +1024,49 @@ const handleLogout = async () => {
     .title {
       font-size: 24px;
     }
-    
-
   }
   
-
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
   
-           .admin-actions {
-     gap: 10px;
-     margin-top: 0px;
-     
-     .van-button {
-       height: 36px;
-       padding: 0 12px;
-       
-       .btn-text {
-         font-size: 12px;
-       }
-       
-       .btn-icon {
-         font-size: 14px;
-       }
-     }
-   }
-   
-   .login-section .van-button {
-     height: 48px;
-     font-size: 16px;
-     padding: 0 25px;
-   }
- }
+  .countdown-section {
+    gap: 10px;
+  }
+  
+  .countdown-card {
+    padding: 12px;
+  }
+  
+  .countdown-time {
+    font-size: 16px;
+  }
+  
+  .admin-actions {
+    gap: 10px;
+    margin-top: 0px;
+    
+    .van-button {
+      height: 36px;
+      padding: 0 12px;
+      
+      .btn-text {
+        font-size: 12px;
+      }
+      
+      .btn-icon {
+        font-size: 14px;
+      }
+    }
+  }
+  
+  .login-section .van-button {
+    height: 48px;
+    font-size: 16px;
+    padding: 0 25px;
+  }
+}
 
 // 伴侣状态区域样式
 .partner-status-section {

@@ -182,6 +182,60 @@ public class SystemConfigController {
     }
 
     /**
+     * 获取纪念日列表
+     */
+    @GetMapping("/anniversary-dates")
+    public ResponseEntity<ApiResponse<String>> getAnniversaryDates() {
+        try {
+            String anniversaryDates = systemConfigService.getAnniversaryDates();
+            return ResponseEntity.ok(ApiResponse.success(anniversaryDates));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取纪念日列表失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 设置纪念日列表
+     */
+    @PostMapping("/anniversary-dates")
+    public ResponseEntity<ApiResponse<String>> setAnniversaryDates(@RequestBody Map<String, String> request) {
+        try {
+            String anniversaryDates = request.get("anniversaryDates");
+            systemConfigService.setAnniversaryDates(anniversaryDates);
+            return ResponseEntity.ok(ApiResponse.success("设置成功"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("设置纪念日列表失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取下次见面日期
+     */
+    @GetMapping("/next-meeting-date")
+    public ResponseEntity<ApiResponse<String>> getNextMeetingDate() {
+        try {
+            String nextMeetingDate = systemConfigService.getNextMeetingDate();
+            return ResponseEntity.ok(ApiResponse.success(nextMeetingDate));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取下次见面日期失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 设置下次见面日期
+     */
+    @PostMapping("/next-meeting-date")
+    public ResponseEntity<ApiResponse<String>> setNextMeetingDate(@RequestBody Map<String, String> request) {
+        try {
+            String nextMeetingDate = request.get("nextMeetingDate");
+            systemConfigService.setNextMeetingDate(nextMeetingDate);
+            return ResponseEntity.ok(ApiResponse.success("设置成功"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("设置下次见面日期失败: " + e.getMessage()));
+        }
+    }
+
+    /**
      * 获取配置的Map形式
      */
     @GetMapping("/config-map/{userId}")

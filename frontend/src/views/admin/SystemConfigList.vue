@@ -109,7 +109,33 @@
           </template>
         </van-cell>
       </van-cell-group>
-      
+
+      <!-- 纪念日管理 -->
+      <van-cell-group title="纪念日管理">
+        <van-cell title="纪念日列表" @click="showAnniversaryDialog = true" />
+        <div class="anniversary-list" v-if="anniversaryDates.length > 0">
+          <div 
+            v-for="(date, index) in anniversaryDates" 
+            :key="index" 
+            class="anniversary-item"
+          >
+            <span class="anniversary-date">{{ date.date }}</span>
+            <span class="anniversary-name">{{ date.name }}</span>
+            <van-button 
+              size="mini" 
+              type="danger" 
+              @click="removeAnniversary(index)"
+            >
+              删除
+            </van-button>
+          </div>
+        </div>
+      </van-cell-group>
+
+      <!-- 下次见面日 -->
+      <van-cell-group title="下次见面日">
+        <van-cell title="下次见面日期" :value="nextMeetingDate" @click="showNextMeetingDatePicker = true" />
+      </van-cell-group>
 
     </div>
     
@@ -124,6 +150,55 @@
         @cancel="showDatePicker = false"
       />
     </van-popup>
+
+    <!-- 下次见面日期选择器 -->
+    <van-popup v-model:show="showNextMeetingDatePicker" position="bottom">
+      <van-date-picker
+        v-model="selectedNextMeetingDate"
+        title="选择下次见面日期"
+        :min-date="new Date()"
+        :max-date="maxDate"
+        @confirm="onNextMeetingDateConfirm"
+        @cancel="showNextMeetingDatePicker = false"
+      />
+    </van-popup>
+
+    <!-- 纪念日添加对话框 -->
+    <van-dialog
+      v-model:show="showAnniversaryDialog"
+      title="添加纪念日"
+      show-cancel-button
+      @confirm="addAnniversary"
+    >
+      <div class="anniversary-form">
+        <van-field
+          v-model="newAnniversaryName"
+          label="纪念日名称"
+          placeholder="请输入纪念日名称"
+          :border="false"
+        />
+        <van-field
+          v-model="newAnniversaryDate"
+          label="纪念日日期"
+          placeholder="请选择日期"
+          readonly
+          @click="showNewAnniversaryDatePicker = true"
+          :border="false"
+        />
+      </div>
+    </van-dialog>
+
+    <!-- 新纪念日日期选择器 -->
+    <van-popup v-model:show="showNewAnniversaryDatePicker" position="bottom">
+      <van-date-picker
+        v-model="selectedNewAnniversaryDate"
+        title="选择纪念日日期"
+        :min-date="minDate"
+        :max-date="maxDate"
+        @confirm="onNewAnniversaryDateConfirm"
+        @cancel="showNewAnniversaryDatePicker = false"
+      />
+    </van-popup>
     
 
   </div>
@@ -133,7 +208,7 @@
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
-import { getTogetherDate, setTogetherDate, getBackgroundMusicAutoplay, setBackgroundMusicAutoplay, getShareExpireMinutes, setShareExpireMinutes } from '@/api/systemConfig'
+import { getTogetherDate, setTogetherDate, getBackgroundMusicAutoplay, setBackgroundMusicAutoplay, getShareExpireMinutes, setShareExpireMinutes, getAnniversaryDates, setAnniversaryDates, getNextMeetingDate, setNextMeetingDate } from '@/api/systemConfig'
 import { getLetterBackgroundMusicByUserIdPublic, setLetterBackgroundMusicByUserId } from '@/api/music'
 import { uploadMusic } from '@/api/upload.js'
 import { useUserStore } from '@/stores/user'
@@ -147,6 +222,27 @@ const backgroundMusicAutoplay = ref(true)
 const shareExpireMinutes = ref(60)
 const letterBackgroundMusic = ref([])
 const showDatePicker = ref(false)
+const nextMeetingDate = ref('')
+const anniversaryDates = ref([])
+
+// 纪念日相关
+const showAnniversaryDialog = ref(false)
+const showNewAnniversaryDatePicker = ref(false)
+const newAnniversaryName = ref('')
+const newAnniversaryDate = ref('')
+const selectedNewAnniversaryDate = ref([
+  new Date().getFullYear().toString(),
+  (new Date().getMonth() + 1).toString().padStart(2, '0'),
+  new Date().getDate().toString().padStart(2, '0')
+])
+
+// 下次见面日相关
+const showNextMeetingDatePicker = ref(false)
+const selectedNextMeetingDate = ref([
+  new Date().getFullYear().toString(),
+  (new Date().getMonth() + 1).toString().padStart(2, '0'),
+  new Date().getDate().toString().padStart(2, '0')
+])
 
 // 音乐播放相关
 const audioElement = ref(null)
@@ -164,7 +260,7 @@ const selectedDate = ref([
 ])
 
 const minDate = new Date(2020, 0, 1)
-const maxDate = new Date()
+const maxDate = new Date(2030, 11, 31) // 允许选择到2030年底
 
 
 
@@ -198,6 +294,18 @@ const loadConfigs = async () => {
     // 加载分享过期时间配置
     const expireValue = await getShareExpireMinutes()
     shareExpireMinutes.value = expireValue
+    
+    // 加载纪念日列表
+    const anniversaryDatesValue = await getAnniversaryDates()
+    try {
+      anniversaryDates.value = JSON.parse(anniversaryDatesValue)
+    } catch (e) {
+      anniversaryDates.value = []
+    }
+    
+    // 加载下次见面日期
+    const nextMeetingDateValue = await getNextMeetingDate()
+    nextMeetingDate.value = nextMeetingDateValue
     
     // 加载当前用户的看信背景音乐配置
     const currentUserId = getCurrentUserId()
@@ -490,6 +598,123 @@ const getCurrentUserId = () => {
   return userStore.userId
 }
 
+// 纪念日相关方法
+const onNewAnniversaryDateConfirm = (value) => {
+  try {
+    // 处理日期选择器返回的数组格式 ['2021', '02', '01']
+    let selectedDate
+    if (Array.isArray(value)) {
+      const [year, month, day] = value
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (value && value.selectedValues && Array.isArray(value.selectedValues)) {
+      const [year, month, day] = value.selectedValues
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (value instanceof Date) {
+      selectedDate = value
+    } else {
+      selectedDate = new Date(value)
+    }
+    
+    // 验证日期是否有效
+    if (isNaN(selectedDate.getTime())) {
+      throw new Error('无效的日期值')
+    }
+    
+    const dateStr = formatDate(selectedDate)
+    newAnniversaryDate.value = dateStr
+    showNewAnniversaryDatePicker.value = false
+  } catch (error) {
+    console.error('日期处理错误:', error)
+    showToast(error.message || '日期设置失败')
+  }
+}
+
+const addAnniversary = async () => {
+  try {
+    if (!newAnniversaryName.value.trim()) {
+      showToast('请输入纪念日名称')
+      return
+    }
+    
+    if (!newAnniversaryDate.value) {
+      showToast('请选择纪念日日期')
+      return
+    }
+    
+    const newAnniversary = {
+      name: newAnniversaryName.value.trim(),
+      date: newAnniversaryDate.value
+    }
+    
+    anniversaryDates.value.push(newAnniversary)
+    
+    // 保存到后端
+    await setAnniversaryDates(JSON.stringify(anniversaryDates.value))
+    
+    // 清空表单
+    newAnniversaryName.value = ''
+    newAnniversaryDate.value = ''
+    showAnniversaryDialog.value = false
+    
+    showToast('纪念日添加成功')
+  } catch (error) {
+    showToast(error.message || '添加失败')
+  }
+}
+
+const removeAnniversary = async (index) => {
+  try {
+    await showConfirmDialog({
+      title: '确认删除',
+      message: `确定要删除纪念日"${anniversaryDates.value[index].name}"吗？`
+    })
+    
+    anniversaryDates.value.splice(index, 1)
+    
+    // 保存到后端
+    await setAnniversaryDates(JSON.stringify(anniversaryDates.value))
+    
+    showToast('删除成功')
+  } catch (error) {
+    if (error !== 'cancel') {
+      showToast(error.message || '删除失败')
+    }
+  }
+}
+
+// 下次见面日相关方法
+const onNextMeetingDateConfirm = async (value) => {
+  try {
+    // 处理日期选择器返回的数组格式 ['2021', '02', '01']
+    let selectedDate
+    if (Array.isArray(value)) {
+      const [year, month, day] = value
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (value && value.selectedValues && Array.isArray(value.selectedValues)) {
+      const [year, month, day] = value.selectedValues
+      selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (value instanceof Date) {
+      selectedDate = value
+    } else {
+      selectedDate = new Date(value)
+    }
+    
+    // 验证日期是否有效
+    if (isNaN(selectedDate.getTime())) {
+      throw new Error('无效的日期值')
+    }
+    
+    const dateStr = formatDate(selectedDate)
+    await setNextMeetingDate(dateStr)
+    nextMeetingDate.value = dateStr
+    showNextMeetingDatePicker.value = false
+    showToast('设置成功')
+  } catch (error) {
+    console.error('日期处理错误:', error)
+    showToast(error.message || '设置失败')
+  }
+}
+
 // 调试用户信息
 const debugUserInfo = () => {
   console.log('=== 调试用户信息 ===')
@@ -676,5 +901,41 @@ onUnmounted(() => {
   justify-content: center;
   padding: 8px;
   color: #ee0a24;
+}
+
+.anniversary-list {
+  margin-top: 8px;
+}
+
+.anniversary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin: 4px 0;
+  background-color: #f7f8fa;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+}
+
+.anniversary-date {
+  font-size: 14px;
+  color: #323233;
+  font-weight: 500;
+}
+
+.anniversary-name {
+  font-size: 14px;
+  color: #646566;
+  margin: 0 8px;
+  flex: 1;
+}
+
+.anniversary-form {
+  padding: 16px;
+}
+
+.anniversary-form .van-field {
+  margin-bottom: 12px;
 }
 </style>

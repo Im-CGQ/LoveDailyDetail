@@ -202,30 +202,73 @@ public class SystemConfigServiceImpl implements SystemConfigService {
 
     @Override
     public void setLetterBackgroundMusicByUserId(Long userId, String musicUrl) {
-        if (userId == null) {
-            throw new IllegalArgumentException("用户ID不能为空");
-        }
-        
-        // 查找现有配置
-        Optional<SystemConfig> existingConfigOpt = systemConfigRepository.findByConfigKeyAndUserId("letter_background_music", userId);
-        
-        if (existingConfigOpt.isPresent()) {
-            // 更新现有配置
-            SystemConfig existingConfig = existingConfigOpt.get();
+        // 先检查配置是否存在
+        SystemConfigDTO existingConfig = getConfigByKeyAndUser("letter_background_music", userId);
+        if (existingConfig != null) {
+            // 如果存在，更新现有配置
             existingConfig.setConfigValue(musicUrl);
-            existingConfig.setUpdatedAt(LocalDateTime.now());
-            systemConfigRepository.save(existingConfig);
+            saveConfig(existingConfig);
         } else {
-            // 创建新配置
-            SystemConfig newConfig = new SystemConfig();
-            newConfig.setConfigKey("letter_background_music");
-            newConfig.setConfigValue(musicUrl);
-            newConfig.setConfigType("STRING");
-            newConfig.setDescription("看信背景音乐URL");
-            newConfig.setUserId(userId);
-            newConfig.setCreatedAt(LocalDateTime.now());
-            newConfig.setUpdatedAt(LocalDateTime.now());
-            systemConfigRepository.save(newConfig);
+            // 如果不存在，创建新配置
+            SystemConfigDTO config = new SystemConfigDTO();
+            config.setConfigKey("letter_background_music");
+            config.setConfigValue(musicUrl);
+            config.setConfigType("STRING");
+            config.setDescription("看信背景音乐");
+            config.setUserId(userId);
+            saveConfig(config);
+        }
+    }
+
+    @Override
+    public String getAnniversaryDates() {
+        SystemConfigDTO config = getConfigByKey("anniversary_dates");
+        return config != null ? config.getConfigValue() : "[]";
+    }
+
+    @Override
+    public void setAnniversaryDates(String anniversaryDates) {
+        // 先检查配置是否存在
+        SystemConfigDTO existingConfig = getConfigByKey("anniversary_dates");
+        if (existingConfig != null) {
+            // 如果存在，更新现有配置
+            existingConfig.setConfigValue(anniversaryDates);
+            saveConfig(existingConfig);
+        } else {
+            // 如果不存在，创建新配置
+            SystemConfigDTO config = new SystemConfigDTO();
+            config.setConfigKey("anniversary_dates");
+            config.setConfigValue(anniversaryDates);
+            config.setConfigType("JSON");
+            config.setDescription("纪念日列表");
+            config.setUserId(null); // 全局配置
+            saveConfig(config);
+        }
+    }
+
+    @Override
+    public String getNextMeetingDate() {
+        SystemConfigDTO config = getConfigByKey("next_meeting_date");
+        return config != null ? config.getConfigValue() : "";
+    }
+
+    @Override
+    public void setNextMeetingDate(String nextMeetingDate) {
+        // 先检查配置是否存在
+        SystemConfigDTO existingConfig = getConfigByKey("next_meeting_date");
+        if (existingConfig != null) {
+            // 如果存在，更新现有配置
+            existingConfig.setConfigValue(nextMeetingDate);
+            saveConfig(existingConfig);
+        } else {
+            // 如果不存在，创建新配置
+            SystemConfigDTO config = new SystemConfigDTO();
+            config.setConfigKey("next_meeting_date");
+            config.setConfigValue(nextMeetingDate);
+            config.setConfigType("STRING");
+            config.setDescription("下次见面日期");
+            config.setUserId(null); // 全局配置
+            saveConfig(config);
         }
     }
 

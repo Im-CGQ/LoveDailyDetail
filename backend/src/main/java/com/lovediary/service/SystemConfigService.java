@@ -29,4 +29,24 @@ public interface SystemConfigService {
      * 根据用户ID设置看信背景音乐
      */
     void setLetterBackgroundMusicByUserId(Long userId, String musicUrl);
+
+    /**
+     * 获取纪念日列表
+     */
+    String getAnniversaryDates();
+
+    /**
+     * 设置纪念日列表
+     */
+    void setAnniversaryDates(String anniversaryDates);
+
+    /**
+     * 获取下次见面日期
+     */
+    String getNextMeetingDate();
+
+    /**
+     * 设置下次见面日期
+     */
+    void setNextMeetingDate(String nextMeetingDate);
 }

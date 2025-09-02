@@ -56,6 +56,28 @@
           <span class="counter-text">天</span>
           <span class="counter-seconds">{{ loveSeconds }}</span>
         </div>
+        
+        <!-- 倒计时显示 -->
+        <div class="countdown-section" v-if="anniversaryCountdown || nextMeetingCountdown">
+          <!-- 纪念日倒计时 -->
+          <div class="countdown-card glass-effect shimmer" v-if="anniversaryCountdown">
+            <div class="countdown-header">
+              <span class="countdown-emoji">💕</span>
+              <h3 class="countdown-title">最近纪念日</h3>
+            </div>
+            <div class="countdown-time">{{ anniversaryCountdown }}</div>
+            <div class="countdown-description">{{ nextAnniversaryName }}</div>
+          </div>
+          
+          <!-- 下次见面倒计时 -->
+          <div class="countdown-card glass-effect shimmer" v-if="nextMeetingCountdown">
+            <div class="countdown-header">
+              <span class="countdown-emoji">💕</span>
+              <h3 class="countdown-title">下次见面</h3>
+            </div>
+            <div class="countdown-time">{{ nextMeetingCountdown }}</div>
+          </div>
+        </div>
       </div>
 
       <div class="media-section">
@@ -199,7 +221,7 @@ import { useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import dayjs from 'dayjs'
 import { getLatestDiary } from '@/api/diary'
-import { getBackgroundMusicAutoplay, getTogetherDate } from '@/api/systemConfig'
+import { getBackgroundMusicAutoplay, getTogetherDate, getAnniversaryDates, getNextMeetingDate } from '@/api/systemConfig'
 import BackButton from '@/components/BackButton.vue'
 
 const router = useRouter()
@@ -225,6 +247,13 @@ const playingVideoIndex = ref(-1) // 当前播放的视频索引
 const togetherDate = ref('2025-05-30 14:30:00') // 在一起的时间，从后台配置读取
 const videoSectionRef = ref(null) // 视频区域容器引用
 const containerWidth = ref(400) // 默认容器宽度
+
+// 纪念日和下次见面日相关
+const anniversaryDates = ref([])
+const nextMeetingDate = ref('')
+const anniversaryCountdown = ref('')
+const nextMeetingCountdown = ref('')
+const nextAnniversaryName = ref('')
 
 let timer = null
 let typingTimer = null
@@ -265,6 +294,113 @@ const stopTimer = () => {
     clearInterval(timer)
     timer = null
   }
+}
+
+// 计算纪念日倒计时
+const calculateAnniversaryCountdown = () => {
+  if (!anniversaryDates.value || anniversaryDates.value.length === 0) {
+    anniversaryCountdown.value = ''
+    nextAnniversaryName.value = ''
+    return
+  }
+  
+  const now = dayjs()
+  let nextAnniversary = null
+  let minTime = Infinity
+  
+  // 找到最近的纪念日
+  anniversaryDates.value.forEach(anniversary => {
+    const anniversaryDate = dayjs(anniversary.date)
+    
+    // 计算到今年纪念日的时间
+    let targetDate = anniversaryDate.year(now.year())
+    if (targetDate.isBefore(now)) {
+      targetDate = anniversaryDate.year(now.year() + 1)
+    }
+    
+    const diff = targetDate.diff(now)
+    if (diff < minTime) {
+      minTime = diff
+      nextAnniversary = anniversary
+    }
+  })
+  
+  if (nextAnniversary && minTime !== Infinity) {
+    // 保存最近纪念日的名称
+    nextAnniversaryName.value = nextAnniversary.name
+    
+    if (minTime <= 0) {
+      anniversaryCountdown.value = '就是今天！🎉'
+    } else {
+      const days = Math.floor(minTime / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((minTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((minTime % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((minTime % (1000 * 60)) / 1000)
+      
+      if (days > 0) {
+        anniversaryCountdown.value = `${days}天${hours}时${minutes}分${seconds}秒`
+      } else if (hours > 0) {
+        anniversaryCountdown.value = `${hours}时${minutes}分${seconds}秒`
+      } else if (minutes > 0) {
+        anniversaryCountdown.value = `${minutes}分${seconds}秒`
+      } else {
+        anniversaryCountdown.value = `${seconds}秒`
+      }
+    }
+  } else {
+    anniversaryCountdown.value = ''
+    nextAnniversaryName.value = ''
+  }
+}
+
+// 计算下次见面倒计时
+const calculateNextMeetingCountdown = () => {
+  if (!nextMeetingDate.value) {
+    nextMeetingCountdown.value = ''
+    return
+  }
+  
+  const now = dayjs()
+  const meetingDate = dayjs(nextMeetingDate.value)
+  
+  if (meetingDate.isBefore(now)) {
+    nextMeetingCountdown.value = '已过期'
+    return
+  }
+  
+  const diff = meetingDate.diff(now)
+  
+  if (diff <= 0) {
+    nextMeetingCountdown.value = '就是今天！💕'
+  } else {
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+    
+    if (days > 0) {
+      nextMeetingCountdown.value = `${days}天${hours}时${minutes}分${seconds}秒`
+    } else if (hours > 0) {
+      nextMeetingCountdown.value = `${hours}时${minutes}分${seconds}秒`
+    } else if (minutes > 0) {
+      nextMeetingCountdown.value = `${minutes}分${seconds}秒`
+    } else {
+      nextMeetingCountdown.value = `${seconds}秒`
+    }
+  }
+}
+
+// 启动倒计时计时器
+const startCountdownTimer = () => {
+  // 立即计算一次
+  calculateAnniversaryCountdown()
+  calculateNextMeetingCountdown()
+  
+  // 每秒更新一次倒计时，显示实时秒数
+  setInterval(() => {
+    calculateAnniversaryCountdown()
+    calculateNextMeetingCountdown()
+  }, 1000)
 }
 
 const formatDate = (date) => {
@@ -513,6 +649,28 @@ const loadLatestDiary = async () => {
       // 保持默认值不变
     }
     
+    // 加载纪念日列表
+    try {
+      const anniversaryDatesValue = await getAnniversaryDates()
+      try {
+        anniversaryDates.value = JSON.parse(anniversaryDatesValue)
+      } catch (e) {
+        anniversaryDates.value = []
+      }
+    } catch (error) {
+      console.warn('加载纪念日配置失败:', error)
+      anniversaryDates.value = []
+    }
+    
+    // 加载下次见面日期
+    try {
+      const nextMeetingDateValue = await getNextMeetingDate()
+      nextMeetingDate.value = nextMeetingDateValue
+    } catch (error) {
+      console.warn('加载下次见面日期配置失败:', error)
+      nextMeetingDate.value = ''
+    }
+    
     const diary = await getLatestDiary()
     if (diary) {
       currentDiary.value = diary
@@ -528,6 +686,9 @@ const loadLatestDiary = async () => {
       }
     }
     // 如果没有日记，currentDiary.value 保持为 null，会显示无日记界面
+    
+    // 启动倒计时计时器
+    startCountdownTimer()
   } catch (error) {
     console.error('加载日记失败:', error)
     showToast('加载失败，请稍后重试')
@@ -1383,5 +1544,153 @@ onBeforeUnmount(() => {
   }
 }
 
+/* 倒计时样式 */
+.countdown-section {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
 
+.countdown-card {
+  padding: 25px;
+  border-radius: 20px;
+  width: 100%;
+  animation: slideInUp 0.8s ease-out;
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.countdown-emoji {
+  font-size: 24px;
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+.countdown-title {
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.countdown-time {
+  font-size: 16px;
+  line-height: 1.8;
+  color: white;
+  text-align: justify;
+  position: relative;
+  transition: all 0.3s ease;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-bottom: 10px;
+}
+
+.countdown-description {
+  font-size: 16px;
+  line-height: 1.8;
+  color: white;
+  text-align: justify;
+  position: relative;
+  transition: all 0.3s ease;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 倒计时响应式设计 */
+@media (max-width: 768px) {
+  .countdown-section {
+    margin-top: 20px;
+    gap: 12px;
+  }
+  
+  .countdown-card {
+    padding: 20px;
+    border-radius: 16px;
+  }
+  
+  .countdown-emoji {
+    font-size: 22px;
+  }
+  
+  .countdown-title {
+    font-size: 18px;
+  }
+  
+  .countdown-time {
+    font-size: 15px;
+  }
+  
+  .countdown-description {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-section {
+    margin-top: 16px;
+    gap: 10px;
+  }
+  
+  .countdown-card {
+    padding: 18px;
+    border-radius: 14px;
+  }
+  
+  .countdown-emoji {
+    font-size: 20px;
+  }
+  
+  .countdown-title {
+    font-size: 16px;
+  }
+  
+  .countdown-time {
+    font-size: 14px;
+  }
+  
+  .countdown-description {
+    font-size: 14px;
+  }
+}
 </style> 

@@ -64,6 +64,12 @@ const routes = [
     component: () => import('@/views/ChatRecord.vue'),
     meta: { title: '聊天记录', requiresAuth: true }
   },
+  {
+    path: '/anniversary-list',
+    name: 'AnniversaryList',
+    component: () => import('@/views/AnniversaryList.vue'),
+    meta: { title: '我们的纪念日', requiresAuth: true }
+  },
 
   // 电影相关路由
             {
@@ -138,6 +144,12 @@ const routes = [
     name: 'LoveTreeDemo',
     component: () => import('@/views/LoveTreeDemo.vue'),
     meta: { title: '樱花树演示', requiresAuth: false }
+  },
+  {
+    path: '/love',
+    name: 'Love',
+    component: () => import('@/views/Love.vue'),
+    meta: { title: '爱的告白', requiresAuth: false }
   },
   {
     path: '/admin',

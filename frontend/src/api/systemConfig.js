@@ -232,3 +232,71 @@ export const setLetterBackgroundMusicByUserId = async (userId, musicUrl) => {
     throw new Error(error.message || '设置看信背景音乐失败，请检查网络连接')
   }
 }
+
+/**
+ * 获取纪念日列表
+ */
+export const getAnniversaryDates = async () => {
+  try {
+    const response = await api.get('/system-config/anniversary-dates')
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '获取纪念日列表失败')
+    }
+  } catch (error) {
+    console.error('获取纪念日列表失败:', error.message)
+    throw new Error(error.message || '获取纪念日列表失败，请检查网络连接')
+  }
+}
+
+/**
+ * 设置纪念日列表
+ */
+export const setAnniversaryDates = async (anniversaryDates) => {
+  try {
+    const response = await api.post('/system-config/anniversary-dates', { anniversaryDates })
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '设置纪念日列表失败')
+    }
+  } catch (error) {
+    console.error('设置纪念日列表失败:', error.message)
+    throw new Error(error.message || '设置纪念日列表失败，请检查网络连接')
+  }
+}
+
+/**
+ * 获取下次见面日期
+ */
+export const getNextMeetingDate = async () => {
+  try {
+    const response = await api.get('/system-config/next-meeting-date')
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '获取下次见面日期失败')
+    }
+  } catch (error) {
+    console.error('获取下次见面日期失败:', error.message)
+    throw new Error(error.message || '获取下次见面日期失败，请检查网络连接')
+  }
+}
+
+/**
+ * 设置下次见面日期
+ */
+export const setNextMeetingDate = async (nextMeetingDate) => {
+  try {
+    const response = await api.post('/system-config/next-meeting-date', { nextMeetingDate })
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || '设置下次见面日期失败')
+    }
+  } catch (error) {
+    console.error('设置下次见面日期失败:', error.message)
+    throw new Error(error.message || '设置下次见面日期失败，请检查网络连接')
+  }
+}
