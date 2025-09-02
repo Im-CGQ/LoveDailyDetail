@@ -42,7 +42,7 @@
               @oversize="onMovieOversize"
             />
             <div class="upload-tips">
-              <p>支持上传视频文件，大小不超过1.5GB</p>
+              <p>支持上传视频文件，大小不超过5GB</p>
               <p>支持格式：MP4, AVI, MOV, MKV等</p>
               <p>如果不重新上传视频，将保持原有视频文件</p>
             </div>
@@ -294,8 +294,8 @@ const afterMovieRead = async (file) => {
 const processMovieFile = async (file) => {
   try {
     // 检查文件大小
-    if (file.file.size > 1.5 * 1024 * 1024 * 1024) {
-      showToast('视频大小不能超过1.5GB')
+    if (file.file.size > 5 * 1024 * 1024 * 1024) {
+      showToast('视频大小不能超过5GB')
       const index = movieFiles.value.findIndex(f => f.file === file.file)
       if (index > -1) {
         movieFiles.value.splice(index, 1)
@@ -349,7 +349,7 @@ const beforeMovieDelete = (file) => {
 }
 
 const onMovieOversize = (file) => {
-  showToast('视频大小不能超过1.5GB')
+  showToast('视频大小不能超过5GB')
   return false
 }
 
