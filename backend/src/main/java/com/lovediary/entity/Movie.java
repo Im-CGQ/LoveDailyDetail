@@ -37,7 +37,10 @@ public class Movie {
 
     @Column(name = "duration_minutes")
     private Integer durationMinutes;
-
+    
+    @Column(name = "duration")
+    private Integer durationSeconds; // 新增：精确时长（秒）
+    
     @Column(name = "file_size")
     private Long fileSize;
 

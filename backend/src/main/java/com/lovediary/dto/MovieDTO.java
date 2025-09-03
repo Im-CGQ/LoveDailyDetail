@@ -26,6 +26,8 @@ public class MovieDTO {
     
     private Integer durationMinutes;
     
+    private Integer durationSeconds; // 新增：精确时长（秒）
+    
     private Long fileSize;
     
     private Integer width;
