@@ -259,20 +259,16 @@ const onMovieOversize = (file) => {
 const formatDuration = (duration) => {
   if (!duration || isNaN(duration)) return '0:00'
   
-  // 如果duration是秒数，直接使用；如果是分钟，转换为秒
-  let seconds = duration
-  if (duration < 1000) { // 如果小于1000，认为是分钟
-    seconds = duration * 60
-  }
-  
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const remainingSeconds = Math.floor(seconds % 60)
+  // duration是秒数，直接使用
+  const totalSeconds = Math.round(duration)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
   
   if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   } else {
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 }
 
@@ -473,7 +469,7 @@ const handleCreateMovie = async () => {
       fileSize: movieFile.fileSize,
       width: movieFile.width,
       height: movieFile.height,
-      durationMinutes: movieFile.duration ? (movieFile.duration < 60 ? movieFile.duration : Math.round(movieFile.duration / 60)) : null, // 小于60秒时发送秒数，否则发送分钟数
+      durationSeconds: movieFile.duration || null, // 直接存储秒数，保持精度
       isPublic: newMovie.isPublic
     }
     

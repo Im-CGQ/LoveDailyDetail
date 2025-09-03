@@ -79,7 +79,7 @@
             <h3 @click="viewMovie(movie)">{{ movie.title }}</h3>
             <p @click="viewMovie(movie)">{{ movie.description || '暂无描述' }}</p>
             <div class="movie-meta">
-              <span v-if="movie.durationMinutes">{{ formatDuration(movie.durationMinutes) }}</span>
+              <span v-if="movie.durationSeconds">{{ formatDuration(movie.durationSeconds) }}</span>
               <span :class="movie.isPublic ? 'public' : 'private'">
                 {{ movie.isPublic ? '公开' : '私密' }}
               </span>
@@ -281,23 +281,16 @@ const handleDeleteMovie = async (movie) => {
 const formatDuration = (duration) => {
   if (!duration || duration <= 0) return '未知'
   
-  // 如果数值小于60，认为是秒数
-  if (duration < 60) {
-    return `${Math.round(duration)}秒`
-  }
-  
-  // 如果数值大于等于60，认为是分钟数
-  const hours = Math.floor(duration / 60)
-  const mins = Math.floor(duration % 60)
+  // duration是秒数，直接使用
+  const totalSeconds = Math.round(duration)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
   
   if (hours > 0) {
-    if (mins > 0) {
-      return `${hours}小时${mins}分钟`
-    } else {
-      return `${hours}小时`
-    }
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   } else {
-    return `${mins}分钟`
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 }
 

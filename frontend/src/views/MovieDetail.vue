@@ -28,7 +28,7 @@
             <div class="movie-meta">
               <div class="meta-item">
                 <span class="meta-label">时长:</span>
-                <span class="meta-value">{{ formatDuration(movie.durationMinutes) }}</span>
+                <span class="meta-value">{{ formatDuration(movie.durationSeconds) }}</span>
               </div>
               <div class="meta-item">
                 <span class="meta-label">文件大小:</span>
@@ -153,23 +153,16 @@ const joinRoom = async () => {
 const formatDuration = (duration) => {
   if (!duration || duration <= 0) return '未知'
   
-  // 如果数值小于60，认为是秒数
-  if (duration < 60) {
-    return `${Math.round(duration)}秒`
-  }
-  
-  // 如果数值大于等于60，认为是分钟数
-  const hours = Math.floor(duration / 60)
-  const mins = Math.floor(duration % 60)
+  // duration是秒数，直接使用
+  const totalSeconds = Math.round(duration)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
   
   if (hours > 0) {
-    if (mins > 0) {
-      return `${hours}小时${mins}分钟`
-    } else {
-      return `${hours}小时`
-    }
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   } else {
-    return `${mins}分钟`
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 }
 

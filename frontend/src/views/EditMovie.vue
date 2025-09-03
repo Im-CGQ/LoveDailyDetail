@@ -53,9 +53,14 @@
               <div class="video-preview-item" ref="videoPreviewSectionRef">
                 <div class="video-info">
                   <span class="video-name">{{ getVideoName() }}</span>
-                  <span class="video-status" :class="getVideoStatus()">
-                    {{ getVideoStatusText() }}
-                  </span>
+                  <div class="video-meta">
+                    <span class="video-duration" v-if="getVideoData()?.duration">
+                      ⏱️ {{ formatDuration(getVideoData().duration) }}
+                    </span>
+                    <span class="video-status" :class="getVideoStatus()">
+                      {{ getVideoStatusText() }}
+                    </span>
+                  </div>
                 </div>
                 <div class="video-player-container" v-if="getVideoUrl()" :style="getVideoStyle()">
                   <video 
@@ -207,7 +212,7 @@ const loadMovie = async () => {
         message: '原有视频',
         width: movieData.width || 0,
         height: movieData.height || 0,
-        duration: movieData.durationMinutes ? movieData.durationMinutes * 60 : null,
+                 duration: movieData.durationSeconds || null, // 直接使用秒数
         fileSize: movieData.fileSize || 0
       }]
     }
@@ -278,6 +283,23 @@ const getVideoData = () => {
     return movieFiles.value[0]
   }
   return null
+}
+
+// 格式化时长显示
+const formatDuration = (duration) => {
+  if (!duration || isNaN(duration)) return '0:00'
+  
+  // duration是秒数，直接使用
+  const totalSeconds = Math.round(duration)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  } else {
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
 }
 
 // 电影文件上传处理
@@ -528,14 +550,14 @@ const handleEditMovie = async () => {
           movieData.fileSize = movieFile.fileSize
           movieData.width = movieFile.width
           movieData.height = movieFile.height
-          movieData.durationMinutes = movieFile.duration ? (movieFile.duration < 60 ? movieFile.duration : Math.round(movieFile.duration / 60)) : null
+          movieData.durationSeconds = movieFile.duration || null // 直接存储秒数
         } else {
           movieData.movieUrl = movieFile.url
           movieData.fileName = movieFile.fileName
           movieData.fileSize = movieFile.fileSize
           movieData.width = movieFile.width
           movieData.height = movieFile.height
-          movieData.durationMinutes = movieFile.duration ? (movieFile.duration < 60 ? movieFile.duration : Math.round(movieFile.duration / 60)) : null
+          movieData.durationSeconds = movieFile.duration || null // 直接存储秒数
         }
       }
     }
@@ -735,30 +757,44 @@ onMounted(() => {
       white-space: nowrap;
     }
     
-    .video-status {
-      font-size: 12px;
-      padding: 2px 8px;
-      border-radius: 12px;
-      margin-left: 10px;
+    .video-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       
-      &.uploading {
-        background: #e6f7ff;
-        color: #1890ff;
-      }
-      
-      &.done {
-        background: #f6ffed;
-        color: #52c41a;
-      }
-      
-      &.failed {
-        background: #fff2f0;
-        color: #ff4d4f;
-      }
-      
-      &.default {
-        background: #f5f5f5;
+      .video-duration {
+        font-size: 12px;
         color: #666;
+        background: #f0f0f0;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-weight: 500;
+      }
+      
+      .video-status {
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        
+        &.uploading {
+          background: #e6f7ff;
+          color: #1890ff;
+        }
+        
+        &.done {
+          background: #f6ffed;
+          color: #52c41a;
+        }
+        
+        &.failed {
+          background: #fff2f0;
+          color: #ff4d4f;
+        }
+        
+        &.default {
+          background: #f5f5f5;
+          color: #666;
+        }
       }
     }
   }
