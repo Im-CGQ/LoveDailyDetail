@@ -6,149 +6,149 @@ const routes = [
   {
     path: '/',
     name: 'Welcome',
-    component: () => import('@/views/Welcome.vue'),
+    component: () => import('@/views/common/Welcome.vue'),
     meta: { title: '美好回忆' }
   },
   {
     path: '/home',
     name: 'Home',
-    component: () => import('@/views/Home.vue'),
+    component: () => import('@/views/common/Home.vue'),
     meta: { title: '我们的每一天', requiresAuth: true }
   },
   {
     path: '/calendar',
     name: 'Calendar',
-    component: () => import('@/views/Calendar.vue'),
+    component: () => import('@/views/calendar/Calendar.vue'),
     meta: { title: '时光日历', requiresAuth: true }
   },
   {
     path: '/diary/:id',
     name: 'Detail',
-    component: () => import('@/views/Detail.vue'),
+    component: () => import('@/views/diary/Detail.vue'),
     meta: { title: '美好回忆', requiresAuth: true }
   },
   {
     path: '/diaries/date/:date',
     name: 'UserDiaryList',
-    component: () => import('@/views/DiaryList.vue'),
+    component: () => import('@/views/diary/DiaryList.vue'),
     meta: { title: '日记列表', requiresAuth: true }
   },
   {
     path: '/letters',
     name: 'LetterBox',
-    component: () => import('@/views/LetterBox.vue'),
+    component: () => import('@/views/letter/LetterBox.vue'),
     meta: { title: '我的信箱', requiresAuth: true }
   },
   {
     path: '/letter/:id',
     name: 'LetterDetail',
-    component: () => import('@/views/LetterDetail.vue'),
+    component: () => import('@/views/letter/LetterDetail.vue'),
     meta: { title: '信件详情', requiresAuth: true }
   },
 
   {
     path: '/share/diary/:shareToken',
     name: 'SharedDiary',
-    component: () => import('@/views/SharedDiary.vue'),
+    component: () => import('@/views/diary/SharedDiary.vue'),
     meta: { title: '分享的日记', requiresAuth: false }
   },
   {
     path: '/share/letter/:shareToken',
     name: 'SharedLetter',
-    component: () => import('@/views/SharedLetter.vue'),
+    component: () => import('@/views/letter/SharedLetter.vue'),
     meta: { title: '分享的信件', requiresAuth: false }
   },
   {
     path: '/chat-record',
     name: 'ChatRecord',
-    component: () => import('@/views/ChatRecord.vue'),
+    component: () => import('@/views/chat/ChatRecord.vue'),
     meta: { title: '聊天记录', requiresAuth: true }
   },
   {
     path: '/anniversary-list',
     name: 'AnniversaryList',
-    component: () => import('@/views/AnniversaryList.vue'),
+    component: () => import('@/views/calendar/AnniversaryList.vue'),
     meta: { title: '我们的纪念日', requiresAuth: true }
   },
 
   // 电影相关路由
-            {
-            path: '/movies',
-            name: 'MovieList',
-            component: () => import('@/views/MovieList.vue'),
-            meta: { title: '一起看电影', requiresAuth: true }
-          },
-          {
-            path: '/create-movie',
-            name: 'CreateMovie',
-            component: () => import('@/views/CreateMovie.vue'),
-            meta: { title: '上传电影', requiresAuth: true }
-          },
-          {
-            path: '/edit-movie/:id',
-            name: 'EditMovie',
-            component: () => import('@/views/EditMovie.vue'),
-            meta: { title: '编辑电影', requiresAuth: true }
-          },
+  {
+    path: '/movies',
+    name: 'MovieList',
+    component: () => import('@/views/movie/MovieList.vue'),
+    meta: { title: '一起看电影', requiresAuth: true }
+  },
+  {
+    path: '/create-movie',
+    name: 'CreateMovie',
+    component: () => import('@/views/movie/CreateMovie.vue'),
+    meta: { title: '上传电影', requiresAuth: true }
+  },
+  {
+    path: '/edit-movie/:id',
+    name: 'EditMovie',
+    component: () => import('@/views/movie/EditMovie.vue'),
+    meta: { title: '编辑电影', requiresAuth: true }
+  },
   {
     path: '/movie/:id',
     name: 'MovieDetail',
-    component: () => import('@/views/MovieDetail.vue'),
+    component: () => import('@/views/movie/MovieDetail.vue'),
     meta: { title: '电影详情', requiresAuth: true }
   },
   {
     path: '/join-room',
     name: 'JoinRoom',
-    component: () => import('@/views/JoinRoom.vue'),
+    component: () => import('@/views/movie/JoinRoom.vue'),
     meta: { title: '加入房间', requiresAuth: true }
   },
   {
     path: '/movie-room/:roomCode',
     name: 'MovieRoom',
-    component: () => import('@/views/MovieRoom.vue'),
+    component: () => import('@/views/movie/MovieRoom.vue'),
     meta: { title: '电影房间', requiresAuth: true }
   },
 
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/Login.vue'),
+    component: () => import('@/views/auth/Login.vue'),
     meta: { title: '登录' }
   },
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/Register.vue'),
+    component: () => import('@/views/auth/Register.vue'),
     meta: { title: '注册' }
   },
   {
     path: '/email-register',
     name: 'EmailRegister',
-    component: () => import('@/views/EmailRegister.vue'),
+    component: () => import('@/views/auth/EmailRegister.vue'),
     meta: { title: '邮箱注册' }
   },
   {
     path: '/edit-profile',
     name: 'EditProfile',
-    component: () => import('@/views/EditProfile.vue'),
+    component: () => import('@/views/profile/EditProfile.vue'),
     meta: { title: '编辑个人信息', requiresAuth: true }
   },
   {
     path: '/love-tree',
     name: 'LoveTree',
-    component: () => import('@/views/LoveTree.vue'),
+    component: () => import('@/views/special/LoveTree.vue'),
     meta: { title: '樱花树', requiresAuth: false }
   },
   {
     path: '/love-tree-demo',
     name: 'LoveTreeDemo',
-    component: () => import('@/views/LoveTreeDemo.vue'),
+    component: () => import('@/views/special/LoveTreeDemo.vue'),
     meta: { title: '樱花树演示', requiresAuth: false }
   },
   {
     path: '/love',
     name: 'Love',
-    component: () => import('@/views/Love.vue'),
+    component: () => import('@/views/special/Love.vue'),
     meta: { title: '爱的告白', requiresAuth: false }
   },
   {
@@ -185,7 +185,7 @@ const routes = [
       {
         path: 'letter/edit/:id',
         name: 'EditLetter',
-        component: () => import('@/views/EditLetter.vue')
+        component: () => import('@/views/letter/EditLetter.vue')
       },
       {
         path: 'letters',
