@@ -1,5 +1,5 @@
-@import './variables.scss';
-@import './vant.scss';
+@use './variables.scss' as *;
+@use './vant.scss';
 
 // 全局样式重置
 * {
