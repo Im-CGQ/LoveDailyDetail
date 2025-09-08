@@ -40,6 +40,19 @@
             </div>
           </van-swipe-item>
 
+          <!-- 最近信件卡片 - 第二个位置 -->
+          <van-swipe-item v-if="latestLetter">
+            <div class="carousel-card letter-card glass-effect shimmer" @click="goToLetterBox">
+              <div class="letter-icon-container">
+                <div class="card-icon">💌</div>
+                <div v-if="!latestLetter.isRead" class="unread-badge">未读</div>
+              </div>
+              <h3 class="card-title">{{ latestLetter.title }}</h3>
+              <p class="card-subtitle">来自: {{ latestLetter.senderName }}</p>
+              <p class="card-date">{{ formatDateTime(latestLetter.createdAt) }}</p>
+            </div>
+          </van-swipe-item>
+
           <!-- 在一起时间倒计时卡片 -->
           <van-swipe-item v-if="loveCountdown">
             <div class="carousel-card countdown-card glass-effect shimmer">
@@ -248,6 +261,7 @@ import { checkLoginState, clearLoginState } from '@/utils/auth'
 import { getPartnerInfo, invitePartner, acceptInvitation, rejectInvitation, unbindPartner, cancelInvitation } from '@/api/partner'
 import { getAnniversaryDates, getNextMeetingDate, getTogetherDate } from '@/api/systemConfig'
 import { getLatestDiary } from '@/api/diary'
+import { getUnlockedLetters } from '@/api/letter'
 import { showToast, showDialog } from 'vant'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
@@ -276,6 +290,9 @@ const togetherDate = ref('2025-05-30 14:30:00') // 在一起的时间，从后�
 
 // 回忆记录数据
 const currentDiary = ref(null)
+
+// 信件数据
+const latestLetter = ref(null)
 
 const showInviteDialog = ref(false)
 const showPartnerDialog = ref(false)
@@ -809,11 +826,33 @@ const loadCurrentDiary = async () => {
   }
 }
 
+// 获取最近信件
+const loadLatestLetter = async () => {
+  if (!isLoggedIn.value) return
+  
+  try {
+    const letters = await getUnlockedLetters()
+    if (letters && letters.length > 0) {
+      // 获取最新的信件（按创建时间排序）
+      latestLetter.value = letters[0]
+    }
+  } catch (error) {
+    console.error('获取最近信件失败:', error)
+  }
+}
+
 // 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return ''
   return dayjs(dateString).format('YYYY年MM月DD日')
 }
+
+// 格式化日期时间
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  return dayjs(dateTime).format('MM月DD日 HH:mm')
+}
+
 
 // 处理伴侣卡片点击
 const handlePartnerCardClick = () => {
@@ -835,6 +874,7 @@ onMounted(() => {
     loadPartnerInfo()
     loadCountdownConfigs()
     loadCurrentDiary()
+    loadLatestLetter()
   }
 })
 
@@ -844,6 +884,7 @@ watch(isLoggedIn, (newValue) => {
     loadPartnerInfo()
     loadCountdownConfigs()
     loadCurrentDiary()
+    loadLatestLetter()
   } else {
     // 登出时清除定时器
     stopCountdownTimer()
@@ -1705,6 +1746,57 @@ onUnmounted(() => {
   }
 }
 
+.letter-card {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+  color: white;
+  
+  .letter-icon-container {
+    position: relative;
+    margin-bottom: 15px;
+    
+    .card-icon {
+      font-size: 48px;
+      animation: heartbeat 2s ease-in-out infinite;
+    }
+    
+    .unread-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ff4757;
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+  }
+  
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+  
+  .card-subtitle {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  
+  .card-date {
+    font-size: 11px;
+    opacity: 0.8;
+    line-height: 1.4;
+  }
+}
+
 // 响应式设计
 @media (max-width: 768px) {
   .carousel-section {
@@ -1750,6 +1842,34 @@ onUnmounted(() => {
     .card-title {
       font-size: 16px;
       max-width: 150px;
+    }
+  }
+  
+  .letter-card {
+    .letter-icon-container {
+      margin-bottom: 12px;
+      
+      .card-icon {
+        font-size: 36px;
+      }
+      
+      .unread-badge {
+        font-size: 9px;
+        padding: 1px 4px;
+      }
+    }
+    
+    .card-title {
+      font-size: 16px;
+      max-width: 150px;
+    }
+    
+    .card-subtitle {
+      font-size: 12px;
+    }
+    
+    .card-date {
+      font-size: 10px;
     }
   }
   
