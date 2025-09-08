@@ -114,7 +114,8 @@
       <van-date-picker
         v-model="currentDate"
         title="选择日期"
-        :min-date="minDate"
+        :min-date="new Date(2020, 0, 1)"
+        :max-date="new Date(2030, 11, 31)"
         @confirm="onDateConfirm"
         @cancel="showDatePicker = false"
       />
