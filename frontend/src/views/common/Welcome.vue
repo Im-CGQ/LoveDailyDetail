@@ -12,82 +12,90 @@
         <h1 class="title text-gradient-romantic">美好回忆</h1>
       </div>
 
-      <!-- 伴侣状态和倒计时区域 - 紧凑布局 -->
-      <div v-if="isLoggedIn" class="status-countdown-section">
-        <!-- 伴侣状态 - 更紧凑 -->
-        <div class="partner-status-compact">
-          <!-- 没有伴侣时显示邀请图标 -->
-          <div v-if="!partnerInfo.hasPartner && !partnerInfo.hasPendingInvitation && !partnerInfo.hasSentInvitation" 
-               class="partner-invite-compact" @click="showInviteDialog = true">
-            <div class="partner-invite-icon">💝</div>
-            <div class="partner-invite-text">
-              <h3>邀请伴侣</h3>
-              <p>与心爱的人一起记录美好时光</p>
+      <!-- 伴侣状态和倒计时轮播区域 -->
+      <div v-if="isLoggedIn" class="carousel-section">
+        <van-swipe 
+          :autoplay="3000" 
+          :show-indicators="true" 
+          :loop="true"
+          class="love-carousel"
+          indicator-color="rgba(255, 255, 255, 0.5)"
+        >
+          <!-- 回忆记录卡片 - 第一个位置 -->
+          <van-swipe-item v-if="currentDiary">
+            <div class="carousel-card memory-card glass-effect shimmer" @click="goToHome">
+              <div class="memory-image-container">
+                <img 
+                  v-if="currentDiary.images && currentDiary.images.length > 0" 
+                  :src="currentDiary.images[0].imageUrl" 
+                  :alt="currentDiary.title"
+                  class="memory-image"
+                />
+                <div v-else class="memory-placeholder">
+                  <div class="card-icon">📸</div>
+                </div>
+              </div>
+              <h3 class="card-title">{{ currentDiary.title }}</h3>
+              <p class="card-subtitle">{{ formatDate(currentDiary.date) }}</p>
             </div>
-          </div>
+          </van-swipe-item>
 
-          <!-- 有伴侣时显示伴侣信息，点击显示伴侣信息弹窗 -->
-          <div v-else-if="partnerInfo.hasPartner" 
-               class="partner-info-compact" @click="showPartnerDialog = true">
-            <div class="partner-avatar">💑</div>
-            <div class="partner-info">
-              <h3>我的伴侣</h3>
-              <p>{{ partnerInfo.partnerDisplayName || partnerInfo.partnerUsername }}</p>
+          <!-- 在一起时间倒计时卡片 -->
+          <van-swipe-item v-if="loveCountdown">
+            <div class="carousel-card countdown-card glass-effect shimmer">
+              <div class="card-icon">💕</div>
+              <h3 class="card-title">在一起</h3>
+              <div class="countdown-display">{{ loveCountdown }}</div>
+              <p class="card-subtitle">每一天都是珍贵的回忆</p>
             </div>
-          </div>
+          </van-swipe-item>
+          
+          <!-- 纪念日倒计时卡片 -->
+          <van-swipe-item v-if="anniversaryCountdown">
+            <div class="carousel-card countdown-card glass-effect shimmer" @click="goToAnniversaryList">
+              <div class="card-icon">🎉</div>
+              <h3 class="card-title">最近纪念日</h3>
+              <div class="countdown-display">{{ anniversaryCountdown }}</div>
+              <p class="card-subtitle">{{ nextAnniversaryName }}</p>
+            </div>
+          </van-swipe-item>
+          
+          <!-- 下次见面倒计时卡片 -->
+          <van-swipe-item v-if="nextMeetingCountdown">
+            <div class="carousel-card countdown-card glass-effect shimmer">
+              <div class="card-icon">💕</div>
+              <h3 class="card-title">下次见面</h3>
+              <div class="countdown-display">{{ nextMeetingCountdown }}</div>
+            </div>
+          </van-swipe-item>
 
-          <!-- 有邀请时显示邀请信息 -->
-          <div v-else-if="partnerInfo.hasPendingInvitation" 
-               class="partner-invitation-compact" @click="showInvitationDialog = true">
-            <div class="invitation-icon">💌</div>
-            <div class="invitation-info">
-              <h3>收到邀请</h3>
-              <p>{{ partnerInfo.pendingInvitation.fromDisplayName || partnerInfo.pendingInvitation.fromUsername }} 邀请您成为伴侣</p>
-            </div>
-          </div>
-          
-          <!-- 已发送邀请时显示邀请信息 -->
-          <div v-else-if="partnerInfo.hasSentInvitation" 
-               class="partner-sent-invitation-compact" @click="showSentInvitationDialog = true">
-            <div class="invitation-icon">📤</div>
-            <div class="invitation-info">
-              <h3>已发送邀请</h3>
-              <p>等待 {{ partnerInfo.sentInvitation.toDisplayName || partnerInfo.sentInvitation.toUsername }} 回复</p>
-            </div>
-          </div>
-        </div>
+          <!-- 伴侣状态卡片 - 只在没有伴侣关系时显示 -->
+          <van-swipe-item v-if="!partnerInfo.hasPartner">
+            <div class="carousel-card partner-card glass-effect" @click="handlePartnerCardClick">
+              <!-- 没有伴侣时显示邀请图标 -->
+              <div v-if="!partnerInfo.hasPendingInvitation && !partnerInfo.hasSentInvitation" 
+                   class="partner-invite-content">
+                <div class="card-icon">💝</div>
+                <h3 class="card-title">邀请伴侣</h3>
+                <p class="card-subtitle">与心爱的人一起记录美好时光</p>
+              </div>
 
-        <!-- 倒计时显示区域 - 更紧凑 -->
-        <div v-if="loveCountdown || anniversaryCountdown || nextMeetingCountdown" class="countdown-section-compact">
-          <!-- 在一起时间倒计时 -->
-          <div v-if="loveCountdown" class="countdown-card-compact glass-effect shimmer">
-            <div class="countdown-header-compact">
-              <span class="countdown-emoji">💕</span>
-              <h3 class="countdown-title-compact">在一起</h3>
+              <!-- 有邀请时显示邀请信息 -->
+              <div v-else-if="partnerInfo.hasPendingInvitation" class="partner-invitation-content">
+                <div class="card-icon">💌</div>
+                <h3 class="card-title">收到邀请</h3>
+                <p class="card-subtitle">{{ partnerInfo.pendingInvitation.fromDisplayName || partnerInfo.pendingInvitation.fromUsername }} 邀请您成为伴侣</p>
+              </div>
+              
+              <!-- 已发送邀请时显示邀请信息 -->
+              <div v-else-if="partnerInfo.hasSentInvitation" class="partner-sent-invitation-content">
+                <div class="card-icon">📤</div>
+                <h3 class="card-title">已发送邀请</h3>
+                <p class="card-subtitle">等待 {{ partnerInfo.sentInvitation.toDisplayName || partnerInfo.sentInvitation.toUsername }} 回复</p>
+              </div>
             </div>
-            <div class="countdown-time-compact">{{ loveCountdown }}</div>
-          </div>
-          
-          <!-- 纪念日倒计时 -->
-          <div v-if="anniversaryCountdown" class="countdown-card-compact glass-effect shimmer" @click="goToAnniversaryList">
-            <div class="countdown-header-compact">
-              <span class="countdown-emoji">💕</span>
-              <h3 class="countdown-title-compact">最近纪念日</h3>
-            </div>
-            <div class="countdown-time-compact">{{ anniversaryCountdown }}</div>
-            <div class="countdown-description-compact">{{ nextAnniversaryName }}</div>
-            <div class="click-hint-compact">点击查看全部</div>
-          </div>
-          
-          <!-- 下次见面倒计时 -->
-          <div v-if="nextMeetingCountdown" class="countdown-card-compact glass-effect shimmer">
-            <div class="countdown-header-compact">
-              <span class="countdown-emoji">💕</span>
-              <h3 class="countdown-title-compact">下次见面</h3>
-            </div>
-            <div class="countdown-time-compact">{{ nextMeetingCountdown }}</div>
-          </div>
-        </div>
+          </van-swipe-item>
+        </van-swipe>
       </div>
 
       <div class="welcome-content">
@@ -239,6 +247,7 @@ import { useRouter } from 'vue-router'
 import { checkLoginState, clearLoginState } from '@/utils/auth'
 import { getPartnerInfo, invitePartner, acceptInvitation, rejectInvitation, unbindPartner, cancelInvitation } from '@/api/partner'
 import { getAnniversaryDates, getNextMeetingDate, getTogetherDate } from '@/api/systemConfig'
+import { getLatestDiary } from '@/api/diary'
 import { showToast, showDialog } from 'vant'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
@@ -264,6 +273,9 @@ const nextAnniversaryName = ref('')
 const anniversaryDates = ref([])
 const nextMeetingDate = ref('')
 const togetherDate = ref('2025-05-30 14:30:00') // 在一起的时间，从后台配置读取
+
+// 回忆记录数据
+const currentDiary = ref(null)
 
 const showInviteDialog = ref(false)
 const showPartnerDialog = ref(false)
@@ -782,6 +794,66 @@ const handleLogout = async () => {
     router.push('/login?mode=user')
   }
 }
+
+// 获取回忆记录
+const loadCurrentDiary = async () => {
+  if (!isLoggedIn.value) return
+  
+  try {
+    const response = await getLatestDiary() // 获取最新的1条记录
+    if (response) {
+      currentDiary.value = response
+    }
+  } catch (error) {
+    console.error('获取回忆记录失败:', error)
+  }
+}
+
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return dayjs(dateString).format('YYYY年MM月DD日')
+}
+
+// 处理伴侣卡片点击
+const handlePartnerCardClick = () => {
+  if (!partnerInfo.value.hasPendingInvitation && !partnerInfo.value.hasSentInvitation) {
+    // 没有伴侣时显示邀请对话框
+    showInviteDialog.value = true
+  } else if (partnerInfo.value.hasPendingInvitation) {
+    // 有邀请时显示邀请处理对话框
+    showInvitationDialog.value = true
+  } else if (partnerInfo.value.hasSentInvitation) {
+    // 已发送邀请时显示邀请状态对话框
+    showSentInvitationDialog.value = true
+  }
+}
+
+// 页面加载时执行
+onMounted(() => {
+  if (isLoggedIn.value) {
+    loadPartnerInfo()
+    loadCountdownConfigs()
+    loadCurrentDiary()
+  }
+})
+
+// 监听登录状态变化
+watch(isLoggedIn, (newValue) => {
+  if (newValue) {
+    loadPartnerInfo()
+    loadCountdownConfigs()
+    loadCurrentDiary()
+  } else {
+    // 登出时清除定时器
+    stopCountdownTimer()
+  }
+})
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  stopCountdownTimer()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -1427,6 +1499,270 @@ const handleLogout = async () => {
   
   .btn-icon {
     margin-right: 4px;
+  }
+}
+
+// 轮播图样式
+.carousel-section {
+  margin: 20px 0;
+  padding: 0 10px;
+}
+
+.love-carousel {
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  
+  :deep(.van-swipe__indicators) {
+    bottom: 15px;
+    
+    .van-swipe__indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      margin: 0 4px;
+      transition: all 0.3s ease;
+      
+      &.van-swipe__indicator--active {
+        background: rgba(255, 107, 157, 0.8);
+        transform: scale(1.2);
+      }
+    }
+  }
+}
+
+.carousel-card {
+  height: 200px;
+  margin: 0 10px;
+  border-radius: 20px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+      rgba(255, 107, 157, 0.1) 0%, 
+      rgba(255, 138, 171, 0.1) 50%, 
+      rgba(255, 194, 209, 0.1) 100%);
+    z-index: 1;
+  }
+  
+  > * {
+    position: relative;
+    z-index: 2;
+  }
+}
+
+.partner-card {
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 50%, #ffc2d1 100%);
+  color: white;
+  
+  .card-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    animation: heartbeat 2s ease-in-out infinite;
+  }
+  
+  .card-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-subtitle {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  
+  .card-action {
+    font-size: 12px;
+    opacity: 0.8;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+  }
+}
+
+.countdown-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  color: white;
+  
+  .card-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .countdown-display {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+  }
+  
+  .card-subtitle {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  
+  .card-action {
+    font-size: 11px;
+    opacity: 0.8;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+  }
+}
+
+.memory-card {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #fecfef 100%);
+  color: white;
+  
+  .memory-image-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .memory-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+  }
+  
+  .memory-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    
+    .card-icon {
+      font-size: 36px;
+      opacity: 0.8;
+    }
+  }
+  
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+  
+  .card-subtitle {
+    font-size: 13px;
+    opacity: 0.9;
+    line-height: 1.4;
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .carousel-section {
+    margin: 15px 0;
+    padding: 0 5px;
+  }
+  
+  .carousel-card {
+    height: 180px;
+    margin: 0 5px;
+    padding: 20px;
+    
+    .card-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+    
+    .card-title {
+      font-size: 16px;
+    }
+    
+    .countdown-display {
+      font-size: 20px;
+      padding: 6px 12px;
+    }
+    
+    .card-subtitle {
+      font-size: 12px;
+    }
+  }
+  
+  .memory-card {
+    .memory-image-container {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 12px;
+      
+      .memory-placeholder .card-icon {
+        font-size: 28px;
+      }
+    }
+    
+    .card-title {
+      font-size: 16px;
+      max-width: 150px;
+    }
+  }
+  
+  .love-carousel {
+    :deep(.van-swipe__indicators) {
+      bottom: 10px;
+      
+      .van-swipe__indicator {
+        width: 6px;
+        height: 6px;
+        margin: 0 3px;
+      }
+    }
   }
 }
 </style> 
