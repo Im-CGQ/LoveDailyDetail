@@ -36,6 +36,8 @@ CREATE TABLE users (
 );
 
 -- 创建系统配置表
+-- 注意：此表不再支持全局配置（user_id为NULL），每个配置都必须关联到具体用户
+-- 时间相关配置会在伴侣间自动同步，其他配置保持用户独立
 CREATE TABLE system_configs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     config_key VARCHAR(100) NOT NULL COMMENT '配置键',
@@ -46,7 +48,7 @@ CREATE TABLE system_configs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_user_config (config_key, user_id)
+    UNIQUE KEY unique_user_config (config_key, user_id) COMMENT '每个用户的配置键唯一'
 );
 
 -- 创建伴侣邀请表
