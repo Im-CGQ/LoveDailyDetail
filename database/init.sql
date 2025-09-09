@@ -42,11 +42,11 @@ CREATE TABLE system_configs (
     config_value TEXT COMMENT '配置值',
     config_type VARCHAR(20) DEFAULT 'STRING' COMMENT '配置类型：STRING, NUMBER, BOOLEAN, JSON',
     description VARCHAR(255) COMMENT '配置描述',
-    user_id BIGINT NULL COMMENT '用户ID，NULL表示全局配置',
+    user_id BIGINT NOT NULL COMMENT '用户ID，不再支持全局配置',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_config_key_user (config_key, user_id)
+    UNIQUE KEY unique_user_config (config_key, user_id)
 );
 
 -- 创建伴侣邀请表
@@ -244,13 +244,7 @@ CREATE TABLE letter_share_links (
 INSERT INTO users (username, password, display_name, role) VALUES 
 ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '管理员', 'ADMIN');
 
--- 插入默认系统配置
-INSERT INTO system_configs (config_key, config_value, config_type, description, user_id) VALUES 
-('together_date', '2025-05-30', 'STRING', '在一起的时间', NULL),
-('background_music_autoplay', 'true', 'BOOLEAN', '背景音乐是否自动播放', NULL),
-('max_file_size', '104857600', 'NUMBER', '最大文件大小（字节）- 100MB', NULL),
-('allowed_video_formats', 'mp4,avi,mov,wmv,flv', 'STRING', '允许的视频格式', NULL),
-('allowed_image_formats', 'jpg,jpeg,png,gif,webp', 'STRING', '允许的图片格式', NULL);
+-- 不再插入默认系统配置，所有配置都需要用户ID
 
 -- 创建索引
 -- 用户相关索引

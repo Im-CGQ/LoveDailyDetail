@@ -108,9 +108,6 @@
       </div>
     </div>
 
-    <div v-else class="loading-state">
-      <van-loading type="spinner" size="24px">加载中...</van-loading>
-    </div>
   </div>
 </template>
 
@@ -163,16 +160,23 @@ const fetchLetterDetail = async () => {
     startCountdown()
     // 加载看信背景音乐配置（根据发送者ID获取）
     if (letter.value && letter.value.senderId) {
-      const musicUrl = await getLetterBackgroundMusicByUserIdPublic(letter.value.senderId)
-      if (musicUrl) {
-        letterBackgroundMusic.value = {
-          url: musicUrl,
-          fileName: musicUrl.split('/').pop()
+      try {
+        const musicUrl = await getLetterBackgroundMusicByUserIdPublic(letter.value.senderId)
+        console.log('获取到的信件背景音乐URL:', musicUrl, '发送者ID:', letter.value.senderId)
+        if (musicUrl && musicUrl.trim() !== '') {
+          letterBackgroundMusic.value = {
+            url: musicUrl,
+            fileName: musicUrl.split('/').pop()
+          }
+          // 初始化音乐播放器
+          nextTick(() => {
+            initAudio()
+          })
+        } else {
+          console.log('发送者未配置信件背景音乐')
         }
-        // 初始化音乐播放器
-        nextTick(() => {
-          initAudio()
-        })
+      } catch (error) {
+        console.warn('获取信件背景音乐失败:', error)
       }
     }
   } catch (error) {
