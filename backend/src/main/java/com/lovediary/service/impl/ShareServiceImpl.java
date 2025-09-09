@@ -35,7 +35,7 @@ public class ShareServiceImpl implements ShareService {
     private final SystemConfigService systemConfigService;
     
     @Override
-    public ShareLink createShareLink(Long diaryId) {
+    public ShareLink createShareLink(Long diaryId, Long userId) {
         // 检查日记是否存在
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> new RuntimeException("日记不存在"));
@@ -44,7 +44,8 @@ public class ShareServiceImpl implements ShareService {
         String shareToken = generateShareToken();
         
         // 从系统配置获取分享过期时间（分钟）
-        Integer expireMinutes = systemConfigService.getShareExpireMinutes();
+        Integer expireMinutes = userId != null ? 
+            systemConfigService.getShareExpireMinutesByUserId(userId) : 60; // 默认60分钟
         // 设置过期时间
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(expireMinutes);
         
@@ -172,7 +173,7 @@ public class ShareServiceImpl implements ShareService {
     }
     
     @Override
-    public LetterShareLink createLetterShareLink(Long letterId) {
+    public LetterShareLink createLetterShareLink(Long letterId, Long userId) {
         // 检查信件是否存在
         Letter letter = letterRepository.findById(letterId)
                 .orElseThrow(() -> new RuntimeException("信件不存在"));
@@ -181,7 +182,8 @@ public class ShareServiceImpl implements ShareService {
         String shareToken = generateShareToken();
         
         // 从系统配置获取分享过期时间（分钟）
-        Integer expireMinutes = systemConfigService.getShareExpireMinutes();
+        Integer expireMinutes = userId != null ? 
+            systemConfigService.getShareExpireMinutesByUserId(userId) : 60; // 默认60分钟
         // 设置过期时间
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(expireMinutes);
         

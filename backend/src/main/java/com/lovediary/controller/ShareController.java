@@ -6,6 +6,7 @@ import com.lovediary.dto.SharedLetterDTO;
 import com.lovediary.entity.ShareLink;
 import com.lovediary.entity.LetterShareLink;
 import com.lovediary.service.ShareService;
+import com.lovediary.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,14 +21,29 @@ import java.util.Map;
 public class ShareController {
     
     private final ShareService shareService;
+    private final JwtUtil jwtUtil;
+    
+    private Long getCurrentUserId(String token) {
+        if (token == null || token.isEmpty()) {
+            return null;
+        }
+        try {
+            return jwtUtil.getUserIdFromToken(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
     
     /**
      * 创建分享链接
      */
     @PostMapping("/create/{diaryId}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> createShareLink(@PathVariable Long diaryId) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> createShareLink(
+            @PathVariable Long diaryId,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            ShareLink shareLink = shareService.createShareLink(diaryId);
+            Long userId = getCurrentUserId(token);
+            ShareLink shareLink = shareService.createShareLink(diaryId, userId);
             
             // 构建分享链接
             String shareUrl = "/share/diary/" + shareLink.getShareToken();
@@ -73,9 +89,12 @@ public class ShareController {
      * 创建信件分享链接
      */
     @PostMapping("/letter/create/{letterId}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> createLetterShareLink(@PathVariable Long letterId) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> createLetterShareLink(
+            @PathVariable Long letterId,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         try {
-            LetterShareLink shareLink = shareService.createLetterShareLink(letterId);
+            Long userId = getCurrentUserId(token);
+            LetterShareLink shareLink = shareService.createLetterShareLink(letterId, userId);
             
             // 构建分享链接
             String shareUrl = "/share/letter/" + shareLink.getShareToken();

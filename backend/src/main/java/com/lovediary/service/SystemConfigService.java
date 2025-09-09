@@ -5,20 +5,64 @@ import java.util.List;
 import java.util.Map;
 
 public interface SystemConfigService {
-    List<SystemConfigDTO> getAllConfigs();
+    
+    // 基础配置管理
     List<SystemConfigDTO> getUserConfigs(Long userId);
-    List<SystemConfigDTO> getGlobalConfigs();
-    SystemConfigDTO getConfigByKey(String configKey);
     SystemConfigDTO getConfigByKeyAndUser(String configKey, Long userId);
     SystemConfigDTO saveConfig(SystemConfigDTO configDTO);
     void deleteConfig(String configKey, Long userId);
-    String getTogetherDate();
-    void setTogetherDate(String togetherDate);
-    boolean getBackgroundMusicAutoplay();
-    void setBackgroundMusicAutoplay(boolean autoplay);
-    Integer getShareExpireMinutes();
-    void setShareExpireMinutes(Integer minutes);
     Map<String, Object> getConfigMap(Long userId);
+
+    // 用户特定配置方法
+    /**
+     * 根据用户ID获取在一起时间
+     */
+    String getTogetherDateByUserId(Long userId);
+    
+    /**
+     * 根据用户ID设置在一起时间（同步给伴侣）
+     */
+    void setTogetherDateByUserId(Long userId, String togetherDate);
+    
+    /**
+     * 根据用户ID获取背景音乐自动播放配置
+     */
+    boolean getBackgroundMusicAutoplayByUserId(Long userId);
+    
+    /**
+     * 根据用户ID设置背景音乐自动播放配置
+     */
+    void setBackgroundMusicAutoplayByUserId(Long userId, boolean autoplay);
+    
+    /**
+     * 根据用户ID获取分享过期时间配置
+     */
+    Integer getShareExpireMinutesByUserId(Long userId);
+    
+    /**
+     * 根据用户ID设置分享过期时间配置
+     */
+    void setShareExpireMinutesByUserId(Long userId, Integer minutes);
+    
+    /**
+     * 根据用户ID获取纪念日列表
+     */
+    String getAnniversaryDatesByUserId(Long userId);
+    
+    /**
+     * 根据用户ID设置纪念日列表（同步给伴侣）
+     */
+    void setAnniversaryDatesByUserId(Long userId, String anniversaryDates);
+    
+    /**
+     * 根据用户ID获取下次见面日期
+     */
+    String getNextMeetingDateByUserId(Long userId);
+    
+    /**
+     * 根据用户ID设置下次见面日期（同步给伴侣）
+     */
+    void setNextMeetingDateByUserId(Long userId, String nextMeetingDate);
 
     /**
      * 根据用户ID获取看信背景音乐
@@ -30,23 +74,30 @@ public interface SystemConfigService {
      */
     void setLetterBackgroundMusicByUserId(Long userId, String musicUrl);
 
+    // ========== 默认配置方法（用于没有用户上下文的情况） ==========
+    
     /**
-     * 获取纪念日列表
+     * 获取默认分享过期时间（分钟）
      */
-    String getAnniversaryDates();
-
+    Integer getDefaultShareExpireMinutes();
+    
     /**
-     * 设置纪念日列表
+     * 获取默认背景音乐自动播放配置
      */
-    void setAnniversaryDates(String anniversaryDates);
-
+    boolean getDefaultBackgroundMusicAutoplay();
+    
     /**
-     * 获取下次见面日期
+     * 获取默认在一起时间
      */
-    String getNextMeetingDate();
-
+    String getDefaultTogetherDate();
+    
     /**
-     * 设置下次见面日期
+     * 获取默认纪念日列表
      */
-    void setNextMeetingDate(String nextMeetingDate);
+    String getDefaultAnniversaryDates();
+    
+    /**
+     * 获取默认下次见面日期
+     */
+    String getDefaultNextMeetingDate();
 }

@@ -12,9 +12,10 @@ public interface ShareService {
     /**
      * 创建分享链接
      * @param diaryId 日记ID
+     * @param userId 用户ID
      * @return 分享链接信息
      */
-    ShareLink createShareLink(Long diaryId);
+    ShareLink createShareLink(Long diaryId, Long userId);
     
     /**
      * 根据分享token获取日记
@@ -38,9 +39,10 @@ public interface ShareService {
     /**
      * 创建信件分享链接
      * @param letterId 信件ID
+     * @param userId 用户ID
      * @return 分享链接信息
      */
-    LetterShareLink createLetterShareLink(Long letterId);
+    LetterShareLink createLetterShareLink(Long letterId, Long userId);
     
     /**
      * 根据分享token获取信件

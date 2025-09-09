@@ -125,6 +125,7 @@ import { getSharedLetter } from '@/api/share'
 import { getShareExpireMinutes } from '@/api/systemConfig'
 import { showToast } from 'vant'
 import { getLetterBackgroundMusicByUserIdPublic } from '@/api/music'
+import { getBackgroundMusicAutoplayByUserId } from '@/api/systemConfig'
 
 const route = useRoute()
 const router = useRouter()
@@ -143,6 +144,7 @@ const expiresAt = ref(null)
 
 // 背景音乐
 const letterBackgroundMusic = ref(null)
+const musicAutoplay = ref(false) // 默认不自动播放，只有发送者开启才自动播放
 
 // 音乐播放器相关
 const audioElement = ref(null)
@@ -188,16 +190,27 @@ const fetchLetterDetail = async () => {
 
     // 加载看信背景音乐配置（根据发送者ID获取）
     if (letter.value && letter.value.senderId) {
-      const musicUrl = await getLetterBackgroundMusicByUserIdPublic(letter.value.senderId)
-      if (musicUrl) {
-        letterBackgroundMusic.value = {
-          url: musicUrl,
-          fileName: musicUrl.split('/').pop()
+      try {
+        // 获取发送者的背景音乐自动播放配置
+        const autoplayConfig = await getBackgroundMusicAutoplayByUserId(letter.value.senderId)
+        musicAutoplay.value = autoplayConfig
+        
+        // 获取背景音乐URL
+        const musicUrl = await getLetterBackgroundMusicByUserIdPublic(letter.value.senderId)
+        if (musicUrl) {
+          letterBackgroundMusic.value = {
+            url: musicUrl,
+            fileName: musicUrl.split('/').pop()
+          }
+          // 初始化音乐播放器
+          nextTick(() => {
+            initAudio()
+          })
         }
-        // 初始化音乐播放器
-        nextTick(() => {
-          initAudio()
-        })
+      } catch (error) {
+        console.warn('获取发送者音乐配置失败:', error)
+        // 使用默认配置：不自动播放
+        musicAutoplay.value = false
       }
     }
   } catch (err) {
@@ -324,8 +337,8 @@ const showFullText = () => {
       clearTimeout(typingTimer)
     }
     
-    // 点击信件内容时播放音乐
-    if (letterBackgroundMusic.value?.url && audioElement.value) {
+    // 点击信件内容时播放音乐（根据配置决定）
+    if (letterBackgroundMusic.value?.url && audioElement.value && musicAutoplay.value) {
       if (audioElement.value.paused) {
         audioElement.value.play().catch(error => {
           console.warn('播放音乐失败:', error)
@@ -365,10 +378,12 @@ const initAudio = () => {
   
   audioElement.value.addEventListener('loadedmetadata', () => {
     duration.value = audioElement.value.duration
-    // 自动播放音乐
-    audioElement.value.play().catch(error => {
-      console.warn('自动播放失败:', error)
-    })
+    // 根据配置决定是否自动播放音乐
+    if (musicAutoplay.value) {
+      audioElement.value.play().catch(error => {
+        console.warn('自动播放失败:', error)
+      })
+    }
   })
   
   audioElement.value.addEventListener('play', () => {

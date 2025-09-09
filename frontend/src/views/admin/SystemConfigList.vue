@@ -250,7 +250,13 @@
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
-import { getTogetherDate, setTogetherDate, getBackgroundMusicAutoplay, setBackgroundMusicAutoplay, getShareExpireMinutes, setShareExpireMinutes, getAnniversaryDates, setAnniversaryDates, getNextMeetingDate, setNextMeetingDate } from '@/api/systemConfig'
+import { 
+  getTogetherDateByUserId, setTogetherDateByUserId, 
+  getBackgroundMusicAutoplayByUserId, setBackgroundMusicAutoplayByUserId, 
+  getShareExpireMinutesByUserId, setShareExpireMinutesByUserId, 
+  getAnniversaryDatesByUserId, setAnniversaryDatesByUserId, 
+  getNextMeetingDateByUserId, setNextMeetingDateByUserId 
+} from '@/api/systemConfig'
 import { getLetterBackgroundMusicByUserIdPublic, setLetterBackgroundMusicByUserId } from '@/api/music'
 import { uploadMusic } from '@/api/upload.js'
 import { useUserStore } from '@/stores/user'
@@ -325,8 +331,15 @@ const goBack = () => {
 
 const loadConfigs = async () => {
   try {
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      console.warn('无法获取当前用户ID，配置功能将不可用')
+      showToast('无法获取用户信息，请重新登录')
+      return
+    }
+    
     // 加载在一起时间
-    const togetherDateValue = await getTogetherDate()
+    const togetherDateValue = await getTogetherDateByUserId(currentUserId)
     togetherDate.value = togetherDateValue
     
     // 将日期字符串转换为数组格式
@@ -342,15 +355,15 @@ const loadConfigs = async () => {
     }
     
     // 加载背景音乐自动播放配置
-    const autoplayValue = await getBackgroundMusicAutoplay()
+    const autoplayValue = await getBackgroundMusicAutoplayByUserId(currentUserId)
     backgroundMusicAutoplay.value = autoplayValue
     
     // 加载分享过期时间配置
-    const expireValue = await getShareExpireMinutes()
+    const expireValue = await getShareExpireMinutesByUserId(currentUserId)
     shareExpireMinutes.value = expireValue
     
     // 加载纪念日列表
-    const anniversaryDatesValue = await getAnniversaryDates()
+    const anniversaryDatesValue = await getAnniversaryDatesByUserId(currentUserId)
     try {
       anniversaryDates.value = JSON.parse(anniversaryDatesValue)
     } catch (e) {
@@ -358,27 +371,21 @@ const loadConfigs = async () => {
     }
     
     // 加载下次见面日期
-    const nextMeetingDateValue = await getNextMeetingDate()
+    const nextMeetingDateValue = await getNextMeetingDateByUserId(currentUserId)
     nextMeetingDate.value = nextMeetingDateValue
     
     // 加载当前用户的看信背景音乐配置
-    const currentUserId = getCurrentUserId()
-    if (currentUserId) {
-      const musicUrl = await getLetterBackgroundMusicByUserIdPublic(currentUserId)
-      if (musicUrl) {
-        letterBackgroundMusic.value = [{
-          url: musicUrl,
-          status: 'done',
-          fileName: musicUrl.split('/').pop()
-        }]
-        // 初始化音乐播放器
-        nextTick(() => {
-          initAudioListeners()
-        })
-      }
-    } else {
-      console.warn('无法获取当前用户ID，背景音乐功能将不可用')
-      showToast('无法获取用户信息，请重新登录')
+    const musicUrl = await getLetterBackgroundMusicByUserIdPublic(currentUserId)
+    if (musicUrl) {
+      letterBackgroundMusic.value = [{
+        url: musicUrl,
+        status: 'done',
+        fileName: musicUrl.split('/').pop()
+      }]
+      // 初始化音乐播放器
+      nextTick(() => {
+        initAudioListeners()
+      })
     }
   } catch (error) {
     showToast(error.message)
@@ -410,8 +417,14 @@ const onDateConfirm = async (value) => {
       throw new Error('无效的日期值')
     }
     
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      showToast('无法获取用户信息，请重新登录')
+      return
+    }
+    
     const dateStr = formatDate(selectedDate)
-    await setTogetherDate(dateStr)
+    await setTogetherDateByUserId(currentUserId, dateStr)
     togetherDate.value = dateStr
     showDatePicker.value = false
     showToast('设置成功')
@@ -423,7 +436,13 @@ const onDateConfirm = async (value) => {
 
 const onAutoplayChange = async (value) => {
   try {
-    await setBackgroundMusicAutoplay(value)
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      showToast('无法获取用户信息，请重新登录')
+      return
+    }
+    
+    await setBackgroundMusicAutoplayByUserId(currentUserId, value)
     showToast('设置成功')
   } catch (error) {
     showToast(error.message)
@@ -447,7 +466,13 @@ const onExpireMinutesChange = async () => {
       return
     }
     
-    await setShareExpireMinutes(minutes)
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      showToast('无法获取用户信息，请重新登录')
+      return
+    }
+    
+    await setShareExpireMinutesByUserId(currentUserId, minutes)
     showToast('设置成功')
   } catch (error) {
     showToast(error.message)
@@ -703,7 +728,13 @@ const addAnniversary = async () => {
     anniversaryDates.value.push(newAnniversary)
     
     // 保存到后端
-    await setAnniversaryDates(JSON.stringify(anniversaryDates.value))
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      showToast('无法获取用户信息，请重新登录')
+      return
+    }
+    
+    await setAnniversaryDatesByUserId(currentUserId, JSON.stringify(anniversaryDates.value))
     
     // 清空表单
     newAnniversaryName.value = ''
@@ -749,7 +780,13 @@ const removeAnniversary = async (index) => {
     anniversaryDates.value.splice(index, 1)
     
     // 保存到后端
-    await setAnniversaryDates(JSON.stringify(anniversaryDates.value))
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      showToast('无法获取用户信息，请重新登录')
+      return
+    }
+    
+    await setAnniversaryDatesByUserId(currentUserId, JSON.stringify(anniversaryDates.value))
     
     showToast('删除成功')
   } catch (error) {
@@ -836,7 +873,13 @@ const updateAnniversary = async () => {
     }
     
     // 保存到后端
-    await setAnniversaryDates(JSON.stringify(anniversaryDates.value))
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      showToast('无法获取用户信息，请重新登录')
+      return
+    }
+    
+    await setAnniversaryDatesByUserId(currentUserId, JSON.stringify(anniversaryDates.value))
     
     // 清空编辑状态
     editingAnniversaryIndex.value = -1
@@ -873,7 +916,13 @@ const onNextMeetingDateConfirm = async (value) => {
     }
     
     const dateStr = formatDate(selectedDate)
-    await setNextMeetingDate(dateStr)
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      showToast('无法获取用户信息，请重新登录')
+      return
+    }
+    
+    await setNextMeetingDateByUserId(currentUserId, dateStr)
     nextMeetingDate.value = dateStr
     showNextMeetingDatePicker.value = false
     showToast('设置成功')

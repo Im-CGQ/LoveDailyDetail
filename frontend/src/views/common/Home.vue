@@ -222,10 +222,12 @@ import { useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import dayjs from 'dayjs'
 import { getLatestDiary } from '@/api/diary'
-import { getBackgroundMusicAutoplay, getTogetherDate, getAnniversaryDates, getNextMeetingDate } from '@/api/systemConfig'
+import { getBackgroundMusicAutoplayByUserId, getTogetherDateByUserId, getAnniversaryDatesByUserId, getNextMeetingDateByUserId } from '@/api/systemConfig'
 import BackButton from '@/components/BackButton.vue'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const currentDiary = ref(null)
 const isLoading = ref(true)
 const loveCount = ref('')
@@ -631,8 +633,10 @@ const loadLatestDiary = async () => {
   try {
     // 加载音乐自动播放配置
     try {
-      const autoplayConfig = await getBackgroundMusicAutoplay()
-      musicAutoplay.value = autoplayConfig
+      if (userStore.userId) {
+        const autoplayConfig = await getBackgroundMusicAutoplayByUserId(userStore.userId)
+        musicAutoplay.value = autoplayConfig
+      }
     } catch (error) {
       console.warn('加载音乐自动播放配置失败，使用默认值:', error)
       musicAutoplay.value = true
@@ -640,13 +644,15 @@ const loadLatestDiary = async () => {
     
     // 加载在一起时间配置
     try {
-      const togetherDateConfig = await getTogetherDate()
-      if (togetherDateConfig) {
-        // 如果后台返回的是日期格式，转换为完整的日期时间格式
-        if (togetherDateConfig.includes('-') && !togetherDateConfig.includes(':')) {
-          togetherDate.value = togetherDateConfig + ' 00:00:00'
-        } else {
-          togetherDate.value = togetherDateConfig
+      if (userStore.userId) {
+        const togetherDateConfig = await getTogetherDateByUserId(userStore.userId)
+        if (togetherDateConfig) {
+          // 如果后台返回的是日期格式，转换为完整的日期时间格式
+          if (togetherDateConfig.includes('-') && !togetherDateConfig.includes(':')) {
+            togetherDate.value = togetherDateConfig + ' 00:00:00'
+          } else {
+            togetherDate.value = togetherDateConfig
+          }
         }
       }
     } catch (error) {
@@ -656,11 +662,13 @@ const loadLatestDiary = async () => {
     
     // 加载纪念日列表
     try {
-      const anniversaryDatesValue = await getAnniversaryDates()
-      try {
-        anniversaryDates.value = JSON.parse(anniversaryDatesValue)
-      } catch (e) {
-        anniversaryDates.value = []
+      if (userStore.userId) {
+        const anniversaryDatesValue = await getAnniversaryDatesByUserId(userStore.userId)
+        try {
+          anniversaryDates.value = JSON.parse(anniversaryDatesValue)
+        } catch (e) {
+          anniversaryDates.value = []
+        }
       }
     } catch (error) {
       console.warn('加载纪念日配置失败:', error)
@@ -669,8 +677,10 @@ const loadLatestDiary = async () => {
     
     // 加载下次见面日期
     try {
-      const nextMeetingDateValue = await getNextMeetingDate()
-      nextMeetingDate.value = nextMeetingDateValue
+      if (userStore.userId) {
+        const nextMeetingDateValue = await getNextMeetingDateByUserId(userStore.userId)
+        nextMeetingDate.value = nextMeetingDateValue
+      }
     } catch (error) {
       console.warn('加载下次见面日期配置失败:', error)
       nextMeetingDate.value = ''

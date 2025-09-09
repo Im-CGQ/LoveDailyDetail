@@ -42,7 +42,7 @@
 
           <!-- 最近信件卡片 - 第二个位置 -->
           <van-swipe-item v-if="latestLetter">
-            <div class="carousel-card letter-card glass-effect shimmer" @click="goToLetterBox">
+            <div class="carousel-card letter-card glass-effect shimmer" @click="goToLetterDetail">
               <div class="letter-icon-container">
                 <div class="card-icon">💌</div>
                 <div v-if="!latestLetter.isRead" class="unread-badge">未读</div>
@@ -259,9 +259,9 @@ import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { checkLoginState, clearLoginState } from '@/utils/auth'
 import { getPartnerInfo, invitePartner, acceptInvitation, rejectInvitation, unbindPartner, cancelInvitation } from '@/api/partner'
-import { getAnniversaryDates, getNextMeetingDate, getTogetherDate } from '@/api/systemConfig'
+import { getAnniversaryDatesByUserId, getNextMeetingDateByUserId, getTogetherDateByUserId } from '@/api/systemConfig'
 import { getLatestDiary } from '@/api/diary'
-import { getUnlockedLetters } from '@/api/letter'
+import { getUnlockedLetters, getReceivedLetters, getSentLetters } from '@/api/letter'
 import { showToast, showDialog } from 'vant'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
@@ -457,13 +457,15 @@ const loadCountdownConfigs = async () => {
   try {
     // 加载在一起时间配置
     try {
-      const togetherDateConfig = await getTogetherDate()
-      if (togetherDateConfig) {
-        // 如果后台返回的是日期格式，转换为完整的日期时间格式
-        if (togetherDateConfig.includes('-') && !togetherDateConfig.includes(':')) {
-          togetherDate.value = togetherDateConfig + ' 00:00:00'
-        } else {
-          togetherDate.value = togetherDateConfig
+      if (userStore.userId) {
+        const togetherDateConfig = await getTogetherDateByUserId(userStore.userId)
+        if (togetherDateConfig) {
+          // 如果后台返回的是日期格式，转换为完整的日期时间格式
+          if (togetherDateConfig.includes('-') && !togetherDateConfig.includes(':')) {
+            togetherDate.value = togetherDateConfig + ' 00:00:00'
+          } else {
+            togetherDate.value = togetherDateConfig
+          }
         }
       }
     } catch (error) {
@@ -473,11 +475,13 @@ const loadCountdownConfigs = async () => {
     
     // 加载纪念日列表
     try {
-      const anniversaryDatesValue = await getAnniversaryDates()
-      try {
-        anniversaryDates.value = JSON.parse(anniversaryDatesValue)
-      } catch (e) {
-        anniversaryDates.value = []
+      if (userStore.userId) {
+        const anniversaryDatesValue = await getAnniversaryDatesByUserId(userStore.userId)
+        try {
+          anniversaryDates.value = JSON.parse(anniversaryDatesValue)
+        } catch (e) {
+          anniversaryDates.value = []
+        }
       }
     } catch (error) {
       console.warn('加载纪念日配置失败:', error)
@@ -486,8 +490,10 @@ const loadCountdownConfigs = async () => {
     
     // 加载下次见面日期
     try {
-      const nextMeetingDateValue = await getNextMeetingDate()
-      nextMeetingDate.value = nextMeetingDateValue
+      if (userStore.userId) {
+        const nextMeetingDateValue = await getNextMeetingDateByUserId(userStore.userId)
+        nextMeetingDate.value = nextMeetingDateValue
+      }
     } catch (error) {
       console.warn('加载下次见面日期配置失败:', error)
       nextMeetingDate.value = ''
@@ -536,6 +542,22 @@ const goToLetterBox = () => {
   if (checkLoginState()) {
     // 已登录，直接跳转到信箱页面
     router.push('/letters')
+  } else {
+    // 未登录，跳转到登录页面
+    router.push('/login?mode=user')
+  }
+}
+
+// 跳转到信件详情页
+const goToLetterDetail = () => {
+  if (checkLoginState()) {
+    // 已登录，如果有最新信件，跳转到信件详情页
+    if (latestLetter.value && latestLetter.value.id) {
+      router.push(`/letter/${latestLetter.value.id}`)
+    } else {
+      // 没有信件，跳转到信箱页面
+      router.push('/letters')
+    }
   } else {
     // 未登录，跳转到登录页面
     router.push('/login?mode=user')
@@ -831,10 +853,19 @@ const loadLatestLetter = async () => {
   if (!isLoggedIn.value) return
   
   try {
-    const letters = await getUnlockedLetters()
-    if (letters && letters.length > 0) {
+    // 优先获取收到的最近一封解锁的信件
+    const unlockedLetters = await getUnlockedLetters()
+    if (unlockedLetters && unlockedLetters.length > 0) {
       // 获取最新的信件（按创建时间排序）
-      latestLetter.value = letters[0]
+      latestLetter.value = unlockedLetters[0]
+      return
+    }
+    
+    // 如果没有解锁的信件，获取自己写的第一封信
+    const sentLetters = await getSentLetters()
+    if (sentLetters && sentLetters.length > 0) {
+      // 获取最新的信件（按创建时间排序）
+      latestLetter.value = sentLetters[0]
     }
   } catch (error) {
     console.error('获取最近信件失败:', error)
