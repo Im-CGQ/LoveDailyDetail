@@ -24,7 +24,7 @@
           <!-- 回忆记录卡片 - 第一个位置 -->
           <van-swipe-item v-if="currentDiary">
             <div class="carousel-card memory-card glass-effect shimmer" @click="goToHome">
-              <div class="memory-image-container">
+              <div class="memory-background-image">
                 <img 
                   v-if="currentDiary.images && currentDiary.images.length > 0" 
                   :src="currentDiary.images[0].imageUrl" 
@@ -35,8 +35,10 @@
                   <div class="card-icon">📸</div>
                 </div>
               </div>
-              <h3 class="card-title">{{ currentDiary.title }}</h3>
-              <p class="card-subtitle">{{ formatDate(currentDiary.date) }}</p>
+              <div class="memory-content-overlay">
+                <h3 class="card-title">{{ currentDiary.title }}</h3>
+                <p class="card-subtitle">{{ formatDate(currentDiary.date) }}</p>
+              </div>
             </div>
           </van-swipe-item>
 
@@ -1726,54 +1728,66 @@ onUnmounted(() => {
 .memory-card {
   background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #fecfef 100%);
   color: white;
+  position: relative;
+  overflow: hidden;
   
-  .memory-image-container {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    overflow: hidden;
-    margin-bottom: 15px;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .memory-background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
     
     .memory-image {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 50%;
+    }
+    
+    .memory-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #fecfef 100%);
+      
+      .card-icon {
+        font-size: 48px;
+        opacity: 0.8;
+      }
     }
   }
   
-  .memory-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    
-    .card-icon {
-      font-size: 36px;
-      opacity: 0.8;
-    }
+  .memory-content-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    padding: 20px 25px 25px 25px;
+    z-index: 2;
+    text-align: center;
   }
   
   .card-title {
     font-size: 18px;
     font-weight: 600;
-    margin-bottom: 8px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin: 0 auto 8px auto;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
+    max-width: 90%;
   }
   
   .card-subtitle {
     font-size: 13px;
     opacity: 0.9;
     line-height: 1.4;
+    margin: 0 auto;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -1860,19 +1874,21 @@ onUnmounted(() => {
   }
   
   .memory-card {
-    .memory-image-container {
-      width: 60px;
-      height: 60px;
-      margin-bottom: 12px;
-      
-      .memory-placeholder .card-icon {
-        font-size: 28px;
-      }
+    .memory-content-overlay {
+      padding: 15px 20px 20px 20px;
+    }
+    
+    .memory-placeholder .card-icon {
+      font-size: 36px;
     }
     
     .card-title {
       font-size: 16px;
       max-width: 150px;
+    }
+    
+    .card-subtitle {
+      font-size: 12px;
     }
   }
   
