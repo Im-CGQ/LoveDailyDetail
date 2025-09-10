@@ -68,6 +68,18 @@
           <span class="btn-icon">🔗</span>
           分享链接
         </van-button>
+        
+        <van-button 
+          type="default" 
+          size="large"
+          @click="saveAsImage"
+          :loading="savingImage"
+          round
+          class="save-image-btn"
+        >
+          <span class="btn-icon">📷</span>
+          保存为图片
+        </van-button>
       </div>
     </div>
 
@@ -120,12 +132,14 @@ import { copyToClipboard } from '@/utils/clipboard'
 import { getShareExpireMinutes } from '@/api/systemConfig'
 import { showToast } from 'vant'
 import { getLetterBackgroundMusicByUserIdPublic } from '@/api/music'
+import html2canvas from 'html2canvas'
 
 const route = useRoute()
 const router = useRouter()
 
 const letter = ref(null)
 const markingAsRead = ref(false)
+const savingImage = ref(false)
 const countdownTimer = ref(null)
 const displayText = ref('')
 const typingComplete = ref(false)
@@ -368,6 +382,63 @@ const showShareDialog = (shareUrl) => {
       document.body.removeChild(input)
     }
   }, 3000)
+}
+
+// 保存信件为图片
+const saveAsImage = async () => {
+  if (!letter.value) return
+  
+  savingImage.value = true
+  try {
+    // 确保显示完整内容
+    if (letter.value && letter.value.content) {
+      displayText.value = letter.value.content
+      typingComplete.value = true
+      if (typingTimer) {
+        clearTimeout(typingTimer)
+      }
+    }
+    
+    // 等待DOM更新
+    await nextTick()
+    
+    // 获取信件纸张元素
+    const letterPaper = document.querySelector('.paper-border')
+    if (!letterPaper) {
+      showToast('未找到信件内容')
+      return
+    }
+    
+    // 使用html2canvas截图
+    const canvas = await html2canvas(letterPaper, {
+      backgroundColor: null, // 透明背景
+      scale: 2, // 提高图片质量
+      useCORS: true, // 允许跨域图片
+      allowTaint: true,
+      logging: false,
+      width: letterPaper.offsetWidth,
+      height: letterPaper.offsetHeight,
+      scrollX: 0,
+      scrollY: 0
+    })
+    
+    // 创建下载链接
+    const link = document.createElement('a')
+    link.download = `信件_${letter.value.title || '未命名'}_${new Date().toISOString().slice(0, 10)}.png`
+    link.href = canvas.toDataURL('image/png')
+    
+    // 触发下载
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    showToast('图片保存成功')
+  } catch (error) {
+    console.error('保存图片失败:', error)
+    showToast('保存图片失败，请重试')
+  } finally {
+    savingImage.value = false
+  }
 }
 
 // 音乐播放器相关方法
@@ -873,6 +944,16 @@ onUnmounted(() => {
       
       &:hover {
         background: linear-gradient(135deg, #5a6fd8, #6a4190);
+      }
+    }
+    
+    &.save-image-btn {
+      background: linear-gradient(135deg, #ff6b9d, #ff8fab);
+      border-color: #ff5a8a;
+      margin-top: 12px;
+      
+      &:hover {
+        background: linear-gradient(135deg, #ff5a8a, #ff7ba3);
       }
     }
   }
