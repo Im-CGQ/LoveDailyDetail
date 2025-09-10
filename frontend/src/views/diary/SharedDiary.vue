@@ -46,7 +46,33 @@
       </div>
     </div>
     
-         <div class="content" v-if="diary">
+    <!-- 日记封面 -->
+    <div class="diary-envelope" v-if="diary && !isDiaryOpened" @click="openDiary">
+      <div class="envelope-outer">
+        <div class="envelope-flap">
+          <div class="envelope-seal">
+            <span class="seal-heart">📖</span>
+          </div>
+        </div>
+        <div class="envelope-body">
+          <div class="envelope-address">
+            <div class="to-label">美好回忆</div>
+            <div class="recipient-name">{{ diary.title }}</div>
+          </div>
+          <div class="envelope-sender">
+            <div class="from-label">日期</div>
+            <div class="sender-name">{{ formatDate(diary.date) }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="open-hint">
+        <span class="hint-text">点击打开美好回忆</span>
+        <span class="hint-arrow">↓</span>
+      </div>
+    </div>
+
+    <!-- 日记内容 -->
+    <div class="content" v-if="diary && isDiaryOpened">
        <!-- 倒计时显示 -->
        <div class="countdown-section" v-if="countdown">
          <div class="countdown-card">
@@ -175,6 +201,7 @@ const displayText = ref('')
 const typingComplete = ref(false)
 const loading = ref(true)
 const error = ref(false)
+const isDiaryOpened = ref(false) // 日记是否已打开
 let typingTimer = null
 
 // 倒计时相关
@@ -448,6 +475,21 @@ const startTyping = (text) => {
   typeNextChar()
 }
 
+// 打开日记
+const openDiary = () => {
+  isDiaryOpened.value = true
+  
+  // 启动打字机效果
+  if (diary.value && diary.value.description) {
+    startTyping(diary.value.description)
+  }
+  
+  // 初始化音乐播放器
+  if (diary.value?.backgroundMusic && diary.value.backgroundMusic.length > 0) {
+    initAudio()
+  }
+}
+
 // 点击显示全部内容
 const showFullText = () => {
   if (diary.value && diary.value.description) {
@@ -618,6 +660,7 @@ const loadDiary = async () => {
   try {
     loading.value = true
     error.value = false
+    isDiaryOpened.value = false // 确保初始状态为false
     
     // 分享页面使用默认的音乐自动播放配置
     musicAutoplay.value = true
@@ -637,15 +680,7 @@ const loadDiary = async () => {
     // 启动倒计时
     startCountdown()
     
-    // 启动打字机效果
-    if (diary.value && diary.value.description) {
-      startTyping(diary.value.description)
-    }
-    
-    // 初始化音乐播放器
-    if (diary.value?.backgroundMusic && diary.value.backgroundMusic.length > 0) {
-      initAudio()
-    }
+    // 不在这里启动打字机效果，等用户点击打开日记时再启动
   } catch (err) {
     console.error('加载分享日记失败:', err)
     error.value = true
@@ -730,6 +765,11 @@ onUnmounted(() => {
 .detail {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   position: relative;
+  
+  /* 修复romantic-bg伪元素阻止点击的问题 */
+  &::after {
+    pointer-events: none;
+  }
 }
 
 .content {
@@ -739,6 +779,193 @@ onUnmounted(() => {
   position: relative;
   z-index: 2;
   padding-bottom: 40px;
+}
+
+/* 日记封面样式 */
+.diary-envelope {
+  max-width: 500px;
+  margin: 80px auto 0;
+  padding: 40px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1000;
+  
+  &:hover {
+    transform: translateY(-5px);
+    
+    .envelope-outer {
+      box-shadow: 
+        0 15px 40px rgba(102, 126, 234, 0.4),
+        0 25px 60px rgba(102, 126, 234, 0.3);
+    }
+    
+    .envelope-seal {
+      transform: scale(1.1);
+      animation: heartbeat 1.5s ease-in-out infinite;
+    }
+    
+    .open-hint {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.envelope-outer {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border: 3px solid rgba(102, 126, 234, 0.8);
+  border-radius: 15px;
+  box-shadow: 
+    0 10px 30px rgba(102, 126, 234, 0.3),
+    0 20px 50px rgba(102, 126, 234, 0.2),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.1) 1px, transparent 1px),
+      radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px, 60px 60px;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+.envelope-flap {
+  position: relative;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+  border-radius: 15px 15px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 49%, rgba(255, 255, 255, 0.1) 50%, transparent 51%);
+    background-size: 20px 20px;
+  }
+}
+
+.envelope-seal {
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 4px 15px rgba(255, 107, 157, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+  
+  .seal-heart {
+    font-size: 24px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  }
+}
+
+.envelope-body {
+  padding: 40px 30px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.envelope-address {
+  margin-bottom: 30px;
+  
+  .to-label {
+    font-size: 16px;
+    color: rgba(102, 126, 234, 0.8);
+    margin-bottom: 8px;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+  
+  .recipient-name {
+    font-family: 'Brush Script MT', cursive;
+    font-size: 28px;
+    color: #667eea;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.envelope-sender {
+  .from-label {
+    font-size: 14px;
+    color: rgba(118, 75, 162, 0.8);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  
+  .sender-name {
+    font-size: 18px;
+    color: #667eea;
+    font-weight: 600;
+    font-style: italic;
+  }
+}
+
+.open-hint {
+  text-align: center;
+  margin-top: 20px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  
+  .hint-text {
+    display: block;
+    font-size: 16px;
+    color: rgba(102, 126, 234, 0.8);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  
+  .hint-arrow {
+    display: block;
+    font-size: 20px;
+    color: #ff6b9d;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  
+  /* 移动端固定显示 */
+  @media (max-width: 768px) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
 }
 
 /* 倒计时样式 */
@@ -1209,6 +1436,68 @@ onUnmounted(() => {
   
   .header .title {
     font-size: 24px;
+  }
+  
+  /* 移动端日记封面样式 */
+  .diary-envelope {
+    margin: 20vh auto 0;
+    padding: 30px 15px;
+    
+    .envelope-outer {
+      border-radius: 12px;
+    }
+    
+    .envelope-flap {
+      height: 60px;
+      border-radius: 12px 12px 0 0;
+    }
+    
+    .envelope-seal {
+      width: 40px;
+      height: 40px;
+      
+      .seal-heart {
+        font-size: 20px;
+      }
+    }
+    
+    .envelope-body {
+      padding: 30px 20px;
+    }
+    
+    .envelope-address {
+      margin-bottom: 20px;
+      
+      .to-label {
+        font-size: 14px;
+      }
+      
+      .recipient-name {
+        font-size: 24px;
+      }
+    }
+    
+    .envelope-sender {
+      .from-label {
+        font-size: 12px;
+      }
+      
+      .sender-name {
+        font-size: 16px;
+      }
+    }
+    
+    .open-hint {
+      margin-top: 15px;
+      
+      .hint-text {
+        font-size: 14px;
+      }
+      
+      .hint-arrow {
+        font-size: 18px;
+      }
+    }
   }
   
   .global-floating-music-player {

@@ -12,7 +12,37 @@
     </div>
     
     <div class="letter-paper" v-if="letter">
-      <div class="paper-border">
+      <!-- 信件封面 -->
+      <div class="letter-envelope" v-if="!isLetterOpened" @click="openLetter">
+        <div class="envelope-outer">
+          <div class="envelope-flap">
+            <div class="envelope-seal">
+              <span class="seal-heart">💕</span>
+            </div>
+          </div>
+          <div class="envelope-body">
+            <div class="envelope-address">
+              <div class="to-label">致</div>
+              <div class="recipient-name">{{ letter.receiverName || '亲爱的' }}</div>
+            </div>
+            <div class="envelope-sender">
+              <div class="from-label">来自</div>
+              <div class="sender-name">{{ letter.senderName || '神秘人' }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="open-hint">
+          <span class="hint-text">点击打开信件</span>
+          <span class="hint-arrow">↓</span>
+        </div>
+      </div>
+
+      <!-- 信件内容 -->
+      <div 
+        class="paper-border" 
+        v-if="isLetterOpened" 
+        :class="{ 'letter-opened': isLetterOpened }"
+      >
         <div class="paper-content">
           <div class="letter-header">
             <div class="letter-title">
@@ -44,6 +74,7 @@
             </div>
           </div>
         </div>
+        
       </div>
 
              <!-- 解锁时间信息 -->
@@ -135,6 +166,7 @@ const displayText = ref('')
 const typingComplete = ref(false)
 const loading = ref(true)
 const error = ref(false)
+const isLetterOpened = ref(false) // 信件是否已打开
 let typingTimer = null
 
 // 倒计时相关
@@ -183,10 +215,7 @@ const fetchLetterDetail = async () => {
     // 启动倒计时
     startCountdown()
     
-    // 启动打字机效果
-    if (letter.value && letter.value.content) {
-      startTyping(letter.value.content)
-    }
+    // 不在这里启动打字机效果，等用户点击打开信件时再启动
 
     // 加载看信背景音乐配置（根据发送者ID获取）
     if (letter.value && letter.value.senderId) {
@@ -328,6 +357,25 @@ const startTyping = (text) => {
   typeNextChar()
 }
 
+// 打开信件
+const openLetter = () => {
+  isLetterOpened.value = true
+  
+  // 启动打字机效果
+  if (letter.value && letter.value.content) {
+    startTyping(letter.value.content)
+  }
+  
+  // 播放音乐（根据配置决定）
+  if (letterBackgroundMusic.value?.url && audioElement.value && musicAutoplay.value) {
+    if (audioElement.value.paused) {
+      audioElement.value.play().catch(error => {
+        console.warn('播放音乐失败:', error)
+      })
+    }
+  }
+}
+
 // 点击显示全部内容
 const showFullText = () => {
   if (letter.value && letter.value.content) {
@@ -335,15 +383,6 @@ const showFullText = () => {
     typingComplete.value = true
     if (typingTimer) {
       clearTimeout(typingTimer)
-    }
-    
-    // 点击信件内容时播放音乐（根据配置决定）
-    if (letterBackgroundMusic.value?.url && audioElement.value && musicAutoplay.value) {
-      if (audioElement.value.paused) {
-        audioElement.value.play().catch(error => {
-          console.warn('播放音乐失败:', error)
-        })
-      }
     }
   }
 }
@@ -490,6 +529,8 @@ const getShortFileName = (fileName) => {
   return '...' + fileName.slice(-15)
 }
 
+
+
 onMounted(() => {
   fetchLetterDetail()
 })
@@ -585,6 +626,220 @@ onUnmounted(() => {
   padding: 60px 0 20px 0;
   position: relative;
 }
+
+/* 信件封面样式 */
+.letter-envelope {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 40px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    
+    .envelope-outer {
+      box-shadow: 
+        0 15px 40px rgba(139, 69, 19, 0.4),
+        0 25px 60px rgba(139, 69, 19, 0.3);
+    }
+    
+    .envelope-seal {
+      transform: scale(1.1);
+      animation: heartbeat 1.5s ease-in-out infinite;
+    }
+    
+    .open-hint {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.envelope-outer {
+  background: linear-gradient(135deg, #F5DEB3 0%, #DEB887 50%, #D2B48C 100%);
+  border: 3px solid #8B4513;
+  border-radius: 15px;
+  box-shadow: 
+    0 10px 30px rgba(139, 69, 19, 0.3),
+    0 20px 50px rgba(139, 69, 19, 0.2),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+      radial-gradient(circle at 80% 80%, rgba(139, 69, 19, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px, 60px 60px;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+.envelope-flap {
+  position: relative;
+  height: 80px;
+  background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+  border-radius: 15px 15px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 49%, rgba(255, 255, 255, 0.1) 50%, transparent 51%);
+    background-size: 20px 20px;
+  }
+}
+
+.envelope-seal {
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 4px 15px rgba(255, 107, 157, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+  
+  .seal-heart {
+    font-size: 24px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  }
+}
+
+.envelope-body {
+  padding: 40px 30px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.envelope-address {
+  margin-bottom: 30px;
+  
+  .to-label {
+    font-family: 'Times New Roman', serif;
+    font-size: 16px;
+    color: #8B4513;
+    margin-bottom: 8px;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+  
+  .recipient-name {
+    font-family: 'Brush Script MT', cursive;
+    font-size: 28px;
+    color: #654321;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.envelope-sender {
+  .from-label {
+    font-family: 'Times New Roman', serif;
+    font-size: 14px;
+    color: #A0522D;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  
+  .sender-name {
+    font-family: 'Times New Roman', serif;
+    font-size: 18px;
+    color: #8B4513;
+    font-weight: 600;
+    font-style: italic;
+  }
+}
+
+.open-hint {
+  text-align: center;
+  margin-top: 20px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  
+  .hint-text {
+    display: block;
+    font-family: 'Times New Roman', serif;
+    font-size: 16px;
+    color: #8B4513;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  
+  .hint-arrow {
+    display: block;
+    font-size: 20px;
+    color: #ff6b9d;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  
+  // 移动端固定显示
+  @media (max-width: 768px) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 信件打开动画 */
+.paper-border {
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  
+  &.letter-opened {
+    animation: letterReveal 1.2s ease-out;
+  }
+}
+
+@keyframes letterReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-5px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+
 
 .back-button {
   position: fixed;
@@ -857,42 +1112,6 @@ onUnmounted(() => {
   }
 }
 
-.letter-actions {
-  text-align: center;
-  margin-top: 30px;
-  padding: 20px;
-  
-  .van-button {
-    min-width: 140px;
-    height: 48px;
-    font-size: 16px;
-    font-weight: 500;
-    font-family: 'Times New Roman', serif;
-    background: linear-gradient(135deg, #8B4513, #A0522D);
-    border: 2px solid #654321;
-    border-radius: 24px;
-    box-shadow: 
-      0 6px 20px rgba(139, 69, 19, 0.4),
-      inset 0 2px 4px rgba(255, 255, 255, 0.2);
-    color: #F5DEB3;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-    
-    &:active {
-      transform: translateY(2px);
-      box-shadow: 
-        0 4px 12px rgba(139, 69, 19, 0.4),
-        inset 0 1px 2px rgba(255, 255, 255, 0.1);
-    }
-    
-    &:hover {
-      background: linear-gradient(135deg, #A0522D, #CD853F);
-      box-shadow: 
-        0 8px 25px rgba(139, 69, 19, 0.5),
-        inset 0 2px 4px rgba(255, 255, 255, 0.2);
-    }
-  }
-}
 
 .loading-state {
   display: flex;
@@ -1026,6 +1245,47 @@ onUnmounted(() => {
         font-size: 18px;
       }
     }
+  }
+  
+  // 移动端信件封面样式
+  .letter-envelope {
+    max-width: 90%;
+    padding: 30px 0;
+    
+    .envelope-body {
+      padding: 30px 20px;
+    }
+    
+    .envelope-address {
+      margin-bottom: 25px;
+      
+      .recipient-name {
+        font-size: 24px;
+      }
+    }
+    
+    .envelope-sender {
+      .sender-name {
+        font-size: 16px;
+      }
+    }
+    
+    .open-hint {
+      margin-top: 25px;
+      
+      .hint-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: #8B4513;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      
+      .hint-arrow {
+        font-size: 24px;
+        margin-top: 8px;
+      }
+    }
+    
   }
   
   // 移动端音乐播放器样式
