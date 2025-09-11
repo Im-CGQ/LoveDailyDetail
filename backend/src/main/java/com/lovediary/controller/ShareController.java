@@ -28,8 +28,13 @@ public class ShareController {
             return null;
         }
         try {
+            // 处理 Bearer 前缀
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
             return jwtUtil.getUserIdFromToken(token);
         } catch (Exception e) {
+            System.out.println("ShareController - 获取用户ID失败: " + e.getMessage());
             return null;
         }
     }

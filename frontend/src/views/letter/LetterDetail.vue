@@ -129,13 +129,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { getLetterById, markAsRead } from '@/api/letter'
 import { createLetterShareLink } from '@/api/share'
 import { copyToClipboard } from '@/utils/clipboard'
-import { getShareExpireMinutes } from '@/api/systemConfig'
+import { getShareExpireMinutes, getShareExpireMinutesByUserId } from '@/api/systemConfig'
 import { showToast } from 'vant'
 import { getLetterBackgroundMusicByUserIdPublic } from '@/api/music'
+import { useUserStore } from '@/stores/user'
 import html2canvas from 'html2canvas'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const letter = ref(null)
 const markingAsRead = ref(false)
@@ -324,8 +326,21 @@ const createShare = async () => {
     const result = await createLetterShareLink(letter.value.id)
     const shareUrl = window.location.origin + result.shareUrl
     
-    // 获取分享过期时间配置并显示
-    const minutes = await getShareExpireMinutes()
+    // 获取用户个人分享过期时间配置并显示
+    let minutes
+    try {
+      // 首先尝试获取用户个人配置
+      if (userStore.userId) {
+        minutes = await getShareExpireMinutesByUserId(userStore.userId)
+      } else {
+        // 如果获取不到用户ID，使用默认配置
+        minutes = await getShareExpireMinutes()
+      }
+    } catch (error) {
+      console.warn('获取用户分享配置失败，使用默认配置:', error)
+      minutes = await getShareExpireMinutes()
+    }
+    
     const hours = Math.floor(minutes / 60)
     const remainingMinutes = minutes % 60
     let timeText = ''

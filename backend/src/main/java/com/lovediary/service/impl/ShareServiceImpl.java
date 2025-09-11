@@ -44,8 +44,14 @@ public class ShareServiceImpl implements ShareService {
         String shareToken = generateShareToken();
         
         // 从系统配置获取分享过期时间（分钟）
-        Integer expireMinutes = userId != null ? 
-            systemConfigService.getShareExpireMinutesByUserId(userId) : 60; // 默认60分钟
+        Integer expireMinutes;
+        if (userId != null) {
+            expireMinutes = systemConfigService.getShareExpireMinutesByUserId(userId);
+            System.out.println("ShareServiceImpl - 使用用户个人配置，用户ID: " + userId + ", 过期时间: " + expireMinutes + "分钟");
+        } else {
+            expireMinutes = 60; // 默认60分钟
+            System.out.println("ShareServiceImpl - 用户ID为空，使用默认配置: " + expireMinutes + "分钟");
+        }
         // 设置过期时间
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(expireMinutes);
         
@@ -182,8 +188,14 @@ public class ShareServiceImpl implements ShareService {
         String shareToken = generateShareToken();
         
         // 从系统配置获取分享过期时间（分钟）
-        Integer expireMinutes = userId != null ? 
-            systemConfigService.getShareExpireMinutesByUserId(userId) : 60; // 默认60分钟
+        Integer expireMinutes;
+        if (userId != null) {
+            expireMinutes = systemConfigService.getShareExpireMinutesByUserId(userId);
+            System.out.println("ShareServiceImpl - 使用用户个人配置，用户ID: " + userId + ", 过期时间: " + expireMinutes + "分钟");
+        } else {
+            expireMinutes = 60; // 默认60分钟
+            System.out.println("ShareServiceImpl - 用户ID为空，使用默认配置: " + expireMinutes + "分钟");
+        }
         // 设置过期时间
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(expireMinutes);
         

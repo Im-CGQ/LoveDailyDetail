@@ -160,14 +160,16 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showImagePreview } from 'vant'
 import { getDiaryById } from '@/api/diary'
-import { getBackgroundMusicAutoplay, getShareExpireMinutes } from '@/api/systemConfig'
+import { getBackgroundMusicAutoplay, getShareExpireMinutes, getShareExpireMinutesByUserId } from '@/api/systemConfig'
 import { createShareLink } from '@/api/share'
 import { copyToClipboard } from '@/utils/clipboard'
 import BackButton from '@/components/BackButton.vue'
+import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 const diary = ref(null)
 const displayText = ref('')
 const typingComplete = ref(false)
@@ -213,8 +215,21 @@ const share = async () => {
     // 创建分享链接
     const shareData = await createShareLink(diaryId)
     
-    // 获取分享过期时间配置并显示
-    const minutes = await getShareExpireMinutes()
+    // 获取用户个人分享过期时间配置并显示
+    let minutes
+    try {
+      // 首先尝试获取用户个人配置
+      if (userStore.userId) {
+        minutes = await getShareExpireMinutesByUserId(userStore.userId)
+      } else {
+        // 如果获取不到用户ID，使用默认配置
+        minutes = await getShareExpireMinutes()
+      }
+    } catch (error) {
+      console.warn('获取用户分享配置失败，使用默认配置:', error)
+      minutes = await getShareExpireMinutes()
+    }
+    
     const hours = Math.floor(minutes / 60)
     const remainingMinutes = minutes % 60
     let timeText = ''
