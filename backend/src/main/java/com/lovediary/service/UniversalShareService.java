@@ -3,6 +3,7 @@ package com.lovediary.service;
 import com.lovediary.entity.UniversalShareLink;
 import com.lovediary.dto.SharedDiaryDTO;
 import com.lovediary.dto.SharedLetterDTO;
+import com.lovediary.dto.SharedMovieDTO;
 
 public interface UniversalShareService {
     
@@ -78,4 +79,31 @@ public interface UniversalShareService {
      * 清理过期的信件分享链接（兼容旧API）
      */
     void cleanupExpiredLetterLinks();
+    
+    /**
+     * 创建电影分享链接
+     * @param movieId 电影ID
+     * @param userId 用户ID
+     * @return 分享链接信息
+     */
+    UniversalShareLink createMovieShareLink(Long movieId, Long userId);
+    
+    /**
+     * 根据分享token获取电影
+     * @param shareToken 分享token
+     * @return 电影信息
+     */
+    SharedMovieDTO getMovieByShareToken(String shareToken);
+    
+    /**
+     * 验证电影分享链接是否有效
+     * @param shareToken 分享token
+     * @return 是否有效
+     */
+    boolean isValidMovieShareLink(String shareToken);
+    
+    /**
+     * 清理过期的电影分享链接
+     */
+    void cleanupExpiredMovieLinks();
 }

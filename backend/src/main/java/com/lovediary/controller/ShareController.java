@@ -3,8 +3,10 @@ package com.lovediary.controller;
 import com.lovediary.dto.ApiResponse;
 import com.lovediary.dto.SharedDiaryDTO;
 import com.lovediary.dto.SharedLetterDTO;
+import com.lovediary.dto.SharedMovieDTO;
 import com.lovediary.entity.ShareLink;
 import com.lovediary.entity.LetterShareLink;
+import com.lovediary.entity.UniversalShareLink;
 import com.lovediary.service.ShareService;
 import com.lovediary.service.UniversalShareService;
 import com.lovediary.util.JwtUtil;
@@ -127,6 +129,44 @@ public class ShareController {
             return ResponseEntity.ok(ApiResponse.success("获取分享信件成功", letter));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponse.error("获取分享信件失败：" + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 创建电影分享链接
+     */
+    @PostMapping("/movie/create/{movieId}")
+    public ResponseEntity<ApiResponse<Map<String, String>>> createMovieShareLink(
+            @PathVariable Long movieId,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            Long userId = getCurrentUserId(token);
+            UniversalShareLink shareLink = universalShareService.createMovieShareLink(movieId, userId);
+            
+            // 构建分享链接
+            String shareUrl = "/share/movie/" + shareLink.getShareToken();
+            
+            Map<String, String> result = new HashMap<>();
+            result.put("shareUrl", shareUrl);
+            result.put("shareToken", shareLink.getShareToken());
+            result.put("expiresAt", shareLink.getExpiresAt().toString());
+            
+            return ResponseEntity.ok(ApiResponse.success("创建电影分享链接成功", result));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("创建电影分享链接失败：" + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 通过分享链接查看电影（无需登录）
+     */
+    @GetMapping("/movie/{shareToken}")
+    public ResponseEntity<ApiResponse<SharedMovieDTO>> viewSharedMovie(@PathVariable String shareToken) {
+        try {
+            SharedMovieDTO movie = universalShareService.getMovieByShareToken(shareToken);
+            return ResponseEntity.ok(ApiResponse.success("获取分享电影成功", movie));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取分享电影失败：" + e.getMessage()));
         }
     }
 }

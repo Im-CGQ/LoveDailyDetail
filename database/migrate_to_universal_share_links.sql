@@ -4,7 +4,7 @@
 -- 1. 创建新的通用分享链接表
 CREATE TABLE universal_share_links (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    share_type ENUM('DIARY', 'LETTER', 'MOVIE', 'CHAT_RECORD', 'MUSIC') NOT NULL COMMENT '分享类型',
+    share_type VARCHAR(100) NOT NULL COMMENT '分享类型',
     target_id BIGINT NOT NULL COMMENT '目标ID（日记ID、信件ID等）',
     share_token VARCHAR(32) NOT NULL UNIQUE COMMENT '分享令牌',
     expires_at TIMESTAMP NOT NULL COMMENT '过期时间',

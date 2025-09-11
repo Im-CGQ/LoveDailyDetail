@@ -1,16 +1,25 @@
 <template>
   <div class="movie-detail">
-    <BackButton />
+    <!-- 倒计时显示 -->
+    <div class="countdown-section" v-if="countdown">
+      <div class="countdown-card">
+        <div class="countdown-icon">⏰</div>
+        <div class="countdown-info">
+          <span class="countdown-label">分享链接剩余时间</span>
+          <span class="countdown-time">{{ countdown }}</span>
+        </div>
+      </div>
+    </div>
     
     <div class="content">
       <div v-if="loading" class="loading">加载中...</div>
       
       <div v-else-if="!movie" class="error">
         <p>电影不存在或已被删除</p>
-        <button @click="$router.push('/movies')">返回电影列表</button>
+        <button @click="$router.push('/')">返回首页</button>
       </div>
       
-             <div v-else class="movie-content" ref="movieContentRef">
+      <div v-else class="movie-content" ref="movieContentRef">
         <div class="movie-header">
           <div class="movie-cover">
             <img 
@@ -49,9 +58,6 @@
               <button class="action-btn secondary" @click="joinRoom">
                 🔗 加入房间
               </button>
-              <button class="action-btn share" @click="shareMovie">
-                📤 分享电影
-              </button>
             </div>
           </div>
         </div>
@@ -77,31 +83,42 @@
 import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
-import BackButton from '@/components/BackButton.vue'
-import { getMovieById } from '@/api/movie.js'
+import { getSharedMovie } from '@/api/share.js'
 import { createRoom as createRoomApi, checkUserInMovieRoom } from '@/api/movieRoom.js'
-import { createMovieShareLink } from '@/api/share.js'
-import { getShareExpireMinutes, getShareExpireMinutesByUserId } from '@/api/systemConfig'
-import { copyToClipboard } from '@/utils/clipboard'
-import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
-const userStore = useUserStore()
 
 const loading = ref(false)
 const movie = ref(null)
 const movieContentRef = ref(null)
 const containerWidth = ref(400) // 默认宽度
 
+// 倒计时相关
+const countdown = ref(null)
+const countdownTimer = ref(null)
+const expiresAt = ref(null)
+
 const loadMovie = async () => {
   loading.value = true
   try {
-    const movieId = route.params.id
-    const movieData = await getMovieById(movieId)
-    movie.value = movieData
+    const shareToken = route.params.shareToken
+    const response = await getSharedMovie(shareToken)
+    if (response.success) {
+      movie.value = response.data
+      
+      // 从分享链接数据中获取过期时间
+      if (movie.value.expiresAt) {
+        expiresAt.value = new Date(movie.value.expiresAt)
+        // 启动倒计时
+        startCountdown()
+      }
+    } else {
+      throw new Error(response.message || '获取分享电影失败')
+    }
   } catch (error) {
     showToast(error.message)
+    console.error('加载分享电影失败:', error)
   } finally {
     loading.value = false
   }
@@ -155,43 +172,6 @@ const joinRoom = async () => {
     }
   } catch (error) {
     showToast(error.message || '操作失败')
-  }
-}
-
-const shareMovie = async () => {
-  try {
-    showToast('正在创建分享链接...')
-    const shareData = await createMovieShareLink(movie.value.id)
-    
-    // 复制分享链接到剪贴板
-    const shareUrl = `${window.location.origin}/share/movie/${shareData.shareToken}`
-    
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(shareUrl)
-      showToast('分享链接已复制到剪贴板')
-    } else {
-      // 降级方案：使用prompt显示链接
-      const userConfirmed = await showConfirmDialog({
-        title: '分享链接',
-        message: `分享链接：\n${shareUrl}\n\n请复制此链接分享给他人`,
-        confirmButtonText: '复制链接',
-        cancelButtonText: '关闭'
-      })
-      
-      if (userConfirmed) {
-        // 尝试使用execCommand复制
-        const textArea = document.createElement('textarea')
-        textArea.value = shareUrl
-        document.body.appendChild(textArea)
-        textArea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textArea)
-        showToast('分享链接已复制')
-      }
-    }
-  } catch (error) {
-    console.error('创建分享链接失败:', error)
-    showToast(error.message || '创建分享链接失败')
   }
 }
 
@@ -268,6 +248,47 @@ const getVideoStyle = computed(() => {
   }
 })
 
+// 计算倒计时
+const calculateCountdown = () => {
+  if (!expiresAt.value) return
+  
+  const now = new Date().getTime()
+  const expireTime = new Date(expiresAt.value).getTime()
+  const diff = expireTime - now
+  
+  if (diff <= 0) {
+    // 倒计时结束，显示错误页面
+    countdown.value = '00:00:00'
+    clearInterval(countdownTimer.value)
+    movie.value = null
+    showToast('分享链接已过期')
+    return
+  }
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+  
+  countdown.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+}
+
+// 启动倒计时
+const startCountdown = () => {
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+  }
+  calculateCountdown() // 立即计算一次
+  countdownTimer.value = setInterval(calculateCountdown, 1000)
+}
+
+// 停止倒计时
+const stopCountdown = () => {
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+    countdownTimer.value = null
+  }
+}
+
 // 监听movie变化，在DOM更新后更新容器宽度
 watch(movie, () => {
   if (movie.value) {
@@ -280,6 +301,13 @@ watch(movie, () => {
 onMounted(() => {
   loadMovie()
 })
+
+// 组件卸载时移除监听器
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  // 清理倒计时定时器
+  stopCountdown()
+})
 </script>
 
 <style scoped>
@@ -289,10 +317,53 @@ onMounted(() => {
   padding: 20px;
 }
 
+/* 倒计时样式 */
+.countdown-section {
+  margin-bottom: 20px;
+}
+
+.countdown-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.countdown-icon {
+  font-size: 24px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.countdown-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.countdown-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.countdown-time {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
 .content {
   max-width: 1200px;
   margin: 0 auto;
-  padding-top: 60px;
 }
 
 .loading, .error {
@@ -429,16 +500,6 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-.action-btn.share {
-  background: #ff6b6b;
-  color: white;
-}
-
-.action-btn.share:hover {
-  background: #ff5252;
-  transform: translateY(-2px);
-}
-
 .movie-player {
   margin-top: 30px;
 }
@@ -457,6 +518,16 @@ onMounted(() => {
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* 动画关键帧 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 @media (max-width: 768px) {
@@ -490,4 +561,3 @@ onMounted(() => {
   }
 }
 </style>
-

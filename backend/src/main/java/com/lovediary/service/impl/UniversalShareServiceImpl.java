@@ -2,14 +2,17 @@ package com.lovediary.service.impl;
 
 import com.lovediary.entity.Diary;
 import com.lovediary.entity.Letter;
+import com.lovediary.entity.Movie;
 import com.lovediary.entity.UniversalShareLink;
 import com.lovediary.repository.DiaryRepository;
 import com.lovediary.repository.LetterRepository;
+import com.lovediary.repository.MovieRepository;
 import com.lovediary.repository.UniversalShareLinkRepository;
 import com.lovediary.service.UniversalShareService;
 import com.lovediary.service.SystemConfigService;
 import com.lovediary.dto.SharedDiaryDTO;
 import com.lovediary.dto.SharedLetterDTO;
+import com.lovediary.dto.SharedMovieDTO;
 import com.lovediary.dto.ImageInfoDTO;
 import com.lovediary.dto.VideoInfoDTO;
 import com.lovediary.dto.DiaryBackgroundMusicDTO;
@@ -29,6 +32,7 @@ public class UniversalShareServiceImpl implements UniversalShareService {
     private final UniversalShareLinkRepository universalShareLinkRepository;
     private final DiaryRepository diaryRepository;
     private final LetterRepository letterRepository;
+    private final MovieRepository movieRepository;
     private final SystemConfigService systemConfigService;
     
     @Override
@@ -84,6 +88,8 @@ public class UniversalShareServiceImpl implements UniversalShareService {
                 return getDiaryByShareToken(shareToken);
             case LETTER:
                 return getLetterByShareToken(shareToken);
+            case MOVIE:
+                return getMovieByShareToken(shareToken);
             default:
                 throw new RuntimeException("不支持的分享类型: " + shareType);
         }
@@ -290,6 +296,79 @@ public class UniversalShareServiceImpl implements UniversalShareService {
         cleanupExpiredLinks(UniversalShareLink.ShareType.LETTER);
     }
     
+    @Override
+    public UniversalShareLink createMovieShareLink(Long movieId, Long userId) {
+        return createShareLink(movieId, UniversalShareLink.ShareType.MOVIE, userId);
+    }
+    
+    @Override
+    public boolean isValidMovieShareLink(String shareToken) {
+        return isValidShareLink(shareToken, UniversalShareLink.ShareType.MOVIE);
+    }
+    
+    @Override
+    public void cleanupExpiredMovieLinks() {
+        cleanupExpiredLinks(UniversalShareLink.ShareType.MOVIE);
+    }
+    
+    /**
+     * 根据分享token获取电影
+     */
+    @Transactional(readOnly = true)
+    public SharedMovieDTO getMovieByShareToken(String shareToken) {
+        UniversalShareLink shareLink = universalShareLinkRepository
+                .findByShareTokenAndShareTypeAndIsActiveTrue(shareToken, UniversalShareLink.ShareType.MOVIE)
+                .orElseThrow(() -> new RuntimeException("分享链接不存在或已过期"));
+        
+        // 检查是否过期
+        if (shareLink.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("分享链接已过期");
+        }
+        
+        Movie movie = movieRepository.findById(shareLink.getTargetId())
+                .orElseThrow(() -> new RuntimeException("电影不存在"));
+        
+        // 增加查看次数
+        shareLink.setViewCount(shareLink.getViewCount() + 1);
+        universalShareLinkRepository.save(shareLink);
+        
+        // 转换为DTO，避免懒加载问题
+        SharedMovieDTO dto = new SharedMovieDTO();
+        dto.setId(movie.getId());
+        dto.setTitle(movie.getTitle());
+        dto.setDescription(movie.getDescription());
+        dto.setCoverUrl(movie.getCoverUrl());
+        dto.setMovieUrl(movie.getMovieUrl());
+        dto.setFileName(movie.getFileName());
+        dto.setIsPublic(movie.getIsPublic());
+        dto.setDurationMinutes(movie.getDurationMinutes());
+        dto.setDurationSeconds(movie.getDurationSeconds());
+        dto.setFileSize(movie.getFileSize());
+        dto.setWidth(movie.getWidth());
+        dto.setHeight(movie.getHeight());
+        dto.setCreatedAt(movie.getCreatedAt());
+        dto.setUpdatedAt(movie.getUpdatedAt());
+        
+        // 设置创建者信息
+        if (movie.getUser() != null) {
+            dto.setCreatorId(movie.getUser().getId());
+            dto.setCreatorName(movie.getUser().getUsername());
+            dto.setCreatorDisplayName(movie.getUser().getDisplayName());
+        }
+        
+        // 设置伴侣信息
+        if (movie.getPartner() != null) {
+            dto.setPartnerId(movie.getPartner().getId());
+            dto.setPartnerName(movie.getPartner().getUsername());
+            dto.setPartnerDisplayName(movie.getPartner().getDisplayName());
+        }
+        
+        // 设置分享链接过期时间
+        dto.setExpiresAt(shareLink.getExpiresAt());
+        
+        return dto;
+    }
+    
     /**
      * 验证目标对象是否存在
      */
@@ -302,6 +381,10 @@ public class UniversalShareServiceImpl implements UniversalShareService {
             case LETTER:
                 letterRepository.findById(targetId)
                         .orElseThrow(() -> new RuntimeException("信件不存在"));
+                break;
+            case MOVIE:
+                movieRepository.findById(targetId)
+                        .orElseThrow(() -> new RuntimeException("电影不存在"));
                 break;
             default:
                 throw new RuntimeException("不支持的分享类型: " + shareType);

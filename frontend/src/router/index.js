@@ -59,6 +59,12 @@ const routes = [
     meta: { title: '分享的信件', requiresAuth: false }
   },
   {
+    path: '/share/movie/:shareToken',
+    name: 'SharedMovie',
+    component: () => import('@/views/movie/SharedMovie.vue'),
+    meta: { title: '分享的电影', requiresAuth: false }
+  },
+  {
     path: '/chat-record',
     name: 'ChatRecord',
     component: () => import('@/views/chat/ChatRecord.vue'),
