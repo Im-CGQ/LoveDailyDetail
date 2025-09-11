@@ -6,6 +6,7 @@ import com.lovediary.dto.SharedLetterDTO;
 import com.lovediary.entity.ShareLink;
 import com.lovediary.entity.LetterShareLink;
 import com.lovediary.service.ShareService;
+import com.lovediary.service.UniversalShareService;
 import com.lovediary.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class ShareController {
     
     private final ShareService shareService;
+    private final UniversalShareService universalShareService;
     private final JwtUtil jwtUtil;
     
     private Long getCurrentUserId(String token) {

@@ -218,28 +218,21 @@ CREATE TABLE chat_records (
     FOREIGN KEY (partner_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- 创建日记分享链接表
-CREATE TABLE diary_share_links (
+-- 创建通用分享链接表
+CREATE TABLE universal_share_links (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    diary_id BIGINT NOT NULL COMMENT '日记ID',
+    share_type ENUM('DIARY', 'LETTER', 'MOVIE', 'CHAT_RECORD', 'MUSIC') NOT NULL COMMENT '分享类型',
+    target_id BIGINT NOT NULL COMMENT '目标ID（日记ID、信件ID等）',
     share_token VARCHAR(32) NOT NULL UNIQUE COMMENT '分享令牌',
     expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE COMMENT '是否激活',
     view_count INT DEFAULT 0 COMMENT '查看次数',
-    FOREIGN KEY (diary_id) REFERENCES diaries(id) ON DELETE CASCADE
-);
-
--- 创建信件分享链接表
-CREATE TABLE letter_share_links (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    letter_id BIGINT NOT NULL COMMENT '信件ID',
-    share_token VARCHAR(32) NOT NULL UNIQUE COMMENT '分享令牌',
-    expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT TRUE COMMENT '是否激活',
-    view_count INT DEFAULT 0 COMMENT '查看次数',
-    FOREIGN KEY (letter_id) REFERENCES letters(id) ON DELETE CASCADE
+    INDEX idx_share_type (share_type),
+    INDEX idx_target_id (target_id),
+    INDEX idx_share_token (share_token),
+    INDEX idx_expires_at (expires_at),
+    INDEX idx_is_active (is_active)
 );
 
 -- 插入默认管理员用户 (用户名: admin, 密码: admin)
@@ -292,15 +285,9 @@ CREATE INDEX idx_chat_records_mood ON chat_records(mood);
 CREATE INDEX idx_system_configs_key ON system_configs(config_key);
 CREATE INDEX idx_system_configs_user_id ON system_configs(user_id);
 
--- 分享链接相关索引
-CREATE INDEX idx_diary_share_links_token ON diary_share_links(share_token);
-CREATE INDEX idx_diary_share_links_diary_id ON diary_share_links(diary_id);
-CREATE INDEX idx_diary_share_links_expires_at ON diary_share_links(expires_at);
-CREATE INDEX idx_diary_share_links_is_active ON diary_share_links(is_active);
-CREATE INDEX idx_letter_share_links_token ON letter_share_links(share_token);
-CREATE INDEX idx_letter_share_links_letter_id ON letter_share_links(letter_id);
-CREATE INDEX idx_letter_share_links_expires_at ON letter_share_links(expires_at);
-CREATE INDEX idx_letter_share_links_is_active ON letter_share_links(is_active);
+-- 通用分享链接相关索引（已在表创建时定义）
+-- 这些索引在表创建时已经定义，这里仅作说明
+-- idx_share_type, idx_target_id, idx_share_token, idx_expires_at, idx_is_active
 
 -- 电影相关索引
 CREATE INDEX idx_movies_user_id ON movies(user_id);
