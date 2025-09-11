@@ -114,6 +114,24 @@ export const getBackgroundMusicAutoplayByUserId = async (userId) => {
 }
 
 /**
+ * 根据用户ID获取背景音乐自动播放配置（公开接口，无需登录）
+ */
+export const getBackgroundMusicAutoplayByUserIdPublic = async (userId) => {
+  try {
+    const response = await api.get(`/system-config/public/background-music-autoplay/${userId}`)
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      console.error('获取背景音乐自动播放配置失败:', response.data.message)
+      return true // 默认返回 true
+    }
+  } catch (error) {
+    console.error('获取背景音乐自动播放配置失败:', error)
+    return true // 默认返回 true
+  }
+}
+
+/**
  * 根据用户ID设置背景音乐自动播放配置
  */
 export const setBackgroundMusicAutoplayByUserId = async (userId, autoplay) => {

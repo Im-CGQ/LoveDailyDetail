@@ -156,7 +156,7 @@ import { getSharedLetter } from '@/api/share'
 import { getShareExpireMinutes } from '@/api/systemConfig'
 import { showToast } from 'vant'
 import { getLetterBackgroundMusicByUserIdPublic } from '@/api/music'
-import { getBackgroundMusicAutoplayByUserId } from '@/api/systemConfig'
+import { getBackgroundMusicAutoplayByUserIdPublic } from '@/api/systemConfig'
 
 const route = useRoute()
 const router = useRouter()
@@ -221,7 +221,7 @@ const fetchLetterDetail = async () => {
     if (letter.value && letter.value.senderId) {
       try {
         // 获取发送者的背景音乐自动播放配置
-        const autoplayConfig = await getBackgroundMusicAutoplayByUserId(letter.value.senderId)
+        const autoplayConfig = await getBackgroundMusicAutoplayByUserIdPublic(letter.value.senderId)
         musicAutoplay.value = autoplayConfig
         
         // 获取背景音乐URL

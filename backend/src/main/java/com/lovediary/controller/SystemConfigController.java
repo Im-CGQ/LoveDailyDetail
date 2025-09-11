@@ -234,6 +234,19 @@ public class SystemConfigController {
     }
 
     /**
+     * 根据用户ID获取背景音乐自动播放配置（公开接口，无需登录）
+     */
+    @GetMapping("/public/background-music-autoplay/{userId}")
+    public ResponseEntity<ApiResponse<Boolean>> getBackgroundMusicAutoplayByUserIdPublic(@PathVariable Long userId) {
+        try {
+            boolean autoplay = systemConfigService.getBackgroundMusicAutoplayByUserId(userId);
+            return ResponseEntity.ok(ApiResponse.success(autoplay));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("获取背景音乐自动播放配置失败: " + e.getMessage()));
+        }
+    }
+
+    /**
      * 设置看信背景音乐配置
      */
     @PostMapping("/letter-background-music")
