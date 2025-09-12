@@ -401,10 +401,15 @@ const showShareDialog = (shareUrl) => {
 
 // 保存信件为图片
 const saveAsImage = async () => {
-  if (!letter.value) return
+  if (!letter.value) {
+    showToast('信件数据不存在')
+    return
+  }
   
   savingImage.value = true
   try {
+    console.log('开始截图保存...')
+    
     // 确保显示完整内容
     if (letter.value && letter.value.content) {
       displayText.value = letter.value.content
@@ -420,39 +425,150 @@ const saveAsImage = async () => {
     // 获取信件纸张元素
     const letterPaper = document.querySelector('.paper-border')
     if (!letterPaper) {
+      console.error('未找到 .paper-border 元素')
       showToast('未找到信件内容')
       return
     }
     
+    console.log('找到信件元素，开始截图...', letterPaper)
+    
     // 使用html2canvas截图
     const canvas = await html2canvas(letterPaper, {
-      backgroundColor: null, // 透明背景
+      backgroundColor: null, // 白色背景
       scale: 2, // 提高图片质量
       useCORS: true, // 允许跨域图片
       allowTaint: true,
-      logging: false,
+      logging: true, // 开启日志以便调试
       width: letterPaper.offsetWidth,
       height: letterPaper.offsetHeight,
       scrollX: 0,
-      scrollY: 0
+      scrollY: 0,
+      onclone: (clonedDoc) => {
+        // 确保克隆的文档中样式正确
+        const clonedElement = clonedDoc.querySelector('.paper-border')
+        if (clonedElement) {
+          clonedElement.style.transform = 'none'
+          clonedElement.style.position = 'static'
+        }
+      }
     })
+    
+    console.log('截图完成，canvas尺寸:', canvas.width, 'x', canvas.height)
+    
+    // 检查canvas是否有效
+    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+      throw new Error('截图失败：生成的画布无效')
+    }
     
     // 创建下载链接
     const link = document.createElement('a')
-    link.download = `信件_${letter.value.title || '未命名'}_${new Date().toISOString().slice(0, 10)}.png`
-    link.href = canvas.toDataURL('image/png')
+    const fileName = `信件_${letter.value.title || '未命名'}_${new Date().toISOString().slice(0, 10)}.png`
+    link.download = fileName
     
-    // 触发下载
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // 将canvas转换为blob
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        throw new Error('无法生成图片文件')
+      }
+      
+      const url = URL.createObjectURL(blob)
+      link.href = url
+      
+      // 触发下载
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // 清理URL对象
+      setTimeout(() => {
+        URL.revokeObjectURL(url)
+      }, 1000)
+      
+      console.log('图片保存成功:', fileName)
+      showToast('图片保存成功')
+    }, 'image/png', 0.9)
     
-    showToast('图片保存成功')
+    // 备用方法：如果toBlob失败，使用toDataURL
+    setTimeout(() => {
+      try {
+        const dataURL = canvas.toDataURL('image/png')
+        if (dataURL && dataURL !== 'data:,') {
+          const backupLink = document.createElement('a')
+          backupLink.download = fileName
+          backupLink.href = dataURL
+          document.body.appendChild(backupLink)
+          backupLink.click()
+          document.body.removeChild(backupLink)
+          console.log('使用备用方法保存成功')
+        }
+      } catch (backupError) {
+        console.error('备用保存方法也失败:', backupError)
+      }
+    }, 100)
+    
   } catch (error) {
-    console.error('保存图片失败:', error)
-    showToast('保存图片失败，请重试')
+    console.error('html2canvas截图失败:', error)
+    
+    // 尝试使用浏览器原生截图API作为备用方案
+    try {
+      await fallbackScreenshot()
+    } catch (fallbackError) {
+      console.error('备用截图方法也失败:', fallbackError)
+      showToast(`保存图片失败：${error.message || '请重试'}`)
+    }
   } finally {
     savingImage.value = false
+  }
+}
+
+// 备用截图方法
+const fallbackScreenshot = async () => {
+  console.log('尝试使用备用截图方法...')
+  
+  // 检查是否支持getDisplayMedia API
+  if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { mediaSource: 'screen' }
+      })
+      
+      // 创建video元素来捕获屏幕
+      const video = document.createElement('video')
+      video.srcObject = stream
+      video.play()
+      
+      video.onloadedmetadata = () => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        
+        ctx.drawImage(video, 0, 0)
+        
+        // 停止屏幕共享
+        stream.getTracks().forEach(track => track.stop())
+        
+        // 下载图片
+        const link = document.createElement('a')
+        const fileName = `信件_${letter.value.title || '未命名'}_${new Date().toISOString().slice(0, 10)}.png`
+        link.download = fileName
+        link.href = canvas.toDataURL('image/png')
+        
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        showToast('使用屏幕截图保存成功')
+      }
+    } catch (screenError) {
+      console.error('屏幕截图失败:', screenError)
+      throw screenError
+    }
+  } else {
+    // 如果都不支持，提供手动截图指导
+    showToast('请使用系统截图工具手动保存图片')
+    throw new Error('不支持自动截图功能')
   }
 }
 
