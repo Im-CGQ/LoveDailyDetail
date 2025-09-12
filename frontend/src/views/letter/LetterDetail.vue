@@ -430,11 +430,21 @@ const saveAsImage = async () => {
       return
     }
     
+    // 临时添加样式确保背景正确显示
+    const originalBackground = letterPaper.style.background
+    const originalBorder = letterPaper.style.border
+    const originalBorderRadius = letterPaper.style.borderRadius
+    
+    // 设置明确的背景样式
+    letterPaper.style.background = 'linear-gradient(135deg, #F5DEB3 0%, #DEB887 50%, #D2B48C 100%)'
+    letterPaper.style.border = '3px solid #8B4513'
+    letterPaper.style.borderRadius = '12px'
+    
     console.log('找到信件元素，开始截图...', letterPaper)
     
     // 使用html2canvas截图
     const canvas = await html2canvas(letterPaper, {
-      backgroundColor: null, // 白色背景
+      backgroundColor: '#F5DEB3', // 设置与信件背景相近的颜色作为默认背景
       scale: 2, // 提高图片质量
       useCORS: true, // 允许跨域图片
       allowTaint: true,
@@ -449,24 +459,59 @@ const saveAsImage = async () => {
         if (clonedElement) {
           clonedElement.style.transform = 'none'
           clonedElement.style.position = 'static'
+          // 确保背景色在克隆的文档中正确显示
+          clonedElement.style.background = 'linear-gradient(135deg, #F5DEB3 0%, #DEB887 50%, #D2B48C 100%)'
+          clonedElement.style.border = '3px solid #8B4513'
+          clonedElement.style.borderRadius = '12px'
+        }
+        
+        // 确保整个页面背景也正确
+        const body = clonedDoc.body
+        if (body) {
+          body.style.background = 'linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #CD853F 100%)'
         }
       }
     })
     
     console.log('截图完成，canvas尺寸:', canvas.width, 'x', canvas.height)
     
+    // 恢复原始样式
+    letterPaper.style.background = originalBackground
+    letterPaper.style.border = originalBorder
+    letterPaper.style.borderRadius = originalBorderRadius
+    
     // 检查canvas是否有效
     if (!canvas || canvas.width === 0 || canvas.height === 0) {
       throw new Error('截图失败：生成的画布无效')
     }
+    
+    // 创建带背景的最终canvas
+    const finalCanvas = document.createElement('canvas')
+    const finalCtx = finalCanvas.getContext('2d')
+    
+    // 设置最终canvas尺寸
+    finalCanvas.width = canvas.width
+    finalCanvas.height = canvas.height
+    
+    // 绘制背景渐变
+    const gradient = finalCtx.createLinearGradient(0, 0, finalCanvas.width, finalCanvas.height)
+    gradient.addColorStop(0, '#F5DEB3')
+    gradient.addColorStop(0.5, '#DEB887')
+    gradient.addColorStop(1, '#D2B48C')
+    
+    finalCtx.fillStyle = gradient
+    finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height)
+    
+    // 绘制原始截图内容
+    finalCtx.drawImage(canvas, 0, 0)
     
     // 创建下载链接
     const link = document.createElement('a')
     const fileName = `信件_${letter.value.title || '未命名'}_${new Date().toISOString().slice(0, 10)}.png`
     link.download = fileName
     
-    // 将canvas转换为blob
-    canvas.toBlob((blob) => {
+    // 将最终canvas转换为blob
+    finalCanvas.toBlob((blob) => {
       if (!blob) {
         throw new Error('无法生成图片文件')
       }
@@ -491,7 +536,7 @@ const saveAsImage = async () => {
     // 备用方法：如果toBlob失败，使用toDataURL
     setTimeout(() => {
       try {
-        const dataURL = canvas.toDataURL('image/png')
+        const dataURL = finalCanvas.toDataURL('image/png')
         if (dataURL && dataURL !== 'data:,') {
           const backupLink = document.createElement('a')
           backupLink.download = fileName
