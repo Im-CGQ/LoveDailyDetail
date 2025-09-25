@@ -46,6 +46,54 @@
         />
         <div class="upload-tips">
           <p>支持上传最多20张图片，每张图片大小不超过20MB</p>
+          <p>使用上下箭头按钮调整图片顺序</p>
+        </div>
+        
+        <!-- 图片排序区域 -->
+        <div class="image-sort-section" v-if="form.images.length > 0">
+          <h4>图片排序</h4>
+          <div class="image-sort-list">
+            <div 
+              v-for="(image, index) in form.images" 
+              :key="image.url || image.file?.name || index"
+              class="image-sort-item"
+            >
+              <div class="image-preview">
+                <img 
+                  :src="image.url || image.content" 
+                  :alt="image.fileName || `图片${index + 1}`"
+                  @error="onImageError"
+                />
+                <div class="image-order">{{ index + 1 }}</div>
+              </div>
+              <div class="image-info">
+                <span class="image-name">{{ image.fileName || image.file?.name || `图片${index + 1}` }}</span>
+                <span class="image-status" :class="image.status">
+                  {{ getImageStatusText(image.status) }}
+                </span>
+              </div>
+              <div class="sort-controls">
+                <button 
+                  type="button"
+                  class="sort-btn up-btn"
+                  :disabled="index === 0"
+                  @click="moveImageUp(index)"
+                  title="上移"
+                >
+                  <van-icon name="arrow-up" size="14" />
+                </button>
+                <button 
+                  type="button"
+                  class="sort-btn down-btn"
+                  :disabled="index === form.images.length - 1"
+                  @click="moveImageDown(index)"
+                  title="下移"
+                >
+                  <van-icon name="arrow-down" size="14" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -220,6 +268,8 @@ const musicProgress = ref(0)
 const musicProgressTimer = ref(null)
 const videoPreviewSectionRef = ref(null) // 视频预览区域容器引用
 const containerWidth = ref(400) // 默认容器宽度
+
+// 图片排序相关
 
 // 获取图片尺寸
 const getImageDimensions = (file) => {
@@ -438,6 +488,46 @@ const beforeDelete = (file) => {
 const onOversize = (file) => {
   showToast('图片大小不能超过20MB')
   return false
+}
+
+// 图片排序相关方法
+const moveImageUp = (index) => {
+  if (index > 0) {
+    const images = [...form.value.images]
+    const temp = images[index]
+    images[index] = images[index - 1]
+    images[index - 1] = temp
+    form.value.images = images
+    showToast('图片已上移')
+  }
+}
+
+const moveImageDown = (index) => {
+  if (index < form.value.images.length - 1) {
+    const images = [...form.value.images]
+    const temp = images[index]
+    images[index] = images[index + 1]
+    images[index + 1] = temp
+    form.value.images = images
+    showToast('图片已下移')
+  }
+}
+
+const getImageStatusText = (status) => {
+  switch (status) {
+    case 'uploading':
+      return '上传中...'
+    case 'done':
+      return '上传成功'
+    case 'failed':
+      return '上传失败'
+    default:
+      return '待上传'
+  }
+}
+
+const onImageError = (event) => {
+  event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+5Zu+54mH5Yqg6L295aSx6LSlPC90ZXh0Pjwvc3ZnPg=='
 }
 
 const beforeVideoDelete = (file) => {
@@ -914,6 +1004,155 @@ onUnmounted(() => {
   font-size: 12px;
   color: #666;
   line-height: 1.5;
+}
+
+/* 图片排序区域样式 */
+.image-sort-section {
+  margin-top: 20px;
+}
+
+.image-sort-section h4 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.image-sort-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.image-sort-item {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.image-sort-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.image-sort-item .image-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-right: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.image-sort-item .image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.image-sort-item .image-preview .image-order {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(255, 107, 157, 0.9);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.image-sort-item .image-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.image-sort-item .image-info .image-name {
+  display: block;
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-sort-item .image-info .image-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.image-sort-item .image-info .image-status.uploading {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.image-sort-item .image-info .image-status.done {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.image-sort-item .image-info .image-status.failed {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+.image-sort-item .image-info .image-status.default {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.image-sort-item .sort-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 12px;
+}
+
+.image-sort-item .sort-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: #f5f5f5;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.image-sort-item .sort-btn:hover:not(:disabled) {
+  background: #ff6b9d;
+  color: white;
+  transform: scale(1.1);
+}
+
+.image-sort-item .sort-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.image-sort-item .sort-btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 /* 视频预览样式 */
