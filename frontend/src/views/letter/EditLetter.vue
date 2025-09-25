@@ -141,23 +141,6 @@
       />
     </van-popup>
 
-    <!-- 预览模态框 -->
-    <van-popup v-model:show="previewVisible" position="center" :style="{ width: '90%', maxWidth: '500px' }">
-      <div class="preview-content">
-        <div class="preview-header">
-          <h3>{{ form.title }}</h3>
-          <p class="unlock-time">解锁时间：{{ form.unlockDateTime }}</p>
-          <p class="receiver-info">收件人：{{ form.receiver }}</p>
-        </div>
-        <div class="content" v-html="form.content"></div>
-        <div class="preview-actions">
-          <van-button @click="previewVisible = false">取消</van-button>
-          <van-button type="primary" @click="confirmUpdate" :loading="loading">
-            确认修改
-          </van-button>
-        </div>
-      </div>
-    </van-popup>
   </div>
 </template>
 
@@ -189,7 +172,6 @@ const form = reactive({
 })
 
 const loading = ref(false)
-const previewVisible = ref(false)
 const showDatePicker = ref(false)
 const showTimePicker = ref(false)
 const showReceiverPicker = ref(false)
@@ -414,7 +396,8 @@ const submitForm = async () => {
     return
   }
   
-  previewVisible.value = true
+  // 直接更新信件，不需要预览确认
+  await confirmUpdate()
 }
 
 // 确认更新
@@ -435,7 +418,6 @@ const confirmUpdate = async () => {
     
     await updateLetter(letterId, letterData)
     showToast('信件修改成功！')
-    previewVisible.value = false
     router.push('/admin/letters')
   } catch (error) {
     console.error('修改信件失败:', error)
@@ -539,49 +521,6 @@ onMounted(async () => {
     padding: 20px;
   }
   
-  .preview-content {
-    padding: 20px;
-    
-    .preview-header {
-      text-align: center;
-      margin-bottom: 20px;
-      
-      h3 {
-        color: #333;
-        margin-bottom: 10px;
-    font-size: 18px;
-      }
-      
-      .unlock-time {
-        color: #666;
-        font-size: 14px;
-        margin-bottom: 5px;
-      }
-      
-      .receiver-info {
-        color: #ff6b9d;
-        font-size: 14px;
-        font-weight: 500;
-      }
-    }
-    
-    .content {
-      line-height: 1.8;
-      color: #333;
-      max-height: 300px;
-      overflow-y: auto;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    
-    .preview-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-  }
 }
 
 :deep(.van-field__label) {

@@ -148,23 +148,6 @@
       />
     </van-popup>
 
-    <!-- 预览模态框 -->
-    <van-popup v-model:show="previewVisible" position="center" :style="{ width: '90%', maxWidth: '500px' }">
-      <div class="preview-content">
-        <div class="preview-header">
-          <h3>{{ form.title }}</h3>
-          <p class="unlock-time">解锁时间：{{ form.unlockDateTime }}</p>
-          <p class="receiver-info">收件人：{{ form.receiver }}</p>
-        </div>
-        <div class="content" v-html="form.content"></div>
-        <div class="preview-actions">
-          <van-button @click="previewVisible = false">取消</van-button>
-          <van-button type="primary" @click="confirmSend" :loading="loading">
-            确认发送
-          </van-button>
-        </div>
-      </div>
-    </van-popup>
   </div>
 </template>
 
@@ -202,7 +185,6 @@ const form = reactive({
 })
 
 const loading = ref(false)
-const previewVisible = ref(false)
 const showDatePicker = ref(false)
 const showTimePicker = ref(false)
 const showReceiverPicker = ref(false) // 新增：收件人选择器
@@ -243,16 +225,11 @@ const formatDateTime = (dateTime) => {
   return date.toLocaleString('zh-CN')
 }
 
-// 格式化时间用于API
-const formatDateTimeForAPI = (date) => {
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hours = String(d.getHours()).padStart(2, '0')
-  const minutes = String(d.getMinutes()).padStart(2, '0')
-  const seconds = String(d.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+// 格式化时间用于API - 保持 "YYYY-MM-DD HH:mm:ss" 格式
+const formatDateTimeForAPI = (dateTimeString) => {
+  if (!dateTimeString) return null
+  // 直接返回 "YYYY-MM-DD HH:mm:ss" 格式，与后端Jackson配置匹配
+  return dateTimeString
 }
 
 // 插入表情符号
@@ -390,7 +367,8 @@ const submitForm = async () => {
     return
   }
   
-  previewVisible.value = true
+  // 直接发送信件，不需要预览确认
+  await confirmSend()
 }
 
 // 重置表单
@@ -436,13 +414,12 @@ const confirmSend = async () => {
     const letterData = {
       title: form.title,
       content: form.content,
-      unlockTime: form.unlockDateTime, // 完整的日期时间
+      unlockTime: formatDateTimeForAPI(form.unlockDateTime), // 转换为ISO格式
       receiverId: form.receiverId
     }
     
     await createLetter(letterData)
     showToast(`信件发送给${form.receiver}成功！`)
-    previewVisible.value = false
     resetForm()
     router.push('/admin/letters')
   } catch (error) {
@@ -570,49 +547,6 @@ onMounted(async () => {
     padding: 20px;
   }
   
-  .preview-content {
-    padding: 20px;
-    
-    .preview-header {
-      text-align: center;
-      margin-bottom: 20px;
-      
-      h3 {
-        color: #333;
-        margin-bottom: 10px;
-        font-size: 18px;
-      }
-      
-      .unlock-time {
-        color: #666;
-        font-size: 14px;
-        margin-bottom: 5px;
-      }
-      
-      .receiver-info {
-        color: #ff6b9d;
-        font-size: 14px;
-        font-weight: 500;
-      }
-    }
-    
-    .content {
-      line-height: 1.8;
-      color: #333;
-      max-height: 300px;
-      overflow-y: auto;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    
-    .preview-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-  }
 }
 
 :deep(.van-field__label) {

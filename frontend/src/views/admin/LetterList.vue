@@ -26,10 +26,15 @@
                 :label="`来自：${letter.senderName}${letter.senderId === letter.receiverId ? ' (自己)' : ''} | ${formatDate(letter.createdAt)}`"
                 :class="{ 'locked': !letter.isUnlocked, 'unread': !letter.isRead }"
                 @click="viewLetter(letter)"
-                is-link
+                :is-link="letter.isUnlocked"
               >
                 <template #right-icon>
-                  <van-tag v-if="!letter.isUnlocked" type="warning" size="small">等待解锁</van-tag>
+                  <div v-if="!letter.isUnlocked" class="locked-info">
+                    <van-tag type="warning" size="small">等待解锁</van-tag>
+                    <div class="countdown-text" v-if="letter.remainingSeconds > 0">
+                      {{ formatCountdown(letter.remainingSeconds) }}
+                    </div>
+                  </div>
                   <van-tag v-else-if="!letter.isRead" type="primary" size="small">未读</van-tag>
                   <van-tag v-else type="success" size="small">已读</van-tag>
                 </template>
@@ -86,38 +91,6 @@
       </van-tab>
     </van-tabs>
 
-    <!-- 信件详情弹窗 -->
-    <van-popup v-model:show="letterDetailVisible" position="center" :style="{ width: '90%', maxWidth: '500px' }">
-      <div v-if="selectedLetter" class="letter-detail">
-        <div class="detail-header">
-          <h3>{{ selectedLetter.title }}</h3>
-        </div>
-        
-        <div class="detail-meta">
-          <p><strong>发送者：</strong>{{ selectedLetter.senderName }}{{ selectedLetter.senderId === selectedLetter.receiverId ? ' (自己)' : '' }}</p>
-          <p><strong>接收者：</strong>{{ selectedLetter.receiverName }}{{ selectedLetter.senderId === selectedLetter.receiverId ? ' (自己)' : '' }}</p>
-          <p><strong>发送时间：</strong>{{ formatDateTime(selectedLetter.createdAt) }}</p>
-          <p><strong>解锁时间：</strong>{{ formatDateTime(selectedLetter.unlockTime) }}</p>
-          <p v-if="selectedLetter.senderId === selectedLetter.receiverId" class="self-letter-tip">
-            <van-icon name="info-o" /> 这是你写给自己的信
-          </p>
-        </div>
-        
-        <div class="detail-content" v-html="selectedLetter.content"></div>
-        
-        <div class="detail-actions">
-          <van-button size="small" @click="letterDetailVisible = false">关闭</van-button>
-          <van-button 
-            v-if="selectedLetter && !selectedLetter.isRead && selectedLetter.isUnlocked"
-            type="primary" 
-            size="small"
-            @click="markAsReadHandler(selectedLetter.id)"
-          >
-            标记为已读
-          </van-button>
-        </div>
-      </div>
-    </van-popup>
   </div>
 </template>
 
@@ -127,8 +100,6 @@ import { useRouter } from 'vue-router'
 import { 
   getReceivedLetters, 
   getSentLetters, 
-  getLetterById, 
-  markAsRead, 
   deleteLetter 
 } from '@/api/letter'
 import { showToast, showDialog } from 'vant'
@@ -140,8 +111,6 @@ const router = useRouter()
 const activeTab = ref('received') // 0: received, 1: sent
 const receivedLetters = ref([])
 const sentLetters = ref([])
-const selectedLetter = ref(null)
-const letterDetailVisible = ref(false)
 const deletingLetter = ref(null)
 const countdownTimer = ref(null)
 
@@ -166,28 +135,17 @@ const handleTabChange = (index) => {
 }
 
 // 查看信件详情
-const viewLetter = async (letter) => {
-  try {
-    selectedLetter.value = await getLetterById(letter.id)
-    letterDetailVisible.value = true
-  } catch (error) {
-    showToast('获取信件详情失败')
-    console.error('获取信件详情失败:', error)
+const viewLetter = (letter) => {
+  // 如果是收到的信件且未解锁，显示提示信息
+  if (activeTab.value === 'received' && !letter.isUnlocked) {
+    showToast('信件尚未解锁，请等待解锁时间到达')
+    return
   }
+  
+  // 其他情况直接跳转到信件详情页
+  router.push(`/letter/${letter.id}`)
 }
 
-// 标记为已读
-const markAsReadHandler = async (letterId) => {
-  try {
-    await markAsRead(letterId)
-    showToast('已标记为已读')
-    letterDetailVisible.value = false
-    loadLetters()
-  } catch (error) {
-    showToast('操作失败')
-    console.error('标记已读失败:', error)
-  }
-}
 
 // 删除信件
 const deleteLetterHandler = async (letterId) => {
@@ -232,6 +190,26 @@ const formatDate = (dateString) => {
 const formatDateTime = (dateString) => {
   const date = new Date(dateString)
   return date.toLocaleString('zh-CN')
+}
+
+// 格式化倒计时
+const formatCountdown = (seconds) => {
+  if (!seconds || seconds <= 0) return '已解锁'
+  
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  
+  if (days > 0) {
+    return `${days}天${hours}小时`
+  } else if (hours > 0) {
+    return `${hours}小时${minutes}分钟`
+  } else if (minutes > 0) {
+    return `${minutes}分钟${secs}秒`
+  } else {
+    return `${secs}秒`
+  }
 }
 
 // 开始倒计时
@@ -364,6 +342,15 @@ onBeforeUnmount(() => {
           opacity: 0.7;
           background: rgba(255, 193, 7, 0.1);
           border-color: rgba(255, 193, 7, 0.3);
+          cursor: not-allowed;
+          
+          .van-cell__title {
+            color: #999;
+          }
+          
+          .van-cell__label {
+            color: #ccc;
+          }
         }
         
         &.unread {
@@ -398,99 +385,27 @@ onBeforeUnmount(() => {
             }
           }
         }
-      }
-    }
-  }
-  
-     .letter-detail {
-     padding: 24px;
-     background: #ffffff;
-     border-radius: 16px;
-    
-    .detail-header {
-      text-align: center;
-      margin-bottom: 24px;
-      
-      h3 {
-        color: #2c3e50;
-        margin: 0;
-        font-size: 20px;
-        font-weight: 600;
-      }
-    }
-    
-         .detail-meta {
-       background: #f8f9fa;
-       padding: 20px;
-       border-radius: 12px;
-       margin-bottom: 20px;
-       border: 1px solid #e9ecef;
-      
-      p {
-        margin: 10px 0;
-        color: #34495e;
-        font-size: 14px;
-        line-height: 1.6;
         
-        strong {
-          color: #2c3e50;
-          font-weight: 600;
-        }
-        
-        &.self-letter-tip {
-          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-          color: #1976d2;
-          padding: 12px 16px;
-          border-radius: 8px;
-          margin-top: 15px;
-          border-left: 4px solid #1976d2;
-          font-weight: 500;
+        .locked-info {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
           
-          .van-icon {
-            margin-right: 8px;
+          .countdown-text {
+            font-size: 11px;
+            color: #f39c12;
+            font-weight: 500;
+            background: rgba(243, 156, 18, 0.1);
+            padding: 2px 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(243, 156, 18, 0.3);
           }
         }
       }
     }
-    
-         .detail-content {
-       line-height: 1.8;
-       color: #2c3e50;
-       max-height: 300px;
-       overflow-y: auto;
-       padding: 20px;
-       background: #f8f9fa;
-       border-radius: 12px;
-       margin-bottom: 20px;
-       border: 1px solid #e9ecef;
-       font-size: 15px;
-     }
-    
-    .detail-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      
-      .van-button {
-        height: 40px;
-        padding: 0 24px;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: 600;
-        
-        &.van-button--primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border: none;
-        }
-        
-                 &.van-button--default {
-           background: #ffffff;
-           border: 1px solid #dee2e6;
-           color: #6c757d;
-         }
-      }
-    }
   }
+  
 }
 
 :deep(.van-tabs__nav) {
